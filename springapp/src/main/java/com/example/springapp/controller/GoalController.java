@@ -1,0 +1,89 @@
+package com.example.springapp.controller;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.springapp.model.Goal;
+import com.example.springapp.model.EmployeeProfile;
+import com.example.springapp.model.Appraisal;
+import com.example.springapp.service.GoalService;
+import com.example.springapp.service.EmployeeProfileService;
+import com.example.springapp.service.AppraisalService;
+
+@RestController
+@RequestMapping("/api/goals")
+public class GoalController {
+
+    private final GoalService goalService;
+    private final EmployeeProfileService employeeService;
+    private final AppraisalService appraisalService;
+
+    public GoalController(GoalService goalService,
+                          EmployeeProfileService employeeService,
+                          AppraisalService appraisalService) {
+        this.goalService = goalService;
+        this.employeeService = employeeService;
+        this.appraisalService = appraisalService;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Goal>> getAllGoals() {
+        return ResponseEntity.ok(goalService.getAllGoals());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Goal> getGoalById(@PathVariable Long id) {
+        return goalService.getGoalById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/employee/{employeeId}")
+    public ResponseEntity<List<Goal>> getGoalsByEmployee(@PathVariable Long employeeId) {
+        return ResponseEntity.ok(goalService.getGoalsByEmployeeId(employeeId));
+    }
+
+    @GetMapping("/appraisal/{appraisalId}")
+    public ResponseEntity<List<Goal>> getGoalsByAppraisal(@PathVariable Long appraisalId) {
+        return ResponseEntity.ok(goalService.getGoalsByAppraisalId(appraisalId));
+    }
+
+    @PostMapping("/employee/{employeeId}")
+    public ResponseEntity<Goal> createGoal(@PathVariable Long employeeId,
+                                           @RequestBody Goal goal) {
+        EmployeeProfile employee = employeeService.getEmployeeProfileById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found with ID " + employeeId));
+        goal.setEmployee(employee);
+
+        return ResponseEntity.ok(goalService.createGoal(goal));
+    }
+
+    @PostMapping("/employee/{employeeId}/appraisal/{appraisalId}")
+    public ResponseEntity<Goal> createGoalWithAppraisal(@PathVariable Long employeeId,
+                                                        @PathVariable Long appraisalId,
+                                                        @RequestBody Goal goal) {
+        EmployeeProfile employee = employeeService.getEmployeeProfileById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found with ID " + employeeId));
+        Appraisal appraisal = appraisalService.getAppraisalById(appraisalId)
+                .orElseThrow(() -> new RuntimeException("Appraisal not found with ID " + appraisalId));
+
+        goal.setEmployee(employee);
+        goal.setAppraisal(appraisal);
+
+        return ResponseEntity.ok(goalService.createGoal(goal));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Goal> updateGoal(@PathVariable Long id, @RequestBody Goal goal) {
+        goal.setGoalId(id);
+        return ResponseEntity.ok(goalService.updateGoal(goal));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteGoal(@PathVariable Long id) {
+        goalService.deleteGoal(id);
+        return ResponseEntity.noContent().build();
+    }
+}
