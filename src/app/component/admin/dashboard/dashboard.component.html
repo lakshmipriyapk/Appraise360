@@ -1,0 +1,39 @@
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h2 class="logo">
+      <i class="fas fa-chart-line"></i>
+      Appraise360
+    </h2>
+    <ul>
+      <li *ngFor="let item of menuItems" (click)="navigateTo(item.route)">
+        <i [ngClass]="['fas', item.icon]"></i> {{ item.title }}
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1>Appraise360 Dashboard</h1>
+        <p class="subtitle">Monitor and manage employee performance reviews and appraisals</p>
+      </div>
+      <div class="topbar-right">
+        <div class="user-info">
+          <i class="fas fa-user-circle"></i>
+          <span>Admin User</span>
+        </div>
+        <button class="logout-btn" (click)="logout()">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </header>
+
+    <!-- Dashboard Content -->
+    <div class="dashboard-content">
+      <!-- Content area is now empty - ready for your custom content -->
+    </div>
+  </div>
+</div>

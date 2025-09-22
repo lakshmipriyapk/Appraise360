@@ -1,0 +1,238 @@
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h2 class="logo">
+      <i class="fas fa-chart-line"></i>
+      Appraise360
+    </h2>
+    <ul>
+      <li *ngFor="let item of menuItems" (click)="navigateTo(item.route)" [class.active]="item.route === '/review-cycle'">
+        <i [ngClass]="['fas', item.icon]"></i> {{ item.title }}
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1>Review Cycle Management</h1>
+        <p class="subtitle">Manage performance review cycles and periods</p>
+      </div>
+      <div class="topbar-right">
+        <div class="user-info">
+          <i class="fas fa-user-circle"></i>
+          <span>Admin User</span>
+        </div>
+        <button class="logout-btn" (click)="logout()">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </header>
+
+    <!-- Review Cycle Management Content -->
+    <div class="dashboard-content">
+      <div class="review-cycle-container">
+        
+        <!-- Messages -->
+        <div *ngIf="errorMessage" class="message message-error">
+          <i class="fas fa-exclamation-circle"></i>
+          {{ errorMessage }}
+        </div>
+        <div *ngIf="successMessage" class="message message-success">
+          <i class="fas fa-check-circle"></i>
+          {{ successMessage }}
+        </div>
+
+        <!-- Header Section with Different Layout -->
+        <div class="section-header-alt">
+          <div class="header-content">
+            <div class="header-icon">
+              <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="header-text">
+              <h2>Review Cycles</h2>
+              <p>Create and manage performance review periods</p>
+            </div>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-primary btn-large" (click)="openCreateModal()">
+              <i class="fas fa-plus-circle"></i> Create New Cycle
+            </button>
+          </div>
+        </div>
+
+        <!-- Search Section with Different Style -->
+        <div class="search-section">
+          <div class="search-container">
+            <div class="search-icon">
+              <i class="fas fa-search"></i>
+            </div>
+            <input 
+              type="text" 
+              placeholder="Search review cycles by name..." 
+              [(ngModel)]="searchTerm"
+              (input)="onSearchChange()"
+              class="search-input-alt">
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" *ngIf="isLoading">
+          <div class="spinner-large"></div>
+          <p>Loading review cycles...</p>
+        </div>
+
+        <!-- Review Cycle Cards with Different Layout -->
+        <div class="review-cycle-grid" *ngIf="!isLoading">
+          <div *ngFor="let cycle of filteredReviewCycles" class="review-cycle-card">
+            <div class="card-header">
+              <div class="cycle-icon">
+                <i class="fas fa-calendar-check"></i>
+              </div>
+              <div class="cycle-info">
+                <h3>{{ cycle.cycleName }}</h3>
+                <div class="cycle-stats">
+                  <span class="stat-item">
+                    <i class="fas fa-clipboard-list"></i>
+                    {{ getAppraisalCount(cycle) }} Appraisals
+                  </span>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button class="btn btn-sm btn-outline" (click)="openEditModal(cycle)" title="Edit Cycle">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" (click)="openDeleteModal(cycle)" title="Delete Cycle">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div class="card-content">
+              <div class="cycle-details">
+                <div class="detail-row">
+                  <span class="detail-label">Cycle ID:</span>
+                  <span class="detail-value">#{{ cycle.cycleId }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Total Appraisals:</span>
+                  <span class="detail-value">{{ getAppraisalCount(cycle) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State with Different Design -->
+        <div class="empty-state-alt" *ngIf="!isLoading && filteredReviewCycles.length === 0">
+          <div class="empty-icon">
+            <i class="fas fa-calendar-times"></i>
+          </div>
+          <div class="empty-content">
+            <h3>No Review Cycles Found</h3>
+            <p *ngIf="searchTerm">No cycles match your search criteria</p>
+            <p *ngIf="!searchTerm">Start by creating your first review cycle</p>
+            <button class="btn btn-primary btn-large" (click)="openCreateModal()" *ngIf="!searchTerm">
+              <i class="fas fa-plus-circle"></i> Create First Cycle
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create/Edit Modal with Different Style -->
+<div class="modal-overlay" *ngIf="showCreateModal || showEditModal" (click)="closeModals()">
+  <div class="modal modal-alt" (click)="$event.stopPropagation()">
+    <div class="modal-header-alt">
+      <div class="modal-icon">
+        <i class="fas fa-calendar-plus"></i>
+      </div>
+      <div class="modal-title">
+        <h2>{{ showCreateModal ? 'Create Review Cycle' : 'Edit Review Cycle' }}</h2>
+        <p>{{ showCreateModal ? 'Set up a new performance review period' : 'Update review cycle details' }}</p>
+      </div>
+      <button class="btn-close-alt" (click)="closeModals()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <form [formGroup]="reviewCycleForm" (ngSubmit)="showCreateModal ? createReviewCycle() : updateReviewCycle()">
+      <div class="modal-body-alt">
+        <div class="form-group-alt">
+          <label for="cycleName">
+            <i class="fas fa-tag"></i>
+            Cycle Name *
+          </label>
+          <input 
+            type="text" 
+            id="cycleName" 
+            formControlName="cycleName" 
+            placeholder="e.g., Q1 2024 Performance Review"
+            class="form-control-alt"
+            [class.error]="reviewCycleForm.get('cycleName')?.invalid && reviewCycleForm.get('cycleName')?.touched">
+          <div class="error-message" *ngIf="reviewCycleForm.get('cycleName')?.invalid && reviewCycleForm.get('cycleName')?.touched">
+            Cycle name is required
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer-alt">
+        <button type="button" class="btn btn-secondary-alt" (click)="closeModals()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="submit" class="btn btn-primary-alt" [disabled]="reviewCycleForm.invalid">
+          <i class="fas fa-save"></i> {{ showCreateModal ? 'Create Cycle' : 'Update Cycle' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal with Different Style -->
+<div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeModals()">
+  <div class="modal delete-modal-alt" (click)="$event.stopPropagation()">
+    <div class="modal-header-alt">
+      <div class="modal-icon danger">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <div class="modal-title">
+        <h2>Delete Review Cycle</h2>
+        <p>This action cannot be undone</p>
+      </div>
+      <button class="btn-close-alt" (click)="closeModals()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body-alt">
+      <div class="delete-confirmation-alt">
+        <div class="warning-content">
+          <p>Are you sure you want to delete the review cycle <strong>"{{ selectedReviewCycle?.cycleName }}"</strong>?</p>
+          <div class="warning-details">
+            <div class="warning-item">
+              <i class="fas fa-info-circle"></i>
+              <span>This will remove the cycle and all associated data</span>
+            </div>
+            <div class="warning-item">
+              <i class="fas fa-exclamation-triangle"></i>
+              <span>This action cannot be undone</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer-alt">
+      <button type="button" class="btn btn-secondary-alt" (click)="closeModals()">
+        <i class="fas fa-times"></i> Cancel
+      </button>
+      <button type="button" class="btn btn-danger-alt" (click)="deleteReviewCycle()">
+        <i class="fas fa-trash"></i> Delete Cycle
+      </button>
+    </div>
+  </div>
+</div>

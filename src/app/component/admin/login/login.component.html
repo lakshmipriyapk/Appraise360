@@ -1,0 +1,103 @@
+<div class="login-page">
+  <header class="header" [class.scrolled]="isScrolled">
+    <div class="logo">
+      <i class="fas fa-chart-line"></i>
+      <span>Appraise360</span>
+    </div>
+    <nav>
+      <a routerLink="/" class="btn-primary">Home</a>
+    </nav>
+  </header>
+
+  <div class="login-container">
+    <div class="login-card">
+    <h2 class="title">Sign in to your dashboard</h2>
+
+    <form (ngSubmit)="onLogin()" #loginForm="ngForm" class="form">
+      <!-- Work Email -->
+      <div class="input-group ">
+        <label for="email">Work Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          [(ngModel)]="loginData.email"
+          placeholder="you@company.com"
+          required
+        />
+      </div>
+
+      <!-- Phone Number -->
+      <div class="input-group">
+        <label for="phone">Phone Number</label>
+        <input
+          type="text"
+          id="phone"
+          name="phone"
+          [(ngModel)]="loginData.phone"
+          placeholder="9876543210"
+          required
+        />
+      </div>
+
+      <!-- Password -->
+      <div class="input-group password-container">
+        <label for="password">Password</label>
+        <input
+          [type]="showPassword ? 'text' : 'password'"
+          id="password"
+          name="password"
+          [(ngModel)]="loginData.password"
+          placeholder="••••••••"
+          required
+        />
+        <i
+          class="fas password-toggle-icon"
+          [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"
+          (click)="togglePassword()"
+        ></i>
+      </div>
+
+      <!-- Login Button -->
+      <button type="submit" class="btn-primary">Log In</button>
+    </form>
+
+    <!-- Helper Links -->
+    <div class="helper-links">
+      <a (click)="showForgotPassword = true">Forgot password?</a>
+      <div class="signup-text">
+        Don't have an account?
+        <!-- RouterLink to SignupComponent -->
+        <a [routerLink]="['/signup']" class="signup-link">Sign Up</a>
+      </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div class="forgot-password-modal" *ngIf="showForgotPassword" (click)="closeForgotPassword()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Reset Password</h3>
+          <button class="close-btn" (click)="closeForgotPassword()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>Enter your email address and we'll send you a link to reset your password.</p>
+          <form (ngSubmit)="onForgotPassword()" #forgotForm="ngForm">
+            <div class="input-group">
+              <label for="resetEmail">Email Address</label>
+              <input
+                type="email"
+                id="resetEmail"
+                name="resetEmail"
+                [(ngModel)]="resetEmail"
+                placeholder="you@company.com"
+                required
+                email
+              />
+            </div>
+            <button type="submit" class="btn-primary">Send Reset Link</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

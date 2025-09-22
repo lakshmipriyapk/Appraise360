@@ -1,0 +1,98 @@
+
+.dashboard-container {
+	display: flex;
+	min-height: 100vh;
+	background: #f4f6f8;
+}
+
+.sidebar {
+	width: 220px;
+	background: #2d3e50;
+	color: #fff;
+	padding: 2rem 1rem;
+	box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+}
+.sidebar h2 {
+	font-size: 1.3rem;
+	margin-bottom: 1.5rem;
+}
+.sidebar ul {
+	list-style: none;
+	padding: 0;
+}
+.sidebar li {
+	margin: 1rem 0;
+}
+.sidebar a {
+	color: #fff;
+	text-decoration: none;
+	font-weight: 500;
+	transition: color 0.2s;
+}
+.sidebar a:hover {
+	color: #ffd700;
+}
+
+.dashboard-main {
+	flex: 1;
+	padding: 2rem 3rem;
+}
+.dashboard-section {
+	background: #fff;
+	border-radius: 10px;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+	margin-bottom: 2rem;
+	padding: 2rem;
+}
+.profile-card {
+	display: flex;
+	align-items: center;
+	gap: 2rem;
+}
+.profile-img {
+	width: 80px;
+	height: 80px;
+	border-radius: 50%;
+	object-fit: cover;
+	border: 3px solid #2d3e50;
+}
+.goals-list {
+	padding-left: 1.2rem;
+}
+.goals-list li {
+	margin-bottom: 0.5rem;
+}
+.feedback-card {
+	background: #f9fafb;
+	border-left: 4px solid #2d3e50;
+	padding: 1rem 1.5rem;
+	border-radius: 6px;
+}
+.appraisal-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 1rem;
+}
+.appraisal-table th, .appraisal-table td {
+	border: 1px solid #e0e0e0;
+	padding: 0.7rem 1rem;
+	text-align: left;
+}
+.appraisal-table th {
+	background: #f4f6f8;
+}
+
+@media (max-width: 900px) {
+	.dashboard-container {
+		flex-direction: column;
+	}
+	.sidebar {
+		width: 100%;
+		box-shadow: none;
+		border-bottom: 1px solid #e0e0e0;
+		padding: 1rem;
+	}
+	.dashboard-main {
+		padding: 1rem;
+	}
+}

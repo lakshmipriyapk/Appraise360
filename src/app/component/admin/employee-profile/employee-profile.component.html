@@ -1,0 +1,227 @@
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h2 class="logo">
+      <i class="fas fa-chart-line"></i>
+      Appraise360
+    </h2>
+    <ul>
+      <li *ngFor="let item of menuItems" (click)="navigateTo(item.route)" [class.active]="item.route === '/employee-profile'">
+        <i [ngClass]="['fas', item.icon]"></i> {{ item.title }}
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1>Employee Profile Management</h1>
+        <p class="subtitle">Manage employee profiles and their organizational details</p>
+      </div>
+      <div class="topbar-right">
+        <div class="user-info">
+          <i class="fas fa-user-circle"></i>
+          <span>Admin User</span>
+        </div>
+        <button class="logout-btn" (click)="logout()">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </header>
+
+    <!-- Employee Profile Management Content -->
+    <div class="dashboard-content">
+      <div class="employee-profile-container">
+
+  <!-- Filters and Search -->
+  <div class="filters-section">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input 
+        type="text" 
+        placeholder="Search by name, email, designation, or department..." 
+        [(ngModel)]="searchTerm"
+        (input)="onSearchChange()"
+        class="search-input">
+    </div>
+    
+    <div class="filter-controls">
+      <select 
+        [(ngModel)]="departmentFilter" 
+        (change)="onDepartmentFilterChange()"
+        class="filter-select">
+        <option value="">All Departments</option>
+        <option *ngFor="let dept of getDepartments()" [value]="dept">{{ dept }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div class="messages" *ngIf="errorMessage || successMessage">
+    <div class="alert alert-error" *ngIf="errorMessage">
+      <i class="fas fa-exclamation-circle"></i>
+      {{ errorMessage }}
+    </div>
+    <div class="alert alert-success" *ngIf="successMessage">
+      <i class="fas fa-check-circle"></i>
+      {{ successMessage }}
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading employee profiles...</p>
+  </div>
+
+  <!-- Employee Profiles Grid -->
+  <div class="employee-profiles-grid" *ngIf="!isLoading">
+    <div *ngFor="let profile of filteredEmployeeProfiles" class="employee-profile-card">
+      <div class="profile-header">
+        <div class="profile-avatar">
+          <i class="fas fa-user"></i>
+        </div>
+        <div class="profile-info">
+          <h3>{{ profile.user.firstName }} {{ profile.user.lastName }}</h3>
+          <p class="profile-email">{{ profile.user.email }}</p>
+        </div>
+        <div class="profile-actions">
+          <button class="btn btn-sm btn-outline" (click)="openEditModal(profile)">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="btn btn-sm btn-danger" (click)="openDeleteModal(profile)">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="profile-details">
+        <div class="detail-item">
+          <span class="detail-label">Designation:</span>
+          <span class="detail-value">{{ profile.designation }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Department:</span>
+          <span class="detail-value department-badge">{{ profile.department }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Role:</span>
+          <span class="detail-value role-badge">{{ profile.user.role }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Username:</span>
+          <span class="detail-value">{{ profile.user.username }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!isLoading && filteredEmployeeProfiles.length === 0">
+    <i class="fas fa-users"></i>
+    <h3>No Employee Profiles Found</h3>
+    <p *ngIf="searchTerm || departmentFilter">Try adjusting your search criteria</p>
+    <p *ngIf="!searchTerm && !departmentFilter">Get started by adding your first employee profile</p>
+    <button class="btn btn-primary" (click)="openCreateModal()" *ngIf="!searchTerm && !departmentFilter">
+      <i class="fas fa-plus"></i> Add Employee Profile
+    </button>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal-overlay" *ngIf="showCreateModal || showEditModal" (click)="closeModals()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ showCreateModal ? 'Add Employee Profile' : 'Edit Employee Profile' }}</h2>
+        <button class="btn-close" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <form [formGroup]="employeeProfileForm" (ngSubmit)="showCreateModal ? createEmployeeProfile() : updateEmployeeProfile()">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="userId">User *</label>
+            <select 
+              id="userId" 
+              formControlName="userId" 
+              class="form-control"
+              [class.error]="employeeProfileForm.get('userId')?.invalid && employeeProfileForm.get('userId')?.touched">
+              <option value="">Select a user</option>
+              <option *ngFor="let user of users" [value]="user.userId">
+                {{ user.firstName }} {{ user.lastName }} ({{ user.email }})
+              </option>
+            </select>
+            <div class="error-message" *ngIf="employeeProfileForm.get('userId')?.invalid && employeeProfileForm.get('userId')?.touched">
+              Please select a user
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="department">Department *</label>
+            <input 
+              type="text" 
+              id="department" 
+              formControlName="department" 
+              placeholder="Enter department"
+              class="form-control"
+              [class.error]="employeeProfileForm.get('department')?.invalid && employeeProfileForm.get('department')?.touched">
+            <div class="error-message" *ngIf="employeeProfileForm.get('department')?.invalid && employeeProfileForm.get('department')?.touched">
+              Department is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="designation">Designation *</label>
+            <input 
+              type="text" 
+              id="designation" 
+              formControlName="designation" 
+              placeholder="Enter designation"
+              class="form-control"
+              [class.error]="employeeProfileForm.get('designation')?.invalid && employeeProfileForm.get('designation')?.touched">
+            <div class="error-message" *ngIf="employeeProfileForm.get('designation')?.invalid && employeeProfileForm.get('designation')?.touched">
+              Designation is required
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="employeeProfileForm.invalid">
+            {{ showCreateModal ? 'Create Profile' : 'Update Profile' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeModals()">
+    <div class="modal delete-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Delete Employee Profile</h2>
+        <button class="btn-close" (click)="closeModals()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="delete-confirmation">
+          <i class="fas fa-exclamation-triangle"></i>
+          <p>Are you sure you want to delete the employee profile for <strong>{{ selectedEmployeeProfile?.user?.firstName }} {{ selectedEmployeeProfile?.user?.lastName }}</strong>?</p>
+          <p class="warning-text">This action cannot be undone.</p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+        <button type="button" class="btn btn-danger" (click)="deleteEmployeeProfile()">Delete</button>
+      </div>
+    </div>
+  </div>
+      </div> <!-- End employee-profile-container -->
+    </div> <!-- End dashboard-content -->
+  </div> <!-- End main -->
+</div> <!-- End layout -->

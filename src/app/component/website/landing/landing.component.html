@@ -1,0 +1,152 @@
+<div class="bg-container"></div>
+<div class="app-container">
+  <header class="header" [class.scrolled]="isScrolled">
+    <div class="logo">
+      <i class="fas fa-chart-line"></i>
+      <span>Appraise360</span>
+    </div>
+    <nav>
+      <a (click)="scrollToSection('features')">Features</a>
+      <a (click)="scrollToSection('benefits')">Benefits</a>
+      <a routerLink="/login" class="btn-primary">Login</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-content">
+        <h1>Performance Review and Appraisal System</h1>
+        <p class="hero-subtitle">Streamline appraisals, set meaningful goals, and foster continuous feedback with our comprehensive performance management platform.</p>
+        <div class="hero-buttons">
+          <a routerLink="/login" class="btn-primary">Get Started</a>
+          <a (click)="scrollToSection('features')" class="btn-secondary">Learn More</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <span class="stat-number">24/7</span>
+            <span class="stat-label">Available</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number">100%</span>
+            <span class="stat-label">Secure</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number">Real-time</span>
+            <span class="stat-label">Updates</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="features-section">
+      <div class="section-header">
+        <h2>Powerful Features for Modern Teams</h2>
+        <p>Everything you need to build a high-performance culture</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <h3>Performance Reviews</h3>
+          <p>Conduct structured, fair, and comprehensive performance evaluations with customizable review cycles and templates.</p>
+          <ul class="feature-list">
+            <li>360-degree feedback</li>
+            <li>Custom review templates</li>
+            <li>Automated reminders</li>
+          </ul>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-bullseye"></i>
+          </div>
+          <h3>Goal Management</h3>
+          <p>Set, track, and align individual and team objectives with your organization's strategic vision.</p>
+          <ul class="feature-list">
+            <li>OKR framework support</li>
+            <li>Progress tracking</li>
+            <li>Goal alignment mapping</li>
+          </ul>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-comments"></i>
+          </div>
+          <h3>Continuous Feedback</h3>
+          <p>Foster a culture of real-time communication and recognition with our intuitive feedback system.</p>
+          <ul class="feature-list">
+            <li>Real-time feedback</li>
+            <li>Peer recognition</li>
+            <li>Anonymous feedback</li>
+          </ul>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-chart-bar"></i>
+          </div>
+          <h3>Analytics & Insights</h3>
+          <p>Make data-driven decisions with comprehensive analytics and performance insights across your organization.</p>
+          <ul class="feature-list">
+            <li>Performance dashboards</li>
+            <li>Trend analysis</li>
+            <li>Custom reports</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="benefits" class="benefits-section">
+      <div class="section-header">
+        <h2>Why Choose Appraise360?</h2>
+        <p>Built for enterprise-grade performance management</p>
+      </div>
+      <div class="benefits-grid">
+        <div class="benefit-card">
+          <div class="benefit-icon">
+            <i class="fas fa-shield-alt"></i>
+          </div>
+          <h3>Enterprise Security</h3>
+          <p>Bank-level security with SOC 2 compliance, end-to-end encryption, and role-based access controls.</p>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon">
+            <i class="fas fa-rocket"></i>
+          </div>
+          <h3>Lightning Fast</h3>
+          <p>Built for scale with microservices architecture, supporting thousands of concurrent users seamlessly.</p>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon">
+            <i class="fas fa-cogs"></i>
+          </div>
+          <h3>Easy Integration</h3>
+          <p>Connect with your existing HR tools via APIs and single sign-on (SSO) integration.</p>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon">
+            <i class="fas fa-headset"></i>
+          </div>
+          <h3>24/7 Support</h3>
+          <p>Dedicated customer success team and comprehensive documentation to ensure your success.</p>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="cta">
+      <div class="cta-content">
+        <h2>Ready to Transform Your Performance Management?</h2>
+        <p>Access our comprehensive performance management system to build high-performing teams.</p>
+        <div class="cta-buttons">
+          <a routerLink="/login" class="btn-primary">Access Performance System</a>
+          <a (click)="scrollToSection('features')" class="btn-secondary">Learn More</a>
+        </div>
+        <div class="cta-guarantee">
+          <i class="fas fa-shield-alt"></i>
+          <span>Secure • Reliable • Enterprise-grade performance management</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+</div>
