@@ -197,6 +197,13 @@ export class GoalComponent implements OnInit {
           employeeProfileId: formData.employeeId,
           department: '',
           designation: '',
+          dateOfJoining: '',
+          reportingManager: '',
+          currentProject: '',
+          currentTeam: '',
+          skills: [],
+          lastAppraisalRating: 0,
+          currentGoals: [],
           user: {
             userId: 0,
             username: '',

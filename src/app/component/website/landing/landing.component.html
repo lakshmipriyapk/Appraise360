@@ -7,34 +7,83 @@
     </div>
     <nav>
       <a (click)="scrollToSection('features')">Features</a>
-      <a (click)="scrollToSection('benefits')">Benefits</a>
+      <a routerLink="/website/benefits">Benefits</a>
+      <div class="dropdown">
+        <a class="dropdown-toggle">Products <i class="fas fa-chevron-down"></i></a>
+        <div class="dropdown-content">
+          <div class="dropdown-header">
+            <h3>PRODUCTS</h3>
+          </div>
+          <div class="products-grid">
+            <a routerLink="/website/perform" class="product-card">
+              <div class="product-icon orange">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div class="product-content">
+                <h4>Perform <i class="fas fa-chevron-right"></i></h4>
+                <p>Performance reviews and measurement that inspire growth.</p>
+              </div>
+            </a>
+            <a routerLink="/website/engage" class="product-card">
+              <div class="product-icon purple">
+                <i class="fas fa-infinity"></i>
+              </div>
+              <div class="product-content">
+                <h4>Engage <i class="fas fa-chevron-right"></i></h4>
+                <p>Engagement surveys and feedback tools to focus on what matters.</p>
+              </div>
+            </a>
+            <a routerLink="/website/manager-products" class="product-card">
+              <div class="product-icon teal">
+                <i class="fas fa-users"></i>
+              </div>
+              <div class="product-content">
+                <h4>Manager Products <i class="fas fa-chevron-right"></i></h4>
+                <p>Upskill managers at all levels with data-driven, AI-powered, best-in-class manager enablement.</p>
+              </div>
+            </a>
+            <div class="product-card">
+              <div class="product-icon yellow">
+                <i class="fas fa-chart-line"></i>
+              </div>
+              <div class="product-content">
+                <h4>Dashboard <i class="fas fa-chevron-right"></i></h4>
+                <p>Track and improve your team's most important metrics.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <a (click)="scrollToSection('benefits')">Why Appraise360</a>
       <a routerLink="/login" class="btn-primary">Login</a>
     </nav>
   </header>
 
   <main>
-    <section class="hero">
+    <!-- Hero Section with Split Layout -->
+    <section class="hero-split">
       <div class="hero-content">
-        <h1>Performance Review and Appraisal System</h1>
-        <p class="hero-subtitle">Streamline appraisals, set meaningful goals, and foster continuous feedback with our comprehensive performance management platform.</p>
-        <div class="hero-buttons">
+        <div class="breadcrumb">
+          <span>Home > Performance Management</span>
+        </div>
+        <div class="section-badge">
+          <span>Performance Management</span>
+        </div>
+        <h1 class="hero-title">
+          Performance Review and<br>
+          Appraisal System
+        </h1>
+        <p class="hero-description">
+          We deliver engaging performance review and appraisal solutions with comprehensive insights, 
+          goal tracking, and continuous feedback tools, along with industry best practices ensuring 
+          your team achieves peak performance and drives organizational success.
+        </p>
+        <div class="hero-cta">
           <a routerLink="/login" class="btn-primary">Get Started</a>
-          <a (click)="scrollToSection('features')" class="btn-secondary">Learn More</a>
         </div>
-        <div class="hero-stats">
-          <div class="stat">
-            <span class="stat-number">24/7</span>
-            <span class="stat-label">Available</span>
-          </div>
-          <div class="stat">
-            <span class="stat-number">100%</span>
-            <span class="stat-label">Secure</span>
-          </div>
-          <div class="stat">
-            <span class="stat-number">Real-time</span>
-            <span class="stat-label">Updates</span>
-          </div>
-        </div>
+      </div>
+      <div class="hero-image">
+        <img src="images/LandingPageimage.jpg?v=6" alt="Three Business Professionals Collaborating" class="banner-img">
       </div>
     </section>
 
@@ -95,6 +144,39 @@
       </div>
     </section>
 
+    <!-- Performance Reviews Setup Section Removed -->
+
+    <!-- Performance Review Interface Section -->
+    <section class="review-interface-section">
+      <div class="review-interface-container">
+        <div class="review-interface-content">
+          <div class="review-interface-text">
+            <h2>Setup Performance Reviews in Minutes. Run Them Effortlessly.</h2>
+            <p>Configure review cycles, customize templates, and launch comprehensive performance evaluations with just a few clicks. Our intuitive interface makes complex review processes simple and efficient.</p>
+            <button class="btn-primary">Review Setup</button>
+          </div>
+        </div>
+        <div class="review-interface-image">
+          <img src="images/PerformanceReviewimage.png" alt="Performance Review Dashboard Interface" class="dashboard-img">
+        </div>
+      </div>
+    </section>
+
+    <!-- Efficient Reviews Section -->
+    <section class="efficient-reviews-section">
+      <div class="efficient-reviews-container">
+        <div class="reviews-interface-image">
+          <img src="images/reviewimage.png" alt="Efficient Reviews Interface" class="reviews-img">
+        </div>
+        <div class="efficient-reviews-content">
+          <div class="efficient-reviews-text">
+            <h2>Efficient Reviews</h2>
+            <p>Streamline your performance review process with our comprehensive dashboard that provides real-time insights, automated workflows, and detailed analytics to help you make informed decisions about your team's performance.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="benefits" class="benefits-section">
       <div class="section-header">
         <h2>Why Choose Appraise360?</h2>
@@ -148,5 +230,3 @@
       </div>
     </section>
   </main>
-
-</div>

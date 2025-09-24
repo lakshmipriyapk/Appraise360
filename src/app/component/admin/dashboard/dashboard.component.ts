@@ -20,6 +20,14 @@ interface RecentActivity {
   employeeId: number;
 }
 
+interface EmployeeStats {
+  totalEmployees: number;
+  newlyJoined: number;
+  activeEmployees: number;
+  employeesOnLeave: number;
+  totalDepartments: number;
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -42,6 +50,13 @@ export class DashboardComponent implements OnInit {
   cards: any;
   performanceMetrics: PerformanceMetric[] = [];
   recentActivities: RecentActivity[] = [];
+  employeeStats: EmployeeStats = {
+    totalEmployees: 0,
+    newlyJoined: 0,
+    activeEmployees: 0,
+    employeesOnLeave: 0,
+    totalDepartments: 0
+  };
 
   constructor(private router: Router) {}
 
@@ -50,6 +65,15 @@ export class DashboardComponent implements OnInit {
   }
 
   loadMockData() {
+    // Mock employee statistics
+    this.employeeStats = {
+      totalEmployees: 156,
+      newlyJoined: 12,
+      activeEmployees: 142,
+      employeesOnLeave: 14,
+      totalDepartments: 8
+    };
+
     // Mock performance metrics
     this.performanceMetrics = [
       { label: 'Review Completion Rate', value: 87, target: 90, unit: '%' },

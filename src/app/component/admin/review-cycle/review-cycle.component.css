@@ -314,9 +314,10 @@
 /* Alternative Review Cycle Grid */
 .review-cycle-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 24px;
   margin-bottom: 2rem;
+  align-items: start;
 }
 
 .review-cycle-card {
@@ -347,9 +348,10 @@
 
 .card-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .cycle-icon {
@@ -367,13 +369,15 @@
 
 .cycle-info {
   flex: 1;
+  min-width: 200px;
 }
 
 .cycle-info h3 {
   margin: 0 0 8px 0;
   color: #1a1a2e;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
+  line-height: 1.3;
 }
 
 .cycle-stats {
@@ -397,47 +401,66 @@
 .card-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .card-actions .btn {
-  padding: 8px;
-  width: 36px;
+  padding: 8px 12px;
+  min-width: 36px;
   height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.card-actions .btn-primary {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.card-actions .btn-primary i {
+  margin-right: 4px;
 }
 
 .card-content {
   border-top: 1px solid #f1f3f4;
   padding-top: 16px;
+  margin-top: 16px;
 }
 
 .cycle-details {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .detail-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
+  padding: 6px 0;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
 }
 
 .detail-label {
   font-weight: 500;
   color: #6b7280;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .detail-value {
   color: #1a1a2e;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 /* Alternative Empty State */
@@ -766,4 +789,114 @@
     margin: 1rem;
     max-width: none;
   }
+}
+
+/* Employee List Modal Styles */
+.employees-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.employee-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  background: #f8f9fa;
+  transition: all 0.3s ease;
+}
+
+.employee-item:hover {
+  background: #e9ecef;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.employee-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.employee-avatar {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+}
+
+.employee-details h4 {
+  margin: 0 0 0.25rem 0;
+  color: #2c3e50;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.employee-email {
+  margin: 0 0 0.25rem 0;
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.employee-department {
+  margin: 0;
+  color: #8b5cf6;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.appraisal-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-completed {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-in-review {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-submitted {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.ratings {
+  display: flex;
+  gap: 1rem;
+}
+
+.rating-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.rating-item i {
+  color: #ffc107;
 }

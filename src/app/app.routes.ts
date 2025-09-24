@@ -13,10 +13,15 @@ import { FeedbackComponent } from './component/admin/feedback/feedback.component
 
 // Website
 import { LandingComponent } from './component/website/landing/landing.component';
+import { PerformComponent } from './component/website/perform/perform';
+import { EngageComponent } from './component/website/engage/engage';
+import { ManagerProductsComponent } from './component/website/manager-products/manager-products';
+import { BenefitsComponent } from './component/website/benefits/benefits';
 
 // User
 import { UserComponent } from './component/admin/user/user.component';
 import { EmployeeDashboardComponent } from './component/admin/employee-dashboard/employee-dashboard.component';
+import { EmployeeAuthGuard } from './guards/employee-auth.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'website/landing', pathMatch: 'full' },
@@ -24,7 +29,11 @@ export const routes: Routes = [
   {
     path: 'website',
     children: [
-      { path: 'landing', component: LandingComponent }
+      { path: 'landing', component: LandingComponent },
+      { path: 'perform', component: PerformComponent },
+      { path: 'engage', component: EngageComponent },
+      { path: 'manager-products', component: ManagerProductsComponent },
+      { path: 'benefits', component: BenefitsComponent }
     ]
   },
 

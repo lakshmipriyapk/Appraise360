@@ -82,12 +82,22 @@
             </select>
 
             <select 
-              [(ngModel)]="managerFilter" 
-              (change)="onManagerFilterChange()"
+              [(ngModel)]="reviewerFilter" 
+              (change)="onReviewerFilterChange()"
               class="filter-select">
-              <option value="">All Managers</option>
-              <option *ngFor="let manager of getManagers()" [value]="manager.userId">
-                {{ manager.firstName }} {{ manager.lastName }}
+              <option value="">All Reviewers</option>
+              <option *ngFor="let user of users" [value]="user.userId">
+                {{ user.firstName }} {{ user.lastName }}
+              </option>
+            </select>
+
+            <select 
+              [(ngModel)]="feedbackTypeFilter" 
+              (change)="onFeedbackTypeFilterChange()"
+              class="filter-select">
+              <option value="">All Types</option>
+              <option *ngFor="let type of feedbackTypes" [value]="type.value">
+                {{ type.label }}
               </option>
             </select>
           </div>
@@ -125,10 +135,24 @@
             </div>
 
             <div class="feedback-content">
-              <div class="manager-info">
-                <span class="label">Feedback by:</span>
-                <span class="manager-name">{{ feedback.manager.firstName }} {{ feedback.manager.lastName }}</span>
-                <span class="manager-role">({{ feedback.manager.role }})</span>
+              <div class="feedback-info">
+                <div class="feedback-type">
+                  <span class="label">Type:</span>
+                  <span class="type-badge" [ngClass]="getFeedbackTypeClass(feedback.feedbackType)">
+                    {{ feedback.feedbackType }}
+                  </span>
+                </div>
+                <div class="reviewer-info">
+                  <span class="label">Reviewer:</span>
+                  <span class="reviewer-name">{{ feedback.reviewer.firstName }} {{ feedback.reviewer.lastName }}</span>
+                  <span class="reviewer-role">({{ feedback.reviewer.role }})</span>
+                </div>
+                <div class="rating-info" *ngIf="feedback.rating">
+                  <span class="label">Rating:</span>
+                  <span class="rating-value" [ngClass]="getRatingClass(feedback.rating)">
+                    {{ feedback.rating }}/5
+                  </span>
+                </div>
               </div>
               
               <div class="comments-section">
@@ -143,9 +167,9 @@
         <div class="empty-state" *ngIf="!isLoading && filteredFeedbacks.length === 0">
           <i class="fas fa-comments"></i>
           <h3>No Feedback Found</h3>
-          <p *ngIf="searchTerm || employeeFilter || managerFilter">Try adjusting your search criteria</p>
-          <p *ngIf="!searchTerm && !employeeFilter && !managerFilter">Get started by adding your first feedback</p>
-          <button class="btn btn-primary" (click)="openCreateModal()" *ngIf="!searchTerm && !employeeFilter && !managerFilter">
+          <p *ngIf="searchTerm || employeeFilter || reviewerFilter || feedbackTypeFilter">Try adjusting your search criteria</p>
+          <p *ngIf="!searchTerm && !employeeFilter && !reviewerFilter && !feedbackTypeFilter">Get started by adding your first feedback</p>
+          <button class="btn btn-primary" (click)="openCreateModal()" *ngIf="!searchTerm && !employeeFilter && !reviewerFilter && !feedbackTypeFilter">
             <i class="fas fa-plus"></i> Add Feedback
           </button>
         </div>
@@ -184,19 +208,36 @@
         </div>
 
         <div class="form-group">
-          <label for="managerId">Manager *</label>
+          <label for="reviewerId">Reviewer *</label>
           <select 
-            id="managerId" 
-            formControlName="managerId" 
+            id="reviewerId" 
+            formControlName="reviewerId" 
             class="form-control"
-            [class.error]="feedbackForm.get('managerId')?.invalid && feedbackForm.get('managerId')?.touched">
-            <option value="">Select a manager</option>
-            <option *ngFor="let manager of getManagers()" [value]="manager.userId">
-              {{ manager.firstName }} {{ manager.lastName }} ({{ manager.role }})
+            [class.error]="feedbackForm.get('reviewerId')?.invalid && feedbackForm.get('reviewerId')?.touched">
+            <option value="">Select a reviewer</option>
+            <option *ngFor="let user of users" [value]="user.userId">
+              {{ user.firstName }} {{ user.lastName }} ({{ user.role }})
             </option>
           </select>
-          <div class="error-message" *ngIf="feedbackForm.get('managerId')?.invalid && feedbackForm.get('managerId')?.touched">
-            Please select a manager
+          <div class="error-message" *ngIf="feedbackForm.get('reviewerId')?.invalid && feedbackForm.get('reviewerId')?.touched">
+            Please select a reviewer
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="feedbackType">Feedback Type *</label>
+          <select 
+            id="feedbackType" 
+            formControlName="feedbackType" 
+            class="form-control"
+            [class.error]="feedbackForm.get('feedbackType')?.invalid && feedbackForm.get('feedbackType')?.touched">
+            <option value="">Select feedback type</option>
+            <option *ngFor="let type of feedbackTypes" [value]="type.value">
+              {{ type.label }}
+            </option>
+          </select>
+          <div class="error-message" *ngIf="feedbackForm.get('feedbackType')?.invalid && feedbackForm.get('feedbackType')?.touched">
+            Please select a feedback type
           </div>
         </div>
 
@@ -211,6 +252,25 @@
             [class.error]="feedbackForm.get('comments')?.invalid && feedbackForm.get('comments')?.touched"></textarea>
           <div class="error-message" *ngIf="feedbackForm.get('comments')?.invalid && feedbackForm.get('comments')?.touched">
             Comments are required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="rating">Rating (Optional)</label>
+          <select 
+            id="rating" 
+            formControlName="rating" 
+            class="form-control"
+            [class.error]="feedbackForm.get('rating')?.invalid && feedbackForm.get('rating')?.touched">
+            <option value="">Select rating (optional)</option>
+            <option value="1">1 - Poor</option>
+            <option value="2">2 - Below Average</option>
+            <option value="3">3 - Average</option>
+            <option value="4">4 - Good</option>
+            <option value="5">5 - Excellent</option>
+          </select>
+          <div class="error-message" *ngIf="feedbackForm.get('rating')?.invalid && feedbackForm.get('rating')?.touched">
+            Please select a valid rating (1-5)
           </div>
         </div>
       </div>

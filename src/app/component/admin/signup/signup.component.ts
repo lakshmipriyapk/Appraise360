@@ -56,10 +56,12 @@ export class SignupComponent implements OnInit {
                            this.signupData.confirmPassword.length > 0;
   }
 
+
   isFormValid(): boolean {
-    return this.signupData.fullName.length > 0 &&
-           this.signupData.email.length > 0 &&
-           this.signupData.phone.length === 10 &&
+    const phoneDigits = this.signupData.phone.replace(/\D/g, ''); // Remove non-digits
+    return this.signupData.fullName.trim().length > 0 &&
+           this.signupData.email.trim().length > 0 &&
+           phoneDigits.length === 10 &&
            this.signupData.password.length >= 6 &&
            this.signupData.confirmPassword.length > 0 &&
            !this.passwordMismatch;

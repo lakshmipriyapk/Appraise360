@@ -7,7 +7,7 @@ import { EmployeeProfile } from '../model/employee-profile.model';
   providedIn: 'root'
 })
 export class EmployeeProfileService {
-  private apiUrl = 'http://localhost:8080/api/employee-profiles';
+  private apiUrl = 'http://localhost:8080/api/employeeProfiles';
 
   constructor(private http: HttpClient) { }
 
@@ -19,12 +19,12 @@ export class EmployeeProfileService {
     return this.http.get<EmployeeProfile>(`${this.apiUrl}/${id}`);
   }
 
-  getEmployeeProfileByUserId(userId: number): Observable<EmployeeProfile> {
-    return this.http.get<EmployeeProfile>(`${this.apiUrl}/user/${userId}`);
+  getEmployeeProfileByUserId(userId: number): Observable<EmployeeProfile[]> {
+    return this.http.get<EmployeeProfile[]>(`${this.apiUrl}/user/${userId}`);
   }
 
-  createEmployeeProfile(employeeProfile: EmployeeProfile): Observable<EmployeeProfile> {
-    return this.http.post<EmployeeProfile>(this.apiUrl, employeeProfile);
+  createEmployeeProfile(userId: number, employeeProfile: EmployeeProfile): Observable<EmployeeProfile> {
+    return this.http.post<EmployeeProfile>(`${this.apiUrl}/user/${userId}`, employeeProfile);
   }
 
   updateEmployeeProfile(employeeProfile: EmployeeProfile): Observable<EmployeeProfile> {

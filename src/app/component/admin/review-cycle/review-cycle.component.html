@@ -101,6 +101,9 @@
                 </div>
               </div>
               <div class="card-actions">
+                <button class="btn btn-sm btn-primary" (click)="viewEmployeesInCycle(cycle)" title="View Employees">
+                  <i class="fas fa-users"></i> View Employees
+                </button>
                 <button class="btn btn-sm btn-outline" (click)="openEditModal(cycle)" title="Edit Cycle">
                   <i class="fas fa-edit"></i>
                 </button>
@@ -233,6 +236,58 @@
       <button type="button" class="btn btn-danger-alt" (click)="deleteReviewCycle()">
         <i class="fas fa-trash"></i> Delete Cycle
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- View Employees Modal -->
+<div class="modal-overlay" *ngIf="showEmployeesModal" (click)="closeModals()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Employees in {{ selectedReviewCycle?.cycleName }}</h2>
+      <button class="btn-close" (click)="closeModals()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div *ngIf="employeesInCycle.length === 0" class="empty-state">
+        <i class="fas fa-users"></i>
+        <h3>No Employees Assigned</h3>
+        <p>No employees have been assigned to this review cycle yet.</p>
+      </div>
+
+      <div *ngIf="employeesInCycle.length > 0" class="employees-list">
+        <div *ngFor="let employee of employeesInCycle" class="employee-item">
+          <div class="employee-info">
+            <div class="employee-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <div class="employee-details">
+              <h4>{{ employee.employee.user.firstName }} {{ employee.employee.user.lastName }}</h4>
+              <p class="employee-email">{{ employee.employee.user.email }}</p>
+              <p class="employee-department">{{ employee.employee.department }} - {{ employee.employee.designation }}</p>
+            </div>
+          </div>
+          <div class="appraisal-status">
+            <span class="status-badge" [ngClass]="'status-' + employee.status.toLowerCase().replace(' ', '-')">
+              {{ employee.status }}
+            </span>
+            <div class="ratings">
+              <span class="rating-item">
+                <i class="fas fa-star"></i> Self: {{ employee.selfRating || 'N/A' }}
+              </span>
+              <span class="rating-item">
+                <i class="fas fa-star"></i> Manager: {{ employee.managerRating || 'N/A' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeModals()">Close</button>
     </div>
   </div>
 </div>

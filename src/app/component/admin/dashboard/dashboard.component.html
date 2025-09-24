@@ -33,7 +33,140 @@
 
     <!-- Dashboard Content -->
     <div class="dashboard-content">
-      <!-- Content area is now empty - ready for your custom content -->
+      <!-- Employee Statistics Cards -->
+      <div class="section-header">
+        <h2>Employee Overview</h2>
+      </div>
+      <div class="cards">
+        <div class="card" (click)="navigateTo('/employee-profile')">
+          <div class="card-header">
+            <i class="fas fa-users icon" style="color: #3b82f6;"></i>
+            <span class="trend positive">+{{ employeeStats.newlyJoined }} this month</span>
+          </div>
+          <div class="card-body">
+            <div class="value">{{ employeeStats.totalEmployees }}</div>
+            <div class="title">Total Employees</div>
+          </div>
+        </div>
+
+        <div class="card" (click)="navigateTo('/employee-profile')">
+          <div class="card-header">
+            <i class="fas fa-user-plus icon" style="color: #10b981;"></i>
+            <span class="trend positive">New Hires</span>
+          </div>
+          <div class="card-body">
+            <div class="value">{{ employeeStats.newlyJoined }}</div>
+            <div class="title">Newly Joined</div>
+          </div>
+        </div>
+
+        <div class="card" (click)="navigateTo('/employee-profile')">
+          <div class="card-header">
+            <i class="fas fa-user-check icon" style="color: #059669;"></i>
+            <span class="trend positive">Active</span>
+          </div>
+          <div class="card-body">
+            <div class="value">{{ employeeStats.activeEmployees }}</div>
+            <div class="title">Active Employees</div>
+          </div>
+        </div>
+
+        <div class="card" (click)="navigateTo('/employee-profile')">
+          <div class="card-header">
+            <i class="fas fa-user-clock icon" style="color: #f59e0b;"></i>
+            <span class="trend negative">On Leave</span>
+          </div>
+          <div class="card-body">
+            <div class="value">{{ employeeStats.employeesOnLeave }}</div>
+            <div class="title">On Leave</div>
+          </div>
+        </div>
+
+        <div class="card" (click)="navigateTo('/employee-profile')">
+          <div class="card-header">
+            <i class="fas fa-building icon" style="color: #8b5cf6;"></i>
+            <span class="trend positive">Departments</span>
+          </div>
+          <div class="card-body">
+            <div class="value">{{ employeeStats.totalDepartments }}</div>
+            <div class="title">Total Departments</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Performance Metrics Section -->
+      <div class="analytics-section">
+        <div class="section-header">
+          <h2>Performance Analytics</h2>
+        </div>
+        <div class="analytics-grid">
+          <div class="metric-card" *ngFor="let metric of performanceMetrics">
+            <div class="metric-header">
+              <h3>{{ metric.label }}</h3>
+              <span class="metric-value">{{ metric.value }}{{ metric.unit }}</span>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar">
+                <div class="progress-fill" 
+                     [ngClass]="getMetricStatus(metric)"
+                     [style.width.%]="getMetricProgress(metric)">
+                </div>
+              </div>
+              <div class="progress-label">
+                Target: {{ metric.target }}{{ metric.unit }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activities Section -->
+      <div class="activities-section">
+        <div class="section-header">
+          <h2>Recent Activities</h2>
+          <button class="view-all-btn">View All</button>
+        </div>
+        <div class="activities-list">
+          <div class="activity-item" *ngFor="let activity of recentActivities">
+            <div class="activity-icon" [ngClass]="activity.status">
+              <i [ngClass]="['fas', getActivityIcon(activity.type)]"></i>
+            </div>
+            <div class="activity-content">
+              <div class="activity-description">{{ activity.description }}</div>
+              <div class="activity-meta">
+                <span class="activity-time">{{ formatTimestamp(activity.timestamp) }}</span>
+                <span class="activity-status" [ngClass]="activity.status">{{ activity.status }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions Section -->
+      <div class="quick-actions-section">
+        <div class="section-header">
+          <h2>Quick Actions</h2>
+        </div>
+        <div class="quick-actions">
+          <button class="action-btn primary" (click)="navigateTo('/appraisal')">
+            <i class="fas fa-clipboard-check"></i>
+            Start New Appraisal
+          </button>
+          <button class="action-btn secondary" (click)="navigateTo('/employee-profile')">
+            <i class="fas fa-user-plus"></i>
+            Add Employee
+          </button>
+          <button class="action-btn secondary" (click)="navigateTo('/goal')">
+            <i class="fas fa-bullseye"></i>
+            Set Goals
+          </button>
+          <button class="action-btn secondary" (click)="navigateTo('/review-cycle')">
+            <i class="fas fa-calendar-alt"></i>
+            Schedule Review
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

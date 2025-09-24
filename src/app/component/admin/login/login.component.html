@@ -6,6 +6,7 @@
     </div>
     <nav>
       <a routerLink="/" class="btn-primary">Home</a>
+      <a routerLink="/signup" class="btn-secondary">Sign Up</a>
     </nav>
   </header>
 
@@ -59,7 +60,16 @@
       </div>
 
       <!-- Login Button -->
-      <button type="submit" class="btn-primary">Log In</button>
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="error-message">
+        <i class="fas fa-exclamation-triangle"></i>
+        {{ errorMessage }}
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="isLoading">
+        <i *ngIf="isLoading" class="fas fa-spinner fa-spin"></i>
+        {{ isLoading ? 'Signing In...' : 'Log In' }}
+      </button>
     </form>
 
     <!-- Helper Links -->

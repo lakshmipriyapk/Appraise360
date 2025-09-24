@@ -694,3 +694,84 @@
     max-width: none;
   }
 }
+
+/* Enhanced Feedback Info Styling */
+.feedback-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.feedback-type,
+.reviewer-info,
+.rating-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.feedback-type .label,
+.reviewer-info .label,
+.rating-info .label {
+  font-weight: 600;
+  color: #8b5cf6;
+  min-width: 80px;
+}
+
+.type-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.type-peer {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.type-manager {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.type-self {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+.reviewer-name {
+  font-weight: 600;
+  color: #374151;
+}
+
+.reviewer-role {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.rating-value {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.rating-excellent {
+  color: #16a34a;
+}
+
+.rating-good {
+  color: #22c55e;
+}
+
+.rating-average {
+  color: #eab308;
+}
+
+.rating-poor {
+  color: #dc2626;
+}

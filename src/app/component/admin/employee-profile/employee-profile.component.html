@@ -17,8 +17,8 @@
     <!-- Topbar -->
     <header class="topbar">
       <div class="topbar-left">
-        <h1>Employee Profile Management</h1>
-        <p class="subtitle">Manage employee profiles and their organizational details</p>
+        <h1>Employee Profiles</h1>
+        <p class="subtitle">View and manage employee profiles for appraisals and reviews</p>
       </div>
       <div class="topbar-right">
         <div class="user-info">
@@ -55,6 +55,10 @@
         <option value="">All Departments</option>
         <option *ngFor="let dept of getDepartments()" [value]="dept">{{ dept }}</option>
       </select>
+      
+      <button class="view-profiles-btn" (click)="refreshProfiles()">
+        <i class="fas fa-sync-alt"></i> Refresh Profiles
+      </button>
     </div>
   </div>
 
@@ -88,31 +92,76 @@
           <p class="profile-email">{{ profile.user.email }}</p>
         </div>
         <div class="profile-actions">
-          <button class="btn btn-sm btn-outline" (click)="openEditModal(profile)">
-            <i class="fas fa-edit"></i>
-          </button>
-          <button class="btn btn-sm btn-danger" (click)="openDeleteModal(profile)">
-            <i class="fas fa-trash"></i>
+          <button class="btn btn-sm btn-primary" (click)="openEditModal(profile)" title="View Details & Update Rating">
+            <i class="fas fa-eye"></i> View Details
           </button>
         </div>
       </div>
 
       <div class="profile-details">
-        <div class="detail-item">
-          <span class="detail-label">Designation:</span>
-          <span class="detail-value">{{ profile.designation }}</span>
+        <!-- Basic Information -->
+        <div class="detail-section">
+          <h4 class="section-title">Basic Information</h4>
+          <div class="detail-item">
+            <span class="detail-label">Employee ID:</span>
+            <span class="detail-value">{{ profile.employeeProfileId }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Designation:</span>
+            <span class="detail-value">{{ profile.designation }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Department:</span>
+            <span class="detail-value department-badge">{{ profile.department }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Date of Joining:</span>
+            <span class="detail-value">{{ formatDate(profile.dateOfJoining) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Contact:</span>
+            <span class="detail-value">{{ profile.user.email }}</span>
+          </div>
         </div>
-        <div class="detail-item">
-          <span class="detail-label">Department:</span>
-          <span class="detail-value department-badge">{{ profile.department }}</span>
+
+        <!-- Work Details -->
+        <div class="detail-section">
+          <h4 class="section-title">Work Details</h4>
+          <div class="detail-item">
+            <span class="detail-label">Reporting Manager:</span>
+            <span class="detail-value">{{ profile.reportingManager }}</span>
+          </div>
+          <div class="detail-item" *ngIf="profile.currentProject">
+            <span class="detail-label">Current Project:</span>
+            <span class="detail-value">{{ profile.currentProject }}</span>
+          </div>
+          <div class="detail-item" *ngIf="profile.currentTeam">
+            <span class="detail-label">Current Team:</span>
+            <span class="detail-value">{{ profile.currentTeam }}</span>
+          </div>
+          <div class="detail-item" *ngIf="profile.skills && profile.skills.length > 0">
+            <span class="detail-label">Skills:</span>
+            <div class="skills-container">
+              <span *ngFor="let skill of profile.skills" class="skill-badge">{{ skill }}</span>
+            </div>
+          </div>
         </div>
-        <div class="detail-item">
-          <span class="detail-label">Role:</span>
-          <span class="detail-value role-badge">{{ profile.user.role }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Username:</span>
-          <span class="detail-value">{{ profile.user.username }}</span>
+
+        <!-- Performance Summary -->
+        <div class="detail-section">
+          <h4 class="section-title">Performance Summary</h4>
+          <div class="detail-item">
+            <span class="detail-label">Last Appraisal Rating:</span>
+            <span class="detail-value" [ngClass]="getRatingClass(profile.lastAppraisalRating)">
+              {{ profile.lastAppraisalRating }}/5
+            </span>
+          </div>
+          <div class="detail-item" *ngIf="profile.currentGoals && profile.currentGoals.length > 0">
+            <span class="detail-label">Current Goals:</span>
+            <div class="goals-container">
+              <span *ngFor="let goal of profile.currentGoals" class="goal-item">{{ goal }}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -123,17 +172,14 @@
     <i class="fas fa-users"></i>
     <h3>No Employee Profiles Found</h3>
     <p *ngIf="searchTerm || departmentFilter">Try adjusting your search criteria</p>
-    <p *ngIf="!searchTerm && !departmentFilter">Get started by adding your first employee profile</p>
-    <button class="btn btn-primary" (click)="openCreateModal()" *ngIf="!searchTerm && !departmentFilter">
-      <i class="fas fa-plus"></i> Add Employee Profile
-    </button>
+    <p *ngIf="!searchTerm && !departmentFilter">No employee profiles are available yet</p>
   </div>
 
   <!-- Create/Edit Modal -->
   <div class="modal-overlay" *ngIf="showCreateModal || showEditModal" (click)="closeModals()">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>{{ showCreateModal ? 'Add Employee Profile' : 'Edit Employee Profile' }}</h2>
+        <h2>Employee Profile Details</h2>
         <button class="btn-close" (click)="closeModals()">
           <i class="fas fa-times"></i>
         </button>
@@ -185,42 +231,130 @@
               Designation is required
             </div>
           </div>
+
+          <div class="form-group">
+            <label for="dateOfJoining">Date of Joining *</label>
+            <input 
+              type="date" 
+              id="dateOfJoining" 
+              formControlName="dateOfJoining" 
+              class="form-control"
+              [class.error]="employeeProfileForm.get('dateOfJoining')?.invalid && employeeProfileForm.get('dateOfJoining')?.touched">
+            <div class="error-message" *ngIf="employeeProfileForm.get('dateOfJoining')?.invalid && employeeProfileForm.get('dateOfJoining')?.touched">
+              Date of joining is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="reportingManager">Reporting Manager *</label>
+            <input 
+              type="text" 
+              id="reportingManager" 
+              formControlName="reportingManager" 
+              placeholder="Enter reporting manager name"
+              class="form-control"
+              [class.error]="employeeProfileForm.get('reportingManager')?.invalid && employeeProfileForm.get('reportingManager')?.touched">
+            <div class="error-message" *ngIf="employeeProfileForm.get('reportingManager')?.invalid && employeeProfileForm.get('reportingManager')?.touched">
+              Reporting manager is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="currentProject">Current Project</label>
+            <input 
+              type="text" 
+              id="currentProject" 
+              formControlName="currentProject" 
+              placeholder="Enter current project"
+              class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="currentTeam">Current Team</label>
+            <input 
+              type="text" 
+              id="currentTeam" 
+              formControlName="currentTeam" 
+              placeholder="Enter current team"
+              class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label>Skills</label>
+            <div class="array-input">
+              <div class="input-with-button">
+                <input 
+                  type="text" 
+                  [(ngModel)]="newSkill" 
+                  placeholder="Enter a skill"
+                  class="form-control"
+                  (keyup.enter)="addSkill()">
+                <button type="button" class="btn btn-sm btn-primary" (click)="addSkill()">
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+              <div class="array-items" *ngIf="skillsArray.length > 0">
+                <span *ngFor="let skill of skillsArray" class="array-item">
+                  {{ skill }}
+                  <button type="button" class="remove-btn" (click)="removeSkill(skill)">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="lastAppraisalRating">Last Appraisal Rating</label>
+            <select 
+              id="lastAppraisalRating" 
+              formControlName="lastAppraisalRating" 
+              class="form-control">
+              <option value="0">No Rating</option>
+              <option value="1">1 - Poor</option>
+              <option value="2">2 - Below Average</option>
+              <option value="3">3 - Average</option>
+              <option value="4">4 - Good</option>
+              <option value="5">5 - Excellent</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Current Goals</label>
+            <div class="array-input">
+              <div class="input-with-button">
+                <input 
+                  type="text" 
+                  [(ngModel)]="newGoal" 
+                  placeholder="Enter a goal"
+                  class="form-control"
+                  (keyup.enter)="addGoal()">
+                <button type="button" class="btn btn-sm btn-primary" (click)="addGoal()">
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+              <div class="array-items" *ngIf="goalsArray.length > 0">
+                <span *ngFor="let goal of goalsArray" class="array-item">
+                  {{ goal }}
+                  <button type="button" class="remove-btn" (click)="removeGoal(goal)">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
           <button type="submit" class="btn btn-primary" [disabled]="employeeProfileForm.invalid">
-            {{ showCreateModal ? 'Create Profile' : 'Update Profile' }}
+            Update Rating
           </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Delete Confirmation Modal -->
-  <div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeModals()">
-    <div class="modal delete-modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>Delete Employee Profile</h2>
-        <button class="btn-close" (click)="closeModals()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <div class="delete-confirmation">
-          <i class="fas fa-exclamation-triangle"></i>
-          <p>Are you sure you want to delete the employee profile for <strong>{{ selectedEmployeeProfile?.user?.firstName }} {{ selectedEmployeeProfile?.user?.lastName }}</strong>?</p>
-          <p class="warning-text">This action cannot be undone.</p>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
-        <button type="button" class="btn btn-danger" (click)="deleteEmployeeProfile()">Delete</button>
-      </div>
-    </div>
-  </div>
       </div> <!-- End employee-profile-container -->
     </div> <!-- End dashboard-content -->
   </div> <!-- End main -->
