@@ -37,6 +37,18 @@ public class GoalService {
         if (goal.getEmployee() == null) {
             throw new IllegalArgumentException("Goal must be linked to an EmployeeProfile");
         }
+        
+        // Set default values for new fields if not provided
+        if (goal.getStatus() == null || goal.getStatus().isEmpty()) {
+            goal.setStatus("PENDING");
+        }
+        if (goal.getProgress() == null) {
+            goal.setProgress(0);
+        }
+        if (goal.getCreatedBy() == null || goal.getCreatedBy().isEmpty()) {
+            goal.setCreatedBy("manager"); // Default to manager-created
+        }
+        
         return repo.save(goal);
     }
 

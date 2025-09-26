@@ -34,9 +34,21 @@ public class FeedbackService {
     }
 
     public Feedback createFeedback(Feedback feedback) {
-        if (feedback.getEmployee() == null || feedback.getManager() == null) {
-            throw new IllegalArgumentException("Employee and Manager must be set for Feedback");
+        if (feedback.getEmployee() == null) {
+            throw new IllegalArgumentException("Employee must be set for Feedback");
         }
+        
+        // Set default values for new fields if not provided
+        if (feedback.getFeedbackType() == null || feedback.getFeedbackType().isEmpty()) {
+            feedback.setFeedbackType("Self");
+        }
+        if (feedback.getIsAnonymous() == null) {
+            feedback.setIsAnonymous(false);
+        }
+        if (feedback.getRating() == null) {
+            feedback.setRating(0);
+        }
+        
         return repo.save(feedback);
     }
 

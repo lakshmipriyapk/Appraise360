@@ -19,4 +19,16 @@ public interface GoalRepository extends JpaRepository<Goal, Long> {
 
     // Optional: find by employee + appraisal
     Optional<Goal> findByEmployee_EmployeeProfileIdAndAppraisal_AppraisalId(Long employeeProfileId, Long appraisalId);
+
+    // Find goals by status
+    List<Goal> findByStatus(String status);
+
+    // Find goals by created by (manager or self)
+    List<Goal> findByCreatedBy(String createdBy);
+
+    // Find goals by category
+    List<Goal> findByCategory(String category);
+
+    // Find goals by employee and status
+    List<Goal> findByEmployee_EmployeeProfileIdAndStatus(Long employeeProfileId, String status);
 }

@@ -19,4 +19,13 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
 
     // Optional: find by employee + manager
     Optional<Feedback> findByEmployee_EmployeeProfileIdAndManager_UserId(Long employeeProfileId, Long managerId);
+
+    // Find feedbacks by type
+    List<Feedback> findByFeedbackType(String feedbackType);
+
+    // Find feedbacks by rating
+    List<Feedback> findByRating(Integer rating);
+
+    // Find feedbacks by employee and type
+    List<Feedback> findByEmployee_EmployeeProfileIdAndFeedbackType(Long employeeProfileId, String feedbackType);
 }

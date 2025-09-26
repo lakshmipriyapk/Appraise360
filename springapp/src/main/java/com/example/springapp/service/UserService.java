@@ -26,6 +26,11 @@ public class UserService {
     }
 
     public User createUser(User user) {
+        // Set default values for new fields if not provided
+        if (user.getRole() == null || user.getRole().isEmpty()) {
+            user.setRole("Employee");
+        }
+        
         // ensure bidirectional link
         if (user.getEmployeeProfiles() != null) {
             user.getEmployeeProfiles().forEach(profile -> profile.setUser(user));

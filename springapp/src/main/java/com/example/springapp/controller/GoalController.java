@@ -50,9 +50,31 @@ public class GoalController {
         return ResponseEntity.ok(goalService.getGoalsByAppraisalId(appraisalId));
     }
 
+    @PostMapping
+    public ResponseEntity<Goal> createGoal(@RequestBody Goal goal) {
+        // Validate required fields
+        if (goal.getEmployee() == null || goal.getEmployee().getEmployeeProfileId() == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Get employee
+        EmployeeProfile employee = employeeService.getEmployeeProfileById(goal.getEmployee().getEmployeeProfileId())
+                .orElseThrow(() -> new RuntimeException("Employee not found with ID " + goal.getEmployee().getEmployeeProfileId()));
+        goal.setEmployee(employee);
+
+        // Handle appraisal if provided
+        if (goal.getAppraisal() != null && goal.getAppraisal().getAppraisalId() != null) {
+            Appraisal appraisal = appraisalService.getAppraisalById(goal.getAppraisal().getAppraisalId())
+                    .orElseThrow(() -> new RuntimeException("Appraisal not found with ID " + goal.getAppraisal().getAppraisalId()));
+            goal.setAppraisal(appraisal);
+        }
+
+        return ResponseEntity.ok(goalService.createGoal(goal));
+    }
+
     @PostMapping("/employee/{employeeId}")
-    public ResponseEntity<Goal> createGoal(@PathVariable Long employeeId,
-                                           @RequestBody Goal goal) {
+    public ResponseEntity<Goal> createGoalWithEmployeeId(@PathVariable Long employeeId,
+                                                         @RequestBody Goal goal) {
         EmployeeProfile employee = employeeService.getEmployeeProfileById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found with ID " + employeeId));
         goal.setEmployee(employee);

@@ -11,4 +11,13 @@ public interface EmployeeProfileRepository extends JpaRepository<EmployeeProfile
 
     // Find profile(s) by userId
     List<EmployeeProfile> findByUserUserId(Long userId);  // userUserId matches the field "userId" in User entity
+
+    // Find profiles by department
+    List<EmployeeProfile> findByDepartment(String department);
+
+    // Find profiles by designation
+    List<EmployeeProfile> findByDesignation(String designation);
+
+    // Find profiles by reporting manager
+    List<EmployeeProfile> findByReportingManager(String reportingManager);
 }

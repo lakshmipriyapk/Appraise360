@@ -57,10 +57,33 @@ public class AppraisalController {
         return ResponseEntity.ok(appraisalService.getAppraisalsByCycleId(cycleId));
     }
 
+    @PostMapping
+    public ResponseEntity<Appraisal> createAppraisal(@RequestBody Appraisal appraisal) {
+        // Validate required fields
+        if (appraisal.getEmployee() == null || appraisal.getEmployee().getEmployeeProfileId() == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Get employee and review cycle
+        EmployeeProfile employee = employeeService.getEmployeeProfileById(appraisal.getEmployee().getEmployeeProfileId())
+                .orElseThrow(() -> new RuntimeException("Employee not found with ID " + appraisal.getEmployee().getEmployeeProfileId()));
+        
+        ReviewCycle cycle = null;
+        if (appraisal.getReviewCycle() != null && appraisal.getReviewCycle().getCycleId() != null) {
+            cycle = reviewCycleService.getReviewCycleById(appraisal.getReviewCycle().getCycleId())
+                    .orElseThrow(() -> new RuntimeException("ReviewCycle not found with ID " + appraisal.getReviewCycle().getCycleId()));
+        }
+
+        appraisal.setEmployee(employee);
+        appraisal.setReviewCycle(cycle);
+
+        return ResponseEntity.ok(appraisalService.createAppraisal(appraisal));
+    }
+
     @PostMapping("/employee/{employeeId}/cycle/{cycleId}")
-    public ResponseEntity<Appraisal> createAppraisal(@PathVariable Long employeeId,
-                                                     @PathVariable Long cycleId,
-                                                     @RequestBody Appraisal appraisal) {
+    public ResponseEntity<Appraisal> createAppraisalWithIds(@PathVariable Long employeeId,
+                                                           @PathVariable Long cycleId,
+                                                           @RequestBody Appraisal appraisal) {
         EmployeeProfile employee = employeeService.getEmployeeProfileById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found with ID " + employeeId));
         ReviewCycle cycle = reviewCycleService.getReviewCycleById(cycleId)

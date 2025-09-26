@@ -34,9 +34,21 @@ public class AppraisalService {
     }
 
     public Appraisal createAppraisal(Appraisal appraisal) {
-        if (appraisal.getEmployee() == null || appraisal.getReviewCycle() == null) {
-            throw new IllegalArgumentException("Employee and ReviewCycle must be set for Appraisal");
+        if (appraisal.getEmployee() == null) {
+            throw new IllegalArgumentException("Employee must be set for Appraisal");
         }
+        
+        // Set default values for new fields if not provided
+        if (appraisal.getSelfRating() == null) {
+            appraisal.setSelfRating(0);
+        }
+        if (appraisal.getManagerRating() == null) {
+            appraisal.setManagerRating(0);
+        }
+        if (appraisal.getStatus() == null || appraisal.getStatus().isEmpty()) {
+            appraisal.setStatus("Submitted");
+        }
+        
         return repo.save(appraisal);
     }
 

@@ -57,10 +57,32 @@ public class FeedbackController {
         return ResponseEntity.ok(feedbackService.getFeedbacksByManagerId(managerId));
     }
 
+    @PostMapping
+    public ResponseEntity<Feedback> createFeedback(@RequestBody Feedback feedback) {
+        // Validate required fields
+        if (feedback.getEmployee() == null || feedback.getEmployee().getEmployeeProfileId() == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Get employee
+        EmployeeProfile employee = employeeService.getEmployeeProfileById(feedback.getEmployee().getEmployeeProfileId())
+                .orElseThrow(() -> new RuntimeException("Employee not found with ID " + feedback.getEmployee().getEmployeeProfileId()));
+        feedback.setEmployee(employee);
+
+        // Handle manager if provided
+        if (feedback.getManager() != null && feedback.getManager().getUserId() != null) {
+            User manager = userService.getUserById(feedback.getManager().getUserId())
+                    .orElseThrow(() -> new RuntimeException("Manager not found with ID " + feedback.getManager().getUserId()));
+            feedback.setManager(manager);
+        }
+
+        return ResponseEntity.ok(feedbackService.createFeedback(feedback));
+    }
+
     @PostMapping("/employee/{employeeId}/manager/{managerId}")
-    public ResponseEntity<Feedback> createFeedback(@PathVariable Long employeeId,
-                                                   @PathVariable Long managerId,
-                                                   @RequestBody Feedback feedback) {
+    public ResponseEntity<Feedback> createFeedbackWithIds(@PathVariable Long employeeId,
+                                                          @PathVariable Long managerId,
+                                                          @RequestBody Feedback feedback) {
         EmployeeProfile employee = employeeService.getEmployeeProfileById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found with ID " + employeeId));
         User manager = userService.getUserById(managerId)

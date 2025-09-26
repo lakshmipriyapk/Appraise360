@@ -47,6 +47,23 @@ public class EmployeeProfileController {
         return profiles.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(profiles);
     }
 
+    @PostMapping
+    public ResponseEntity<EmployeeProfile> createProfile(@RequestBody EmployeeProfile profile) {
+        // Validate required fields
+        if (profile.getUser() == null || profile.getUser().getUserId() == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Get user
+        User user = userService.getUserById(profile.getUser().getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found with ID " + profile.getUser().getUserId()));
+
+        profile.setUser(user);
+        EmployeeProfile created = profileService.createEmployeeProfile(profile);
+
+        return ResponseEntity.ok(created);
+    }
+
     // 🔗 Create profile linked with an existing User
     @PostMapping("/user/{userId}")
     public ResponseEntity<EmployeeProfile> createProfileForUser(@PathVariable Long userId,
