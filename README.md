@@ -1,59 +1,131 @@
-# Angularapp
+# Full Stack Performance Appraisal System
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.2.2.
+A comprehensive performance appraisal system built with Angular frontend and Spring Boot backend.
 
-## Development server
+## Project Structure
 
-To start a local development server, run:
-
-```bash
-ng serve
+```
+FullStack-PerformaceAppraisal/
+├── angularapp/          # Angular frontend application
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── component/    # Angular components
+│   │   │   ├── service/      # Angular services
+│   │   │   ├── model/        # TypeScript models
+│   │   │   └── guards/       # Route guards
+│   │   └── assets/           # Static assets
+│   ├── package.json
+│   └── angular.json
+└── springapp/           # Spring Boot backend application
+    ├── src/main/java/
+    │   └── com/example/springapp/
+    │       ├── controller/   # REST controllers
+    │       ├── service/      # Business logic services
+    │       ├── repository/   # Data access layer
+    │       ├── model/        # JPA entities
+    │       └── config/       # Configuration classes
+    ├── src/main/resources/
+    │   └── application.properties
+    └── pom.xml
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Features
 
-## Code scaffolding
+### Frontend (Angular)
+- Employee dashboard
+- Performance appraisal management
+- Goal setting and tracking
+- Feedback system
+- Review cycle management
+- User authentication and authorization
+- Responsive design
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### Backend (Spring Boot)
+- RESTful API endpoints
+- JPA/Hibernate for data persistence
+- Spring Security for authentication
+- Swagger documentation
+- Comprehensive CRUD operations
 
-```bash
-ng generate component component-name
-```
+## Technologies Used
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+### Frontend
+- Angular 17+
+- TypeScript
+- HTML5/CSS3
+- Angular Material (if used)
 
-```bash
-ng generate --help
-```
+### Backend
+- Spring Boot 3.x
+- Spring Data JPA
+- Spring Security
+- H2/MySQL Database
+- Maven
+- Swagger/OpenAPI
 
-## Building
+## Getting Started
 
-To build the project run:
+### Prerequisites
+- Node.js (v18 or higher)
+- Angular CLI
+- Java 17 or higher
+- Maven 3.6+
 
-```bash
-ng build
-```
+### Running the Backend (Spring Boot)
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+1. Navigate to the springapp directory:
+   ```bash
+   cd springapp
+   ```
 
-## Running unit tests
+2. Run the Spring Boot application:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+   Or on Windows:
+   ```bash
+   mvnw.cmd spring-boot:run
+   ```
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+3. The backend will be available at `http://localhost:8080`
 
-```bash
-ng test
-```
+### Running the Frontend (Angular)
 
-## Running end-to-end tests
+1. Navigate to the angularapp directory:
+   ```bash
+   cd angularapp
+   ```
 
-For end-to-end (e2e) testing, run:
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-```bash
-ng e2e
-```
+3. Start the development server:
+   ```bash
+   ng serve
+   ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+4. The frontend will be available at `http://localhost:4200`
 
-## Additional Resources
+## API Documentation
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Once the Spring Boot application is running, you can access the Swagger documentation at:
+`http://localhost:8080/swagger-ui.html`
+
+## Database
+
+The application uses an embedded H2 database by default. Database configuration can be modified in `springapp/src/main/resources/application.properties`.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Commit your changes
+5. Push to the branch
+6. Create a Pull Request
+
+## License
+
+This project is licensed under the MIT License.

@@ -1,0 +1,310 @@
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h2 class="logo">
+      <i class="fas fa-chart-line"></i>
+      Appraise360
+    </h2>
+    <ul>
+      <li *ngFor="let item of menuItems" (click)="navigateTo(item.route)" [class.active]="item.route === '/feedback'">
+        <i [ngClass]="['fas', item.icon]"></i> {{ item.title }}
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1>Feedback Management</h1>
+        <p class="subtitle">Manage employee feedback and performance reviews</p>
+      </div>
+      <div class="topbar-right">
+        <div class="user-info">
+          <i class="fas fa-user-circle"></i>
+          <span>Admin User</span>
+        </div>
+        <button class="logout-btn" (click)="logout()">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </header>
+
+    <!-- Feedback Management Content -->
+    <div class="dashboard-content">
+      <div class="feedback-container">
+        
+        <!-- Messages -->
+        <div *ngIf="errorMessage" class="message message-error">
+          <i class="fas fa-exclamation-circle"></i>
+          {{ errorMessage }}
+        </div>
+        <div *ngIf="successMessage" class="message message-success">
+          <i class="fas fa-check-circle"></i>
+          {{ successMessage }}
+        </div>
+
+        <!-- Header Section -->
+        <div class="section-header">
+          <div class="header-left">
+            
+          </div>
+          <div class="header-right">
+            <button class="btn btn-primary" (click)="openCreateModal()">
+              <i class="fas fa-plus"></i> Add Feedback
+            </button>
+          </div>
+        </div>
+
+        <!-- Filters and Search -->
+        <div class="filters-section">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input 
+              type="text" 
+              placeholder="Search feedback by employee, manager, or comments..." 
+              [(ngModel)]="searchTerm"
+              (input)="onSearchChange()"
+              class="search-input">
+          </div>
+          
+          <div class="filter-controls">
+            <select 
+              [(ngModel)]="employeeFilter" 
+              (change)="onEmployeeFilterChange()"
+              class="filter-select">
+              <option value="">All Employees</option>
+              <option *ngFor="let emp of employeeProfiles" [value]="emp.employeeProfileId">
+                {{ emp.user.firstName }} {{ emp.user.lastName }}
+              </option>
+            </select>
+
+            <select 
+              [(ngModel)]="reviewerFilter" 
+              (change)="onReviewerFilterChange()"
+              class="filter-select">
+              <option value="">All Reviewers</option>
+              <option *ngFor="let user of users" [value]="user.userId">
+                {{ user.firstName }} {{ user.lastName }}
+              </option>
+            </select>
+
+            <select 
+              [(ngModel)]="feedbackTypeFilter" 
+              (change)="onFeedbackTypeFilterChange()"
+              class="filter-select">
+              <option value="">All Types</option>
+              <option *ngFor="let type of feedbackTypes" [value]="type.value">
+                {{ type.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" *ngIf="isLoading">
+          <div class="spinner"></div>
+          <p>Loading feedback...</p>
+        </div>
+
+        <!-- Feedback Grid -->
+        <div class="feedback-grid" *ngIf="!isLoading">
+          <div *ngFor="let feedback of filteredFeedbacks" class="feedback-card">
+            <div class="feedback-header">
+              <div class="feedback-meta">
+                <div class="employee-info">
+                  <div class="avatar">
+                    <i class="fas fa-user"></i>
+                  </div>
+                  <div class="info">
+                    <h4>{{ feedback.employee.user.firstName }} {{ feedback.employee.user.lastName }}</h4>
+                    <p>{{ feedback.employee.designation }} • {{ feedback.employee.department }}</p>
+                  </div>
+                </div>
+                <div class="feedback-actions">
+                  <button class="btn btn-sm btn-outline" (click)="openEditModal(feedback)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-sm btn-danger" (click)="openDeleteModal(feedback)">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="feedback-content">
+              <div class="feedback-info">
+                <div class="feedback-type">
+                  <span class="label">Type:</span>
+                  <span class="type-badge" [ngClass]="getFeedbackTypeClass(feedback.feedbackType)">
+                    {{ feedback.feedbackType }}
+                  </span>
+                </div>
+                <div class="reviewer-info">
+                  <span class="label">Reviewer:</span>
+                  <span class="reviewer-name">{{ feedback.reviewer.firstName }} {{ feedback.reviewer.lastName }}</span>
+                  <span class="reviewer-role">({{ feedback.reviewer.role }})</span>
+                </div>
+                <div class="rating-info" *ngIf="feedback.rating">
+                  <span class="label">Rating:</span>
+                  <span class="rating-value" [ngClass]="getRatingClass(feedback.rating)">
+                    {{ feedback.rating }}/5
+                  </span>
+                </div>
+              </div>
+              
+              <div class="comments-section">
+                <h5>Comments:</h5>
+                <p class="comments">{{ feedback.comments }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="!isLoading && filteredFeedbacks.length === 0">
+          <i class="fas fa-comments"></i>
+          <h3>No Feedback Found</h3>
+          <p *ngIf="searchTerm || employeeFilter || reviewerFilter || feedbackTypeFilter">Try adjusting your search criteria</p>
+          <p *ngIf="!searchTerm && !employeeFilter && !reviewerFilter && !feedbackTypeFilter">Get started by adding your first feedback</p>
+          <button class="btn btn-primary" (click)="openCreateModal()" *ngIf="!searchTerm && !employeeFilter && !reviewerFilter && !feedbackTypeFilter">
+            <i class="fas fa-plus"></i> Add Feedback
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal-overlay" *ngIf="showCreateModal || showEditModal" (click)="closeModals()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ showCreateModal ? 'Add Feedback' : 'Edit Feedback' }}</h2>
+      <button class="btn-close" (click)="closeModals()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <form [formGroup]="feedbackForm" (ngSubmit)="showCreateModal ? createFeedback() : updateFeedback()">
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="employeeId">Employee *</label>
+          <select 
+            id="employeeId" 
+            formControlName="employeeId" 
+            class="form-control"
+            [class.error]="feedbackForm.get('employeeId')?.invalid && feedbackForm.get('employeeId')?.touched">
+            <option value="">Select an employee</option>
+            <option *ngFor="let emp of employeeProfiles" [value]="emp.employeeProfileId">
+              {{ emp.user.firstName }} {{ emp.user.lastName }} ({{ emp.user.email }})
+            </option>
+          </select>
+          <div class="error-message" *ngIf="feedbackForm.get('employeeId')?.invalid && feedbackForm.get('employeeId')?.touched">
+            Please select an employee
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="reviewerId">Reviewer *</label>
+          <select 
+            id="reviewerId" 
+            formControlName="reviewerId" 
+            class="form-control"
+            [class.error]="feedbackForm.get('reviewerId')?.invalid && feedbackForm.get('reviewerId')?.touched">
+            <option value="">Select a reviewer</option>
+            <option *ngFor="let user of users" [value]="user.userId">
+              {{ user.firstName }} {{ user.lastName }} ({{ user.role }})
+            </option>
+          </select>
+          <div class="error-message" *ngIf="feedbackForm.get('reviewerId')?.invalid && feedbackForm.get('reviewerId')?.touched">
+            Please select a reviewer
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="feedbackType">Feedback Type *</label>
+          <select 
+            id="feedbackType" 
+            formControlName="feedbackType" 
+            class="form-control"
+            [class.error]="feedbackForm.get('feedbackType')?.invalid && feedbackForm.get('feedbackType')?.touched">
+            <option value="">Select feedback type</option>
+            <option *ngFor="let type of feedbackTypes" [value]="type.value">
+              {{ type.label }}
+            </option>
+          </select>
+          <div class="error-message" *ngIf="feedbackForm.get('feedbackType')?.invalid && feedbackForm.get('feedbackType')?.touched">
+            Please select a feedback type
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="comments">Comments *</label>
+          <textarea 
+            id="comments" 
+            formControlName="comments" 
+            placeholder="Enter feedback comments..."
+            rows="4"
+            class="form-control"
+            [class.error]="feedbackForm.get('comments')?.invalid && feedbackForm.get('comments')?.touched"></textarea>
+          <div class="error-message" *ngIf="feedbackForm.get('comments')?.invalid && feedbackForm.get('comments')?.touched">
+            Comments are required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="rating">Rating (Optional)</label>
+          <select 
+            id="rating" 
+            formControlName="rating" 
+            class="form-control"
+            [class.error]="feedbackForm.get('rating')?.invalid && feedbackForm.get('rating')?.touched">
+            <option value="">Select rating (optional)</option>
+            <option value="1">1 - Poor</option>
+            <option value="2">2 - Below Average</option>
+            <option value="3">3 - Average</option>
+            <option value="4">4 - Good</option>
+            <option value="5">5 - Excellent</option>
+          </select>
+          <div class="error-message" *ngIf="feedbackForm.get('rating')?.invalid && feedbackForm.get('rating')?.touched">
+            Please select a valid rating (1-5)
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="feedbackForm.invalid">
+          {{ showCreateModal ? 'Create Feedback' : 'Update Feedback' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeModals()">
+  <div class="modal delete-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Delete Feedback</h2>
+      <button class="btn-close" (click)="closeModals()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="delete-confirmation">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>Are you sure you want to delete this feedback for <strong>{{ selectedFeedback?.employee?.user?.firstName }} {{ selectedFeedback?.employee?.user?.lastName }}</strong>?</p>
+        <p class="warning-text">This action cannot be undone.</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+      <button type="button" class="btn btn-danger" (click)="deleteFeedback()">Delete</button>
+    </div>
+  </div>
+</div>

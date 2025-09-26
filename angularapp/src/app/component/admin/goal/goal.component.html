@@ -1,0 +1,333 @@
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h2 class="logo">
+      <i class="fas fa-chart-line"></i>
+      Appraise360
+    </h2>
+    <ul>
+      <li *ngFor="let item of menuItems" (click)="navigateTo(item.route)" [class.active]="item.route === '/goal'">
+        <i [ngClass]="['fas', item.icon]"></i> {{ item.title }}
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1>Goal Management</h1>
+        <p class="subtitle">Manage employee goals and performance objectives</p>
+      </div>
+      <div class="topbar-right">
+        <div class="user-info">
+          <i class="fas fa-user-circle"></i>
+          <span>Admin User</span>
+        </div>
+        <button class="logout-btn" (click)="logout()">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </header>
+
+    <!-- Goal Management Content -->
+    <div class="dashboard-content">
+      <div class="goal-container">
+        
+        <!-- Messages -->
+        <div *ngIf="errorMessage" class="message message-error">
+          <i class="fas fa-exclamation-circle"></i>
+          {{ errorMessage }}
+        </div>
+        <div *ngIf="successMessage" class="message message-success">
+          <i class="fas fa-check-circle"></i>
+          {{ successMessage }}
+        </div>
+
+        <!-- Header Section -->
+        <div class="section-header">
+          <div class="header-left">
+            
+          </div>
+          <div class="header-right">
+            <button class="btn btn-primary" (click)="openCreateModal()">
+              <i class="fas fa-plus"></i> Add Goal
+            </button>
+          </div>
+        </div>
+
+        <!-- Filters and Search -->
+        <div class="filters-section">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input 
+              type="text" 
+              placeholder="Search goals by title, description, or employee..." 
+              [(ngModel)]="searchTerm"
+              (input)="onSearchChange()"
+              class="search-input">
+          </div>
+          
+          <div class="filter-controls">
+            <select 
+              [(ngModel)]="statusFilter" 
+              (change)="onStatusFilterChange()"
+              class="filter-select">
+              <option value="">All Statuses</option>
+              <option *ngFor="let status of getStatuses()" [value]="status">
+                {{ status | titlecase }}
+              </option>
+            </select>
+
+            <select 
+              [(ngModel)]="employeeFilter" 
+              (change)="onEmployeeFilterChange()"
+              class="filter-select">
+              <option value="">All Employees</option>
+              <option *ngFor="let emp of employeeProfiles" [value]="emp.employeeProfileId">
+                {{ emp.user.firstName }} {{ emp.user.lastName }}
+              </option>
+            </select>
+
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" *ngIf="isLoading">
+          <div class="spinner"></div>
+          <p>Loading goals...</p>
+        </div>
+
+        <!-- Goal Grid -->
+        <div class="goal-grid" *ngIf="!isLoading">
+          <div *ngFor="let goal of filteredGoals" class="goal-card">
+            <div class="goal-header">
+              <div class="goal-meta">
+                <div class="employee-info">
+                  <div class="avatar">
+                    <i class="fas fa-user"></i>
+                  </div>
+                  <div class="info">
+                    <h4>{{ goal.employee.user.firstName }} {{ goal.employee.user.lastName }}</h4>
+                    <p>{{ goal.employee.designation }} • {{ goal.employee.department }}</p>
+                  </div>
+                </div>
+                <div class="goal-actions">
+                  <button class="btn btn-sm btn-outline" (click)="openEditModal(goal)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-sm btn-danger" (click)="openDeleteModal(goal)">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="goal-content">
+              <div class="goal-title">
+                <h5>{{ goal.title }}</h5>
+                <div class="goal-badges">
+                  <span class="status-badge" [ngClass]="getStatusClass(goal.status)">
+                    {{ goal.status | titlecase }}
+                  </span>
+                  <span class="source-badge" [ngClass]="getSourceClass(goal.createdBy)">
+                    {{ goal.createdBy === 'self' ? 'Self-Created' : 'Manager Assigned' }}
+                  </span>
+                </div>
+              </div>
+              
+              <div class="goal-description">
+                <p>{{ goal.description }}</p>
+              </div>
+
+              <div class="goal-details" *ngIf="goal.appraisal">
+                <div class="appraisal-info">
+                  <span class="label">Linked to Appraisal:</span>
+                  <span class="appraisal-name">{{ goal.appraisal.employee.user.firstName }} {{ goal.appraisal.employee.user.lastName }} - {{ goal.appraisal.reviewCycle.cycleName }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="!isLoading && filteredGoals.length === 0">
+          <i class="fas fa-bullseye"></i>
+          <h3>No Goals Found</h3>
+          <p *ngIf="searchTerm || statusFilter || employeeFilter">Try adjusting your search criteria</p>
+          <p *ngIf="!searchTerm && !statusFilter && !employeeFilter">Get started by adding your first goal</p>
+          <button class="btn btn-primary" (click)="openCreateModal()" *ngIf="!searchTerm && !statusFilter && !employeeFilter">
+            <i class="fas fa-plus"></i> Add Goal
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal-overlay" *ngIf="showCreateModal || showEditModal" (click)="closeModals()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ showCreateModal ? 'Add Goal' : 'Edit Goal' }}</h2>
+      <button class="btn-close" (click)="closeModals()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <form [formGroup]="goalForm" (ngSubmit)="showCreateModal ? createGoal() : updateGoal()">
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="employeeId">Employee *</label>
+          <select 
+            id="employeeId" 
+            formControlName="employeeId" 
+            class="form-control"
+            [class.error]="goalForm.get('employeeId')?.invalid && goalForm.get('employeeId')?.touched">
+            <option value="">Select an employee</option>
+            <option *ngFor="let emp of employeeProfiles" [value]="emp.employeeProfileId">
+              {{ emp.user.firstName }} {{ emp.user.lastName }} ({{ emp.user.email }})
+            </option>
+          </select>
+          <div class="error-message" *ngIf="goalForm.get('employeeId')?.invalid && goalForm.get('employeeId')?.touched">
+            Please select an employee
+          </div>
+        </div>
+
+
+        <div class="form-group">
+          <label for="title">Goal Title / Objective *</label>
+          <input 
+            type="text" 
+            id="title" 
+            formControlName="title" 
+            placeholder="e.g., Improve API response time by 20%"
+            class="form-control"
+            [class.error]="goalForm.get('title')?.invalid && goalForm.get('title')?.touched">
+          <div class="error-message" *ngIf="goalForm.get('title')?.invalid && goalForm.get('title')?.touched">
+            Goal title is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description / Details *</label>
+          <textarea 
+            id="description" 
+            formControlName="description" 
+            placeholder="Expanded explanation of the goal and what success looks like..."
+            rows="4"
+            class="form-control"
+            [class.error]="goalForm.get('description')?.invalid && goalForm.get('description')?.touched"></textarea>
+          <div class="error-message" *ngIf="goalForm.get('description')?.invalid && goalForm.get('description')?.touched">
+            Description is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="category">Category / Type *</label>
+          <select 
+            id="category" 
+            formControlName="category" 
+            class="form-control"
+            [class.error]="goalForm.get('category')?.invalid && goalForm.get('category')?.touched">
+            <option value="">Select category</option>
+            <option *ngFor="let category of getCategories()" [value]="category">
+              {{ category }}
+            </option>
+          </select>
+          <div class="error-message" *ngIf="goalForm.get('category')?.invalid && goalForm.get('category')?.touched">
+            Please select a category
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="startDate">Start Date *</label>
+            <input 
+              type="date" 
+              id="startDate" 
+              formControlName="startDate" 
+              class="form-control"
+              [class.error]="goalForm.get('startDate')?.invalid && goalForm.get('startDate')?.touched">
+            <div class="error-message" *ngIf="goalForm.get('startDate')?.invalid && goalForm.get('startDate')?.touched">
+              Start date is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="endDate">End Date *</label>
+            <input 
+              type="date" 
+              id="endDate" 
+              formControlName="endDate" 
+              class="form-control"
+              [class.error]="goalForm.get('endDate')?.invalid && goalForm.get('endDate')?.touched">
+            <div class="error-message" *ngIf="goalForm.get('endDate')?.invalid && goalForm.get('endDate')?.touched">
+              End date is required
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="managerComments">Manager's Comments</label>
+          <textarea 
+            id="managerComments" 
+            formControlName="managerComments" 
+            placeholder="Feedback on how the employee is progressing on the goal..."
+            rows="3"
+            class="form-control"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="status">Status *</label>
+          <select 
+            id="status" 
+            formControlName="status" 
+            class="form-control"
+            [class.error]="goalForm.get('status')?.invalid && goalForm.get('status')?.touched">
+            <option value="">Select status</option>
+            <option *ngFor="let status of getStatuses()" [value]="status">
+              {{ status | titlecase }}
+            </option>
+          </select>
+          <div class="error-message" *ngIf="goalForm.get('status')?.invalid && goalForm.get('status')?.touched">
+            Please select a status
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="goalForm.invalid">
+          {{ showCreateModal ? 'Create Goal' : 'Update Goal' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeModals()">
+  <div class="modal delete-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Delete Goal</h2>
+      <button class="btn-close" (click)="closeModals()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="delete-confirmation">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>Are you sure you want to delete the goal "<strong>{{ selectedGoal?.title }}</strong>" for <strong>{{ selectedGoal?.employee?.user?.firstName }} {{ selectedGoal?.employee?.user?.lastName }}</strong>?</p>
+        <p class="warning-text">This action cannot be undone.</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+      <button type="button" class="btn btn-danger" (click)="deleteGoal()">Delete</button>
+    </div>
+  </div>
+</div>

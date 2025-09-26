@@ -1,0 +1,796 @@
+
+<div class="employee-dashboard">
+  <!-- Loading Spinner -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="loading-spinner">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Loading your dashboard...</p>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="error-message">
+    <i class="fas fa-exclamation-triangle"></i>
+    <p>{{ errorMessage }}</p>
+  </div>
+
+  <!-- Main Dashboard Content -->
+  <div *ngIf="!isLoading && !errorMessage" class="dashboard-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <i class="fas fa-chart-line"></i>
+          <span>Appraise360</span>
+        </div>
+        <div class="employee-info" *ngIf="currentEmployee">
+          <div class="employee-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="employee-details">
+            <h3>{{ currentEmployee.user.firstName }} {{ currentEmployee.user.lastName }}</h3>
+            <p>{{ currentEmployee.designation }}</p>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <ul>
+          <li *ngFor="let item of menuItems" 
+              [class.active]="activeSection === item.route"
+              (click)="navigateToSection(item.route)">
+            <i [class]="'fas ' + item.icon"></i>
+            <span>{{ item.title }}</span>
+          </li>
+        </ul>
+      </nav>
+
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1>{{ getSectionTitle() }}</h1>
+          <p class="breadcrumb">{{ getBreadcrumb() }}</p>
+        </div>
+        <div class="topbar-right">
+          <button class="logout-btn" (click)="logout()">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
+        </div>
+      </header>
+
+      <!-- Dashboard Content -->
+      <div class="content-area">
+        <!-- Overview Section -->
+        <div *ngIf="activeSection === 'overview'" class="overview-section">
+          <!-- Stats Cards -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-bullseye"></i>
+              </div>
+              <div class="stat-content">
+                <h3>{{ dashboardStats.totalGoals }}</h3>
+                <p>Total Goals</p>
+                <div class="stat-progress">
+                  <div class="progress-bar">
+                    <div class="progress-fill" [style.width.%]="getOverallGoalProgressPercentage()"></div>
+                  </div>
+                  <span>{{ getOverallGoalProgressPercentage() }}% Complete</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-star"></i>
+              </div>
+              <div class="stat-content">
+                <h3>{{ currentSelfFeedback?.rating || 'N/A' }}</h3>
+                <p>Self Rating</p>
+                <div class="rating-display">
+                  <div class="stars">
+                    <i *ngFor="let star of [1,2,3,4,5]" 
+                       [class]="'fas fa-star ' + (star <= (currentSelfFeedback?.rating || 0) ? 'filled' : '')"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-comments"></i>
+              </div>
+              <div class="stat-content">
+                <h3>{{ dashboardStats.feedbackCount }}</h3>
+                <p>Feedback Received</p>
+                <div class="feedback-summary">
+                  <span class="recent-count">{{ recentFeedback.length }} Recent</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="recent-activity">
+            <h2>Recent Activity</h2>
+            <div class="activity-list">
+              <div class="activity-item" *ngFor="let feedback of recentFeedback">
+                <div class="activity-icon">
+                  <i class="fas fa-comment"></i>
+                </div>
+                <div class="activity-content">
+                  <h4>{{ feedback.feedbackType }} Feedback</h4>
+                  <p>{{ feedback.comments }}</p>
+                  <span class="activity-time">{{ feedback.reviewer.firstName }} {{ feedback.reviewer.lastName }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="quick-actions">
+            <h2>Quick Actions</h2>
+            <div class="action-buttons">
+              <button class="action-btn" (click)="navigateToSection('goals')">
+                <i class="fas fa-plus"></i>
+                <span>Add New Goal</span>
+              </button>
+              <button class="action-btn" (click)="navigateToSection('feedback')">
+                <i class="fas fa-comment"></i>
+                <span>Request Feedback</span>
+              </button>
+              <button class="action-btn" (click)="navigateToSection('appraisals')">
+                <i class="fas fa-clipboard-check"></i>
+                <span>View Appraisals</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Goals Section -->
+        <div *ngIf="activeSection === 'goals'" class="goals-section">
+          <div class="section-header">
+            <button class="btn-primary" (click)="openGoalModal()">
+              <i class="fas fa-plus"></i>
+              Add New Goal
+            </button>
+          </div>
+
+          <div class="goals-grid">
+            <div class="goal-card" *ngFor="let goal of currentGoals">
+              <div class="goal-header">
+                <h3>{{ goal.title }}</h3>
+                <div class="goal-status-controls">
+                  <div class="status-buttons">
+                    <button 
+                      class="status-btn" 
+                      [class.active]="goal.status === 'Pending'"
+                      [class.pending]="goal.status === 'Pending'"
+                      (click)="updateGoalStatus(goal, 'Pending')">
+                      Pending
+                    </button>
+                    <button 
+                      class="status-btn" 
+                      [class.active]="goal.status === 'In Progress'"
+                      [class.in-progress]="goal.status === 'In Progress'"
+                      (click)="updateGoalStatus(goal, 'In Progress')">
+                      In Progress
+                    </button>
+                    <button 
+                      class="status-btn" 
+                      [class.active]="goal.status === 'Completed'"
+                      [class.completed]="goal.status === 'Completed'"
+                      (click)="updateGoalStatus(goal, 'Completed')">
+                      Completed
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <p class="goal-description">{{ goal.description }}</p>
+              <div class="goal-progress">
+                <div class="progress-bar">
+                  <div class="progress-fill" 
+                       [style.width.%]="getGoalProgressPercentage(goal)">
+                  </div>
+                </div>
+                <span class="progress-text">
+                  {{ getGoalProgressPercentage(goal) }}%
+                </span>
+              </div>
+              <div class="goal-meta">
+                <span class="goal-category" *ngIf="goal.category">{{ goal.category }}</span>
+                <span class="goal-priority" [ngClass]="'priority-' + (goal.priority || 'medium').toLowerCase()">
+                  {{ goal.priority || 'Medium' }} Priority
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feedback Section -->
+        <div *ngIf="activeSection === 'feedback'" class="feedback-section">
+          <div class="section-header">
+            <button class="btn-primary" (click)="openSelfFeedbackModal()">
+              <i class="fas fa-plus"></i>
+              Add Self Feedback
+            </button>
+            <button class="btn-secondary" (click)="openRequestFeedbackModal()">
+              <i class="fas fa-comment"></i>
+              Request Feedback
+            </button>
+          </div>
+
+          <!-- Self Feedback Section -->
+          <div class="self-feedback-section">
+            <h3>Self Feedback</h3>
+            <div class="self-feedback-card" *ngIf="currentSelfFeedback">
+              <div class="feedback-header">
+                <h4>My Self Assessment</h4>
+                <span class="feedback-date">{{ currentSelfFeedback.createdDate | date:'mediumDate' }}</span>
+              </div>
+              <div class="feedback-content">
+                <div class="feedback-rating">
+                  <label>Self Rating:</label>
+                  <div class="rating-display">
+                    <div class="stars">
+                      <i *ngFor="let star of [1,2,3,4,5]" 
+                         [class]="'fas fa-star ' + (star <= currentSelfFeedback.rating ? 'filled' : '')"></i>
+                    </div>
+                    <span class="rating-number">{{ currentSelfFeedback.rating }}</span>
+                  </div>
+                </div>
+                <div class="feedback-comments">
+                  <h5>Comments:</h5>
+                  <p>{{ currentSelfFeedback.comments }}</p>
+                </div>
+                <div class="feedback-actions">
+                  <button class="btn-secondary" (click)="editSelfFeedback()">
+                    <i class="fas fa-edit"></i>
+                    Edit Feedback
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="no-feedback" *ngIf="!currentSelfFeedback">
+              <div class="no-feedback-content">
+                <i class="fas fa-comment-dots"></i>
+                <h4>No Self Feedback Yet</h4>
+                <p>Share your thoughts about your performance and achievements.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="feedback-list">
+            <h3>Received Feedback</h3>
+            <div class="feedback-card" *ngFor="let feedback of recentFeedback">
+              <div class="feedback-header">
+                <div class="feedback-type">
+                  <i class="fas fa-user"></i>
+                  <span>{{ feedback.feedbackType }}</span>
+                </div>
+                <div class="feedback-rating" *ngIf="feedback.rating">
+                  <div class="stars">
+                    <i *ngFor="let star of [1,2,3,4,5]" 
+                       [class]="'fas fa-star ' + (star <= feedback.rating! ? 'filled' : '')"></i>
+                  </div>
+                </div>
+              </div>
+              <p class="feedback-comment">{{ feedback.comments }}</p>
+              <div class="feedback-footer">
+                <span class="reviewer">{{ feedback.reviewer.firstName }} {{ feedback.reviewer.lastName }}</span>
+                <span class="feedback-date">2 days ago</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Appraisals Section -->
+        <div *ngIf="activeSection === 'appraisals'" class="appraisals-section">
+          <div class="appraisals-list">
+            <div class="appraisal-card" *ngFor="let appraisal of appraisals">
+              <div class="appraisal-header">
+                <h4>Appraisal #{{ appraisal.appraisalId }}</h4>
+                <span class="appraisal-status" [style.background-color]="getStatusColor(appraisal.status)">
+                  {{ appraisal.status }}
+                </span>
+              </div>
+              <div class="appraisal-ratings">
+                <div class="rating-item">
+                  <label>Self Rating:</label>
+                  <div class="rating-display">
+                    <div class="stars">
+                      <i *ngFor="let star of [1,2,3,4,5]" 
+                         [class]="'fas fa-star ' + (star <= (currentSelfFeedback?.rating || 0) ? 'filled' : '')"></i>
+                    </div>
+                    <span class="rating-number">{{ currentSelfFeedback?.rating || 'N/A' }}</span>
+                  </div>
+                </div>
+                <div class="rating-item">
+                  <label>Manager Rating:</label>
+                  <div class="rating-display">
+                    <div class="stars">
+                      <i *ngFor="let star of [1,2,3,4,5]" 
+                         [class]="'fas fa-star ' + (star <= appraisal.managerRating ? 'filled' : '')"></i>
+                    </div>
+                    <span class="rating-number">{{ appraisal.managerRating }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Self Feedback Modal -->
+        <div class="modal-overlay" *ngIf="showSelfFeedbackModal" (click)="closeSelfFeedbackModal()">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3>Add Self Feedback</h3>
+              <button class="close-btn" (click)="closeSelfFeedbackModal()">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="modal-body">
+              <form [formGroup]="selfFeedbackForm" (ngSubmit)="submitSelfFeedback()">
+                <div class="form-group">
+                  <label for="rating">Self Rating *</label>
+                  <div class="rating-input">
+                    <div class="stars-input">
+                      <i *ngFor="let star of [1,2,3,4,5]; let i = index" 
+                         [class]="'fas fa-star ' + (i < selfFeedbackForm.get('rating')?.value ? 'filled' : '')"
+                         (click)="setRating(i + 1)">
+                      </i>
+                    </div>
+                    <span class="rating-text">{{ selfFeedbackForm.get('rating')?.value || 0 }} / 5</span>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label for="comments">Comments *</label>
+                  <textarea 
+                    id="comments"
+                    formControlName="comments"
+                    placeholder="Share your thoughts about your performance, achievements, challenges, and areas for improvement..."
+                    rows="6">
+                  </textarea>
+                  <div class="error-message" *ngIf="selfFeedbackForm.get('comments')?.invalid && selfFeedbackForm.get('comments')?.touched">
+                    Comments are required
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="achievements">Key Achievements</label>
+                  <textarea 
+                    id="achievements"
+                    formControlName="achievements"
+                    placeholder="List your key achievements and accomplishments..."
+                    rows="4">
+                  </textarea>
+                </div>
+
+                <div class="form-group">
+                  <label for="challenges">Challenges Faced</label>
+                  <textarea 
+                    id="challenges"
+                    formControlName="challenges"
+                    placeholder="Describe any challenges you faced and how you overcame them..."
+                    rows="4">
+                  </textarea>
+                </div>
+
+                <div class="form-group">
+                  <label for="improvements">Areas for Improvement</label>
+                  <textarea 
+                    id="improvements"
+                    formControlName="improvements"
+                    placeholder="Identify areas where you'd like to improve and your plan for development..."
+                    rows="4">
+                  </textarea>
+                </div>
+
+                <div class="form-actions">
+                  <button type="button" class="btn-secondary" (click)="closeSelfFeedbackModal()">
+                    Cancel
+                  </button>
+                  <button type="submit" class="btn-primary" [disabled]="selfFeedbackForm.invalid">
+                    <i class="fas fa-save"></i>
+                    Save Self Feedback
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Goal Creation Modal -->
+        <div class="modal-overlay" *ngIf="showGoalModal" (click)="closeGoalModal()">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3>Add New Goal</h3>
+              <button class="close-btn" (click)="closeGoalModal()">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="modal-body">
+              <form [formGroup]="goalForm" (ngSubmit)="submitGoal()">
+                <div class="form-group">
+                  <label for="title">Goal Title *</label>
+                  <input 
+                    type="text" 
+                    id="title"
+                    formControlName="title"
+                    placeholder="Enter your goal title..."
+                    class="form-input">
+                  <div class="error-message" *ngIf="goalForm.get('title')?.invalid && goalForm.get('title')?.touched">
+                    Goal title is required
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="description">Description *</label>
+                  <textarea 
+                    id="description"
+                    formControlName="description"
+                    placeholder="Describe your goal in detail..."
+                    rows="4"
+                    class="form-textarea">
+                  </textarea>
+                  <div class="error-message" *ngIf="goalForm.get('description')?.invalid && goalForm.get('description')?.touched">
+                    Description is required
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="targetDate">Target Date *</label>
+                    <input 
+                      type="date" 
+                      id="targetDate"
+                      formControlName="targetDate"
+                      class="form-input">
+                    <div class="error-message" *ngIf="goalForm.get('targetDate')?.invalid && goalForm.get('targetDate')?.touched">
+                      Target date is required
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="priority">Priority</label>
+                    <select 
+                      id="priority"
+                      formControlName="priority"
+                      class="form-select">
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="category">Category</label>
+                  <select 
+                    id="category"
+                    formControlName="category"
+                    class="form-select">
+                    <option value="Professional Development">Professional Development</option>
+                    <option value="Project Goals">Project Goals</option>
+                    <option value="Skill Enhancement">Skill Enhancement</option>
+                    <option value="Performance Improvement">Performance Improvement</option>
+                    <option value="Career Growth">Career Growth</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-actions">
+                  <button type="button" class="btn-secondary" (click)="closeGoalModal()">
+                    Cancel
+                  </button>
+                  <button type="submit" class="btn-primary" [disabled]="goalForm.invalid">
+                    <i class="fas fa-save"></i>
+                    Create Goal
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Request Feedback Modal -->
+        <div class="modal-overlay" *ngIf="showRequestFeedbackModal" (click)="closeRequestFeedbackModal()">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3>Request Feedback</h3>
+              <button class="close-btn" (click)="closeRequestFeedbackModal()">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="modal-body">
+              <form [formGroup]="requestFeedbackForm" (ngSubmit)="submitFeedbackRequest()">
+                <div class="form-group">
+                  <label for="requestee">Request Feedback From *</label>
+                  <select 
+                    id="requestee"
+                    formControlName="requestee"
+                    class="form-select">
+                    <option value="">Select a colleague...</option>
+                    <option value="manager">My Manager</option>
+                    <option value="peer1">John Smith (Senior Developer)</option>
+                    <option value="peer2">Sarah Johnson (Team Lead)</option>
+                    <option value="peer3">Mike Davis (Product Manager)</option>
+                    <option value="peer4">Lisa Wilson (UX Designer)</option>
+                  </select>
+                  <div class="error-message" *ngIf="requestFeedbackForm.get('requestee')?.invalid && requestFeedbackForm.get('requestee')?.touched">
+                    Please select someone to request feedback from
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="feedbackType">Feedback Type *</label>
+                  <select 
+                    id="feedbackType"
+                    formControlName="feedbackType"
+                    class="form-select">
+                    <option value="">Select feedback type...</option>
+                    <option value="Performance">Performance Review</option>
+                    <option value="Project">Project Feedback</option>
+                    <option value="Skills">Skills Development</option>
+                    <option value="Collaboration">Collaboration</option>
+                    <option value="Leadership">Leadership</option>
+                    <option value="General">General Feedback</option>
+                  </select>
+                  <div class="error-message" *ngIf="requestFeedbackForm.get('feedbackType')?.invalid && requestFeedbackForm.get('feedbackType')?.touched">
+                    Please select a feedback type
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="message">Message (Optional)</label>
+                  <textarea 
+                    id="message"
+                    formControlName="message"
+                    placeholder="Add a personal message to your feedback request..."
+                    rows="4"
+                    class="form-textarea">
+                  </textarea>
+                </div>
+
+                <div class="form-group">
+                  <label for="deadline">Request Deadline</label>
+                  <input 
+                    type="date" 
+                    id="deadline"
+                    formControlName="deadline"
+                    class="form-input">
+                </div>
+
+                <div class="form-group">
+                  <label class="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      formControlName="anonymous"
+                      class="form-checkbox">
+                    <span class="checkmark"></span>
+                    Request anonymous feedback
+                  </label>
+                </div>
+
+                <div class="form-actions">
+                  <button type="button" class="btn-secondary" (click)="closeRequestFeedbackModal()">
+                    Cancel
+                  </button>
+                  <button type="submit" class="btn-primary" [disabled]="requestFeedbackForm.invalid">
+                    <i class="fas fa-paper-plane"></i>
+                    Send Request
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit Profile Modal -->
+        <div class="modal-overlay" *ngIf="showEditProfileModal" (click)="closeEditProfileModal()">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3>Edit Profile</h3>
+              <button class="close-btn" (click)="closeEditProfileModal()">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="modal-body">
+              <form [formGroup]="editProfileForm" (ngSubmit)="submitEditProfile()">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="firstName">First Name *</label>
+                    <input 
+                      type="text" 
+                      id="firstName"
+                      formControlName="firstName"
+                      placeholder="Enter your first name..."
+                      class="form-input">
+                    <div class="error-message" *ngIf="editProfileForm.get('firstName')?.invalid && editProfileForm.get('firstName')?.touched">
+                      First name is required (minimum 2 characters)
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="lastName">Last Name *</label>
+                    <input 
+                      type="text" 
+                      id="lastName"
+                      formControlName="lastName"
+                      placeholder="Enter your last name..."
+                      class="form-input">
+                    <div class="error-message" *ngIf="editProfileForm.get('lastName')?.invalid && editProfileForm.get('lastName')?.touched">
+                      Last name is required (minimum 2 characters)
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="email">Email Address *</label>
+                  <input 
+                    type="email" 
+                    id="email"
+                    formControlName="email"
+                    placeholder="Enter your email address..."
+                    class="form-input">
+                  <div class="error-message" *ngIf="editProfileForm.get('email')?.invalid && editProfileForm.get('email')?.touched">
+                    Please enter a valid email address
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="designation">Designation *</label>
+                    <input 
+                      type="text" 
+                      id="designation"
+                      formControlName="designation"
+                      placeholder="Enter your job title..."
+                      class="form-input">
+                    <div class="error-message" *ngIf="editProfileForm.get('designation')?.invalid && editProfileForm.get('designation')?.touched">
+                      Designation is required
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="department">Department *</label>
+                    <select 
+                      id="department"
+                      formControlName="department"
+                      class="form-select">
+                      <option value="">Select Department</option>
+                      <option value="Engineering">Engineering</option>
+                      <option value="Marketing">Marketing</option>
+                      <option value="Sales">Sales</option>
+                      <option value="HR">Human Resources</option>
+                      <option value="Finance">Finance</option>
+                      <option value="Operations">Operations</option>
+                    </select>
+                    <div class="error-message" *ngIf="editProfileForm.get('department')?.invalid && editProfileForm.get('department')?.touched">
+                      Please select your department
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="currentProject">Current Project</label>
+                    <input 
+                      type="text" 
+                      id="currentProject"
+                      formControlName="currentProject"
+                      placeholder="Enter your current project..."
+                      class="form-input">
+                  </div>
+                  <div class="form-group">
+                    <label for="currentTeam">Current Team</label>
+                    <input 
+                      type="text" 
+                      id="currentTeam"
+                      formControlName="currentTeam"
+                      placeholder="Enter your team name..."
+                      class="form-input">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="skills">Skills</label>
+                  <input 
+                    type="text" 
+                    id="skills"
+                    formControlName="skills"
+                    placeholder="Enter your skills separated by commas (e.g., React, JavaScript, TypeScript)..."
+                    class="form-input">
+                </div>
+
+                <div class="form-actions">
+                  <button type="button" class="btn-secondary" (click)="closeEditProfileModal()">
+                    Cancel
+                  </button>
+                  <button type="submit" class="btn-primary" [disabled]="editProfileForm.invalid">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile Section -->
+        <div *ngIf="activeSection === 'profile'" class="profile-section">
+          <div class="section-header">
+            <button class="btn-secondary" (click)="openEditProfileModal()">
+              <i class="fas fa-edit"></i>
+              Edit Profile
+            </button>
+          </div>
+
+          <div class="profile-content" *ngIf="currentEmployee">
+            <div class="profile-card">
+              <div class="profile-header">
+                <div class="profile-avatar">
+                  <i class="fas fa-user"></i>
+                </div>
+                <div class="profile-info">
+                  <h3>{{ currentEmployee.user.firstName }} {{ currentEmployee.user.lastName }}</h3>
+                  <p>{{ currentEmployee.designation }}</p>
+                  <span class="employee-id">ID: {{ currentEmployee.employeeProfileId }}</span>
+                </div>
+              </div>
+
+              <div class="profile-details">
+                <div class="detail-row">
+                  <label>Email:</label>
+                  <span>{{ currentEmployee.user.email }}</span>
+                </div>
+                <div class="detail-row">
+                  <label>Department:</label>
+                  <span>{{ currentEmployee.department }}</span>
+                </div>
+                <div class="detail-row">
+                  <label>Date of Joining:</label>
+                  <span>{{ currentEmployee.dateOfJoining | date:'mediumDate' }}</span>
+                </div>
+                <div class="detail-row">
+                  <label>Reporting Manager:</label>
+                  <span>{{ currentEmployee.reportingManager }}</span>
+                </div>
+                <div class="detail-row">
+                  <label>Current Project:</label>
+                  <span>{{ currentEmployee.currentProject }}</span>
+                </div>
+                <div class="detail-row">
+                  <label>Current Team:</label>
+                  <span>{{ currentEmployee.currentTeam }}</span>
+                </div>
+              </div>
+
+              <div class="skills-section">
+                <h4>Skills</h4>
+                <div class="skills-list">
+                  <span class="skill-tag" *ngFor="let skill of currentEmployee.skills">
+                    {{ skill }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="goals-section">
+                <h4>Current Goals</h4>
+                <div class="goals-list">
+                  <span class="goal-tag" *ngFor="let goal of currentEmployee.currentGoals">
+                    {{ goal }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>

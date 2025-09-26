@@ -1,0 +1,328 @@
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h2 class="logo">
+      <i class="fas fa-chart-line"></i>
+      Appraise360
+    </h2>
+    <ul>
+      <li *ngFor="let item of menuItems" (click)="navigateTo(item.route)" [class.active]="item.route === '/appraisal'">
+        <i [ngClass]="['fas', item.icon]"></i> {{ item.title }}
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1>Appraisal Management</h1>
+        <p class="subtitle">Manage employee performance reviews and evaluations</p>
+      </div>
+      <div class="topbar-right">
+        <div class="user-info">
+          <i class="fas fa-user-circle"></i>
+          <span>Admin User</span>
+        </div>
+        <button class="logout-btn" (click)="logout()">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </header>
+
+    <!-- Appraisal Management Content -->
+    <div class="dashboard-content">
+      <div class="appraisal-container">
+        
+        <!-- Messages -->
+        <div *ngIf="errorMessage" class="message message-error">
+          <i class="fas fa-exclamation-circle"></i>
+          {{ errorMessage }}
+        </div>
+        <div *ngIf="successMessage" class="message message-success">
+          <i class="fas fa-check-circle"></i>
+          {{ successMessage }}
+        </div>
+
+        <!-- Header Section -->
+        <div class="section-header">
+          <div class="header-left">
+            
+          </div>
+          <div class="header-right">
+            <button class="btn btn-primary" (click)="openCreateModal()">
+              <i class="fas fa-plus"></i> Create New Appraisal
+            </button>
+          </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="filters-section">
+          <div class="filter-group">
+            <input 
+              type="text" 
+              placeholder="Search by employee name or email..." 
+              [(ngModel)]="searchTerm"
+              (input)="onSearchChange()"
+              class="search-input"
+            >
+            <i class="fas fa-search search-icon"></i>
+          </div>
+          <div class="filter-group">
+            <select [(ngModel)]="statusFilter" (change)="onStatusFilterChange()" class="filter-select">
+              <option value="">All Statuses</option>
+              <option value="Submitted">Submitted</option>
+              <option value="In Review">In Review</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="isLoading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading appraisals...</p>
+        </div>
+
+        <!-- Appraisals List -->
+        <div *ngIf="!isLoading" class="appraisals-section">
+          <div *ngIf="filteredAppraisals.length > 0" class="appraisals-grid">
+            <div *ngFor="let appraisal of filteredAppraisals" class="appraisal-card">
+              <div class="appraisal-header">
+                <div class="appraisal-title">
+                  <h3>{{ appraisal.employee.user.firstName }} {{ appraisal.employee.user.lastName }}</h3>
+                  <div class="appraisal-meta">
+                    <span class="employee-info">{{ appraisal.employee.designation }} • {{ appraisal.employee.department }}</span>
+                    <span class="appraisal-status" [ngClass]="getStatusClass(appraisal.status)">
+                      {{ appraisal.status | titlecase }}
+                    </span>
+                  </div>
+                </div>
+                <div class="appraisal-actions">
+                  <button class="btn btn-sm btn-secondary" (click)="openEditModal(appraisal)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-sm btn-danger" (click)="openDeleteModal(appraisal)">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="appraisal-content">
+                <div class="ratings-section">
+                  <div class="rating-item">
+                    <span class="rating-label">Self Rating:</span>
+                    <span class="rating-value" [ngClass]="getRatingClass(appraisal.selfRating)">
+                      {{ appraisal.selfRating }}/5
+                    </span>
+                  </div>
+                  <div class="rating-item">
+                    <span class="rating-label">Manager Rating:</span>
+                    <span class="rating-value" [ngClass]="getRatingClass(appraisal.managerRating)">
+                      {{ appraisal.managerRating }}/5
+                    </span>
+                  </div>
+                  <div class="rating-item">
+                    <span class="rating-label">Average Rating:</span>
+                    <span class="rating-value" [ngClass]="getRatingClass(getAverageRating(appraisal))">
+                      {{ getAverageRating(appraisal) | number:'1.1-1' }}/5
+                    </span>
+                  </div>
+                </div>
+
+
+                <div class="appraisal-footer">
+                  <div class="review-cycle-info">
+                    <span><i class="fas fa-calendar-alt"></i> {{ appraisal.reviewCycle.cycleName }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="filteredAppraisals.length === 0 && !isLoading" class="empty-state">
+            <i class="fas fa-clipboard-check"></i>
+            <h3>No Appraisals Found</h3>
+            <p *ngIf="searchTerm || statusFilter">No appraisals match your current filters. Try adjusting your search criteria.</p>
+            <p *ngIf="!searchTerm && !statusFilter">Start by creating your first performance appraisal to track employee progress and achievements.</p>
+            <button class="btn btn-primary" (click)="openCreateModal()">
+              <i class="fas fa-plus"></i> Create First Appraisal
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create/Edit Appraisal Modal -->
+<div class="modal-overlay" *ngIf="showCreateModal || showEditModal" (click)="closeModals()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ showCreateModal ? 'Create New Appraisal' : 'Edit Appraisal' }}</h2>
+      <button class="btn-close" (click)="closeModals()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <form [formGroup]="appraisalForm" (ngSubmit)="showCreateModal ? createAppraisal() : updateAppraisal()">
+      <div class="modal-body appraisal-form">
+        
+        <!-- Employee Details Section -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <i class="fas fa-user"></i>
+            Employee Details
+          </h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Employee Name *</label>
+              <input type="text" formControlName="employeeName" class="form-control" placeholder="Enter employee name">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Employee ID *</label>
+              <input type="text" formControlName="employeeId" class="form-control" placeholder="Enter employee ID">
+            </div>
+          </div>
+        </div>
+
+        <!-- Appraisal Cycle Details Section -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <i class="fas fa-calendar-alt"></i>
+            Appraisal Cycle Details
+          </h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Review Cycle Name *</label>
+              <input type="text" formControlName="cycleName" class="form-control" placeholder="e.g., Mid-Year 2025 Review">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Appraisal Date *</label>
+              <input type="date" formControlName="appraisalDate" class="form-control">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Appraisal Period Start *</label>
+              <input type="date" formControlName="periodStart" class="form-control">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Appraisal Period End *</label>
+              <input type="date" formControlName="periodEnd" class="form-control">
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Reviewer Details Section -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <i class="fas fa-user-tie"></i>
+            Reviewer Details
+          </h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Manager Name *</label>
+              <input type="text" formControlName="managerName" class="form-control" placeholder="Enter manager name">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Reviewer Role *</label>
+              <select formControlName="reviewerRole" class="form-control">
+                <option value="">Select reviewer role</option>
+                <option value="Manager">Manager</option>
+                <option value="HR">HR</option>
+                <option value="Peer">Peer</option>
+                <option value="Senior Manager">Senior Manager</option>
+                <option value="Director">Director</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Review Date *</label>
+            <input type="date" formControlName="reviewDate" class="form-control">
+          </div>
+        </div>
+
+        <!-- Performance Ratings Section -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <i class="fas fa-star"></i>
+            Performance Ratings
+          </h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Manager Rating (1-5) *</label>
+              <input type="number" formControlName="managerRating" class="form-control" min="1" max="5" step="0.1" placeholder="Manager rating">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Status *</label>
+              <select formControlName="status" class="form-control">
+                <option value="">Select status</option>
+                <option value="Draft">Draft</option>
+                <option value="Submitted">Submitted</option>
+                <option value="In Review">In Review</option>
+                <option value="Completed">Completed</option>
+                <option value="Approved">Approved</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manager Comments Section -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <i class="fas fa-comments"></i>
+            Manager Comments
+          </h3>
+          
+          <div class="form-group">
+            <label class="form-label">Manager Comments</label>
+            <textarea formControlName="managerComments" class="form-control" rows="4" placeholder="Enter manager's comments and feedback"></textarea>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="appraisalForm.invalid">
+          {{ showCreateModal ? 'Create Appraisal' : 'Update Appraisal' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeModals()">
+  <div class="modal-content modal-small" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Delete Appraisal</h2>
+      <button class="btn-close" (click)="closeModals()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="delete-confirmation">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>Are you sure you want to delete this appraisal for <strong>{{ selectedAppraisal?.employee?.user?.firstName }} {{ selectedAppraisal?.employee?.user?.lastName }}</strong>?</p>
+        <p class="warning-text">This action cannot be undone.</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+      <button type="button" class="btn btn-danger" (click)="deleteAppraisal()">Delete Appraisal</button>
+    </div>
+  </div>
+</div>
