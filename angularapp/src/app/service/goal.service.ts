@@ -32,6 +32,10 @@ export class GoalService {
     return this.http.post<Goal>(this.apiUrl, goal);
   }
 
+  createGoalWithEmployeeId(employeeId: number, goal: Goal): Observable<Goal> {
+    return this.http.post<Goal>(`${this.apiUrl}/employee/${employeeId}`, goal);
+  }
+
   updateGoal(goal: Goal): Observable<Goal> {
     return this.http.put<Goal>(`${this.apiUrl}/${goal.goalId}`, goal);
   }

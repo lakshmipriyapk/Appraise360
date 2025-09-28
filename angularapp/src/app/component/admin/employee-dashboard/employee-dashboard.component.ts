@@ -652,8 +652,30 @@ export class EmployeeDashboardComponent implements OnInit {
 
       console.log('Saving self feedback to database:', feedbackData);
 
-      // Save to database
-      this.feedbackService.createSelfFeedback(feedbackData).subscribe({
+      // First ensure employee profile exists, then create feedback
+      if (!this.currentEmployee.employeeProfileId) {
+        console.log('Employee profile not created yet, creating it first...');
+        this.createEmployeeProfileInDatabase().then(() => {
+          this.createFeedbackWithEmployeeProfile(feedbackData);
+        });
+      } else {
+        this.createFeedbackWithEmployeeProfile(feedbackData);
+      }
+    } else {
+      // Mark all fields as touched to show validation errors
+      Object.keys(this.selfFeedbackForm.controls).forEach(key => {
+        this.selfFeedbackForm.get(key)?.markAsTouched();
+      });
+    }
+  }
+
+  private createFeedbackWithEmployeeProfile(feedbackData: any) {
+    // Save to database using employee and reviewer IDs
+    this.feedbackService.createFeedbackWithIds(
+      this.currentEmployee.employeeProfileId,
+      this.currentEmployee.user.userId,
+      feedbackData
+    ).subscribe({
         next: (savedFeedback) => {
           console.log('Self feedback saved successfully to database:', savedFeedback);
           
@@ -765,14 +787,31 @@ export class EmployeeDashboardComponent implements OnInit {
         progress: 0,
         createdBy: 'self',
         category: formData.category,
-        employee: { employeeProfileId: this.currentEmployee.employeeProfileId }, // Send only ID
         appraisal: null
       };
 
       console.log('Saving goal to database:', newGoal);
 
-      // Save to database
-      this.goalService.createGoal(newGoal).subscribe({
+      // First ensure employee profile exists, then create goal
+      if (!this.currentEmployee.employeeProfileId) {
+        console.log('Employee profile not created yet, creating it first...');
+        this.createEmployeeProfileInDatabase().then(() => {
+          this.createGoalWithEmployeeProfile(newGoal);
+        });
+      } else {
+        this.createGoalWithEmployeeProfile(newGoal);
+      }
+    } else {
+      // Mark all fields as touched to show validation errors
+      Object.keys(this.goalForm.controls).forEach(key => {
+        this.goalForm.get(key)?.markAsTouched();
+      });
+    }
+  }
+
+  private createGoalWithEmployeeProfile(newGoal: any) {
+    // Save to database using employee ID
+    this.goalService.createGoalWithEmployeeId(this.currentEmployee.employeeProfileId, newGoal).subscribe({
         next: (savedGoal) => {
           console.log('Goal saved successfully to database:', savedGoal);
           
@@ -1094,12 +1133,12 @@ export class EmployeeDashboardComponent implements OnInit {
     }
   }
 
-  private createEmployeeProfileInDatabase() {
-    if (!this.currentEmployee) return;
+  private createEmployeeProfileInDatabase(): Promise<void> {
+    if (!this.currentEmployee) return Promise.reject('No current employee');
     
     console.log('Creating new employee profile in database...');
     
-    // Create a clean profile object without nested user object
+    // Create a full EmployeeProfile object with nested User object
     const profileData = {
       department: this.currentEmployee.department,
       designation: this.currentEmployee.designation,
@@ -1109,48 +1148,55 @@ export class EmployeeDashboardComponent implements OnInit {
       currentTeam: this.currentEmployee.currentTeam,
       skills: this.currentEmployee.skills,
       lastAppraisalRating: this.currentEmployee.lastAppraisalRating,
-      currentGoals: this.currentEmployee.currentGoals
+      currentGoals: this.currentEmployee.currentGoals,
+      user: {
+        userId: this.currentEmployee.user.userId
+      }
     };
     
-    this.employeeProfileService.createEmployeeProfile(
-      this.currentEmployee.user.userId, 
-      profileData as any
-    ).subscribe({
-      next: (createdProfile) => {
-        console.log('New profile created successfully:', createdProfile);
-        
-        // Update local data with the response from database
-        this.currentEmployee = createdProfile;
-        
-        // Update shared service
-        this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee);
-
-        // Close modal and reset form
-        this.closeEditProfileModal();
-        
-        alert('Profile created and saved to database successfully!');
-      },
-      error: (error) => {
-        console.error('Error creating profile in database:', error);
-        console.log('Error details:', error);
-        
-        // Check if it's a connection error
-        if (error.status === 0 || error.status === 404) {
-          console.log('Backend not accessible, saving locally only');
-          alert('Backend not accessible. Profile updated locally only.');
-        } else {
-          console.log('Database error, but saving locally');
-          alert('Database save failed, but profile updated locally.');
-        }
-        
-        // Even if database save fails, update local data
-        if (this.currentEmployee) {
+    return new Promise<void>((resolve, reject) => {
+      this.employeeProfileService.createEmployeeProfile(
+        this.currentEmployee.user.userId, 
+        profileData as any
+      ).subscribe({
+        next: (createdProfile) => {
+          console.log('New profile created successfully:', createdProfile);
+          
+          // Update local data with the response from database
+          this.currentEmployee = createdProfile;
+          
+          // Update shared service
           this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee);
+
+          // Close modal and reset form
+          this.closeEditProfileModal();
+          
+          alert('Profile created and saved to database successfully!');
+          resolve();
+        },
+        error: (error) => {
+          console.error('Error creating profile in database:', error);
+          console.log('Error details:', error);
+          
+          // Check if it's a connection error
+          if (error.status === 0 || error.status === 404) {
+            console.log('Backend not accessible, saving locally only');
+            alert('Backend not accessible. Profile updated locally only.');
+          } else {
+            console.log('Database error, but saving locally');
+            alert('Database save failed, but profile updated locally.');
+          }
+          
+          // Even if database save fails, update local data
+          if (this.currentEmployee) {
+            this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee);
+          }
+          this.closeEditProfileModal();
+          
+          alert('Profile updated locally (database save failed)');
+          reject(error);
         }
-        this.closeEditProfileModal();
-        
-        alert('Profile updated locally (database save failed)');
-      }
+      });
     });
   }
 

@@ -37,6 +37,11 @@ export class FeedbackService {
     return this.http.post<Feedback>(this.apiUrl, feedback);
   }
 
+  // Method for creating feedback with employee and reviewer IDs
+  createFeedbackWithIds(employeeId: number, reviewerId: number, feedback: Feedback): Observable<Feedback> {
+    return this.http.post<Feedback>(`${this.apiUrl}/employee/${employeeId}/reviewer/${reviewerId}`, feedback);
+  }
+
   updateFeedback(feedback: Feedback): Observable<Feedback> {
     return this.http.put<Feedback>(`${this.apiUrl}/${feedback.feedbackId}`, feedback);
   }
