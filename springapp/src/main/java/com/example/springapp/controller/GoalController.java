@@ -2,6 +2,7 @@ package com.example.springapp.controller;
 
 import java.util.List;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +15,7 @@ import com.example.springapp.service.AppraisalService;
 
 @RestController
 @RequestMapping("/api/goals")
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class GoalController {
 
     private final GoalService goalService;
@@ -50,7 +52,7 @@ public class GoalController {
         return ResponseEntity.ok(goalService.getGoalsByAppraisalId(appraisalId));
     }
 
-    @PostMapping
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Goal> createGoal(@RequestBody Goal goal) {
         // Validate required fields
         if (goal.getEmployee() == null || goal.getEmployee().getEmployeeProfileId() == null) {
@@ -72,7 +74,7 @@ public class GoalController {
         return ResponseEntity.ok(goalService.createGoal(goal));
     }
 
-    @PostMapping("/employee/{employeeId}")
+    @PostMapping(value = "/employee/{employeeId}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Goal> createGoalWithEmployeeId(@PathVariable Long employeeId,
                                                          @RequestBody Goal goal) {
         EmployeeProfile employee = employeeService.getEmployeeProfileById(employeeId)

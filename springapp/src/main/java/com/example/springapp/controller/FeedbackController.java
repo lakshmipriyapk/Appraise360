@@ -2,6 +2,7 @@ package com.example.springapp.controller;
 
 import java.util.List;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +23,7 @@ import com.example.springapp.service.UserService;
 
 @RestController
 @RequestMapping("/api/feedbacks")
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class FeedbackController {
 
     private final FeedbackService feedbackService;
@@ -58,7 +60,7 @@ public class FeedbackController {
         return ResponseEntity.ok(feedbackService.getFeedbacksByReviewerId(reviewerId));
     }
 
-    @PostMapping
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Feedback> createFeedback(@RequestBody Feedback feedback) {
         // Validate required fields
         if (feedback.getEmployee() == null || feedback.getEmployee().getEmployeeProfileId() == null) {
@@ -80,7 +82,7 @@ public class FeedbackController {
         return ResponseEntity.ok(feedbackService.createFeedback(feedback));
     }
 
-    @PostMapping("/employee/{employeeId}/reviewer/{reviewerId}")
+    @PostMapping(value = "/employee/{employeeId}/reviewer/{reviewerId}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Feedback> createFeedbackWithIds(@PathVariable Long employeeId,
                                                           @PathVariable Long reviewerId,
                                                           @RequestBody Feedback feedback) {

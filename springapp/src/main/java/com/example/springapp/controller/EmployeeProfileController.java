@@ -20,6 +20,7 @@ import com.example.springapp.service.UserService;
 
 @RestController
 @RequestMapping("/api/employeeProfiles")
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class EmployeeProfileController {
 
     private final EmployeeProfileService profileService;
