@@ -49,4 +49,25 @@ public class UserService {
     public void deleteUser(Long id) {
         repo.deleteById(id);
     }
+
+    public User authenticateUser(String email, String phoneNumber, String password) {
+        Optional<User> userOpt = null;
+        
+        // Try to find user by email first, then by phone number
+        if (email != null && !email.isEmpty()) {
+            userOpt = repo.findByEmail(email);
+        } else if (phoneNumber != null && !phoneNumber.isEmpty()) {
+            userOpt = repo.findByPhoneNumber(phoneNumber);
+        }
+        
+        if (userOpt != null && userOpt.isPresent()) {
+            User user = userOpt.get();
+            // For now, we're doing plain text comparison
+            // In production, you should use BCrypt or similar
+            if (password.equals(user.getPassword())) {
+                return user;
+            }
+        }
+        return null;
+    }
 }

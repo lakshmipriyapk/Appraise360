@@ -137,8 +137,11 @@ export class FeedbackComponent implements OnInit {
             userId: 1,
             username: 'john.doe',
             email: 'john.doe@company.com',
+            fullName: 'John Doe',
             firstName: 'John',
             lastName: 'Doe',
+            phoneNumber: '+1-555-0001',
+            password: 'password123',
             role: 'Employee'
           }
         },
@@ -146,8 +149,11 @@ export class FeedbackComponent implements OnInit {
           userId: 2,
           username: 'jane.smith',
           email: 'jane.smith@company.com',
+          fullName: 'Jane Smith',
           firstName: 'Jane',
           lastName: 'Smith',
+          phoneNumber: '+1-555-0002',
+          password: 'password123',
           role: 'Employee'
         }
       },
@@ -171,8 +177,11 @@ export class FeedbackComponent implements OnInit {
             userId: 3,
             username: 'mike.wilson',
             email: 'mike.wilson@company.com',
+            fullName: 'Mike Wilson',
             firstName: 'Mike',
             lastName: 'Wilson',
+            phoneNumber: '+1-555-0003',
+            password: 'password123',
             role: 'Employee'
           }
         },
@@ -180,8 +189,11 @@ export class FeedbackComponent implements OnInit {
           userId: 4,
           username: 'sarah.jones',
           email: 'sarah.jones@company.com',
+          fullName: 'Sarah Jones',
           firstName: 'Sarah',
           lastName: 'Jones',
+          phoneNumber: '+1-555-0004',
+          password: 'password123',
           role: 'Employee'
         }
       },
@@ -205,8 +217,11 @@ export class FeedbackComponent implements OnInit {
             userId: 5,
             username: 'david.miller',
             email: 'david.miller@company.com',
+            fullName: 'David Miller',
             firstName: 'David',
             lastName: 'Miller',
+            phoneNumber: '+1-555-0005',
+            password: 'password123',
             role: 'Employee'
           }
         },
@@ -214,8 +229,11 @@ export class FeedbackComponent implements OnInit {
           userId: 6,
           username: 'lisa.anderson',
           email: 'lisa.anderson@company.com',
+          fullName: 'Lisa Anderson',
           firstName: 'Lisa',
           lastName: 'Anderson',
+          phoneNumber: '+1-555-0006',
+          password: 'password123',
           role: 'Employee'
         }
       }
@@ -259,8 +277,11 @@ export class FeedbackComponent implements OnInit {
           userId: 1,
           username: 'john.doe',
           email: 'john.doe@company.com',
+          fullName: 'John Doe',
           firstName: 'John',
           lastName: 'Doe',
+          phoneNumber: '+1-555-0001',
+          password: 'password123',
           role: 'Employee'
         }
       },
@@ -279,8 +300,11 @@ export class FeedbackComponent implements OnInit {
           userId: 2,
           username: 'jane.smith',
           email: 'jane.smith@company.com',
+          fullName: 'Jane Smith',
           firstName: 'Jane',
           lastName: 'Smith',
+          phoneNumber: '+1-555-0002',
+          password: 'password123',
           role: 'Employee'
         }
       }
@@ -310,24 +334,33 @@ export class FeedbackComponent implements OnInit {
         userId: 1,
         username: 'john.doe',
         email: 'john.doe@company.com',
+        fullName: 'John Doe',
         firstName: 'John',
         lastName: 'Doe',
+        phoneNumber: '+1-555-0001',
+        password: 'password123',
         role: 'Employee'
       },
       {
         userId: 2,
         username: 'jane.smith',
         email: 'jane.smith@company.com',
+        fullName: 'Jane Smith',
         firstName: 'Jane',
         lastName: 'Smith',
+        phoneNumber: '+1-555-0002',
+        password: 'password123',
         role: 'Employee'
       },
       {
         userId: 3,
         username: 'admin',
         email: 'admin@company.com',
+        fullName: 'Admin User',
         firstName: 'Admin',
         lastName: 'User',
+        phoneNumber: '+1-555-0000',
+        password: 'password123',
         role: 'Admin'
       }
     ];
@@ -445,8 +478,11 @@ export class FeedbackComponent implements OnInit {
             userId: 0,
             username: '',
             email: '',
+            fullName: '',
             firstName: '',
             lastName: '',
+            phoneNumber: '',
+            password: '',
             role: ''
           }
         },
@@ -454,8 +490,11 @@ export class FeedbackComponent implements OnInit {
           userId: formData.reviewerId,
           username: '',
           email: '',
+          fullName: '',
           firstName: '',
           lastName: '',
+          phoneNumber: '',
+          password: '',
           role: ''
         }
       };

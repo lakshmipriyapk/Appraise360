@@ -12,8 +12,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import com.example.springapp.model.User;
+import com.example.springapp.model.LoginRequest;
 import com.example.springapp.service.UserService;
 
 @RestController
@@ -42,6 +44,20 @@ public class UserController {
     public ResponseEntity<User> createUser(@RequestBody User user) {
         User created = service.createUser(user);
         return ResponseEntity.ok(created);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+        try {
+            User user = service.authenticateUser(loginRequest.getEmail(), loginRequest.getPhoneNumber(), loginRequest.getPassword());
+            if (user != null) {
+                return ResponseEntity.ok(user);
+            } else {
+                return ResponseEntity.status(401).body("Invalid credentials");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Login failed: " + e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")

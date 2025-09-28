@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { Appraisal } from '../model/appraisal.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AppraisalService {
-  private apiUrl = 'http://localhost:8080/api/appraisals';
+  private apiUrl = `${environment.apiUrl}/appraisals`;
 
   constructor(private http: HttpClient) { }
 
@@ -26,6 +27,14 @@ export class AppraisalService {
         selfRating: 4,
         managerRating: 4.2,
         status: 'Completed',
+        cycleName: 'Q3 2024 Review',
+        appraisalDate: '2024-09-15',
+        periodStart: '2024-07-01',
+        periodEnd: '2024-09-30',
+        managerName: 'John Smith',
+        reviewerRole: 'Manager',
+        reviewDate: '2024-09-20',
+        managerComments: 'Excellent performance this quarter. Shows great initiative and technical skills.',
         employee: {
           employeeProfileId: 1,
           department: 'Engineering',
@@ -41,8 +50,11 @@ export class AppraisalService {
             userId: 1,
             username: 'john.doe',
             email: 'john.doe@company.com',
+            fullName: 'John Doe',
             firstName: 'John',
             lastName: 'Doe',
+            phoneNumber: '+1-555-0001',
+            password: 'password123',
             role: 'Employee'
           }
         },

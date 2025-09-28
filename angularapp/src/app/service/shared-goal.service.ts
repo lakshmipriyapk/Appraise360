@@ -16,7 +16,7 @@ export class SharedGoalService {
 
   private initializeMockData() {
     const mockGoals: Goal[] = [
-      // Manager-assigned goals
+      // Admin-assigned goals
       {
         goalId: 1,
         title: 'Complete Project Alpha',
@@ -28,8 +28,11 @@ export class SharedGoalService {
             userId: 1,
             username: 'john.doe',
             email: 'john.doe@company.com',
+            fullName: 'John Doe',
             firstName: 'John',
             lastName: 'Doe',
+            phoneNumber: '+1-555-0001',
+            password: 'password123',
             role: 'Employee'
           },
           department: 'Engineering',
@@ -44,14 +47,28 @@ export class SharedGoalService {
         },
         appraisal: {
           appraisalId: 1,
+          selfRating: 4.0,
+          managerRating: 4.2,
+          status: 'Completed',
+          cycleName: 'Q2 2024 Review',
+          appraisalDate: '2024-06-15',
+          periodStart: '2024-04-01',
+          periodEnd: '2024-06-30',
+          managerName: 'Jane Smith',
+          reviewerRole: 'Admin',
+          reviewDate: '2024-06-25',
+          managerComments: 'Good progress on project goals. Shows improvement in technical skills.',
           employee: {
             employeeProfileId: 1,
             user: {
               userId: 1,
               username: 'john.doe',
               email: 'john.doe@company.com',
+              fullName: 'John Doe',
               firstName: 'John',
               lastName: 'Doe',
+              phoneNumber: '+1-555-0001',
+              password: 'password123',
               role: 'Employee'
             },
             department: 'Engineering',
@@ -70,10 +87,7 @@ export class SharedGoalService {
             status: 'Active',
             deadline: new Date('2024-06-30'),
             appraisals: []
-          },
-          selfRating: 4.0,
-          managerRating: 4.2,
-          status: 'Completed'
+          }
         }
       },
       {
@@ -87,8 +101,11 @@ export class SharedGoalService {
             userId: 2,
             username: 'jane.smith',
             email: 'jane.smith@company.com',
+            fullName: 'Jane Smith',
             firstName: 'Jane',
             lastName: 'Smith',
+            phoneNumber: '+1-555-0002',
+            password: 'password123',
             role: 'Employee'
           },
           department: 'Engineering',
@@ -121,8 +138,11 @@ export class SharedGoalService {
             userId: 1,
             username: 'john.doe',
             email: 'john.doe@company.com',
+            fullName: 'John Doe',
             firstName: 'John',
             lastName: 'Doe',
+            phoneNumber: '+1-555-0001',
+            password: 'password123',
             role: 'Employee'
           },
           department: 'Engineering',
@@ -154,8 +174,11 @@ export class SharedGoalService {
             userId: 1,
             username: 'john.doe',
             email: 'john.doe@company.com',
+            fullName: 'John Doe',
             firstName: 'John',
             lastName: 'Doe',
+            phoneNumber: '+1-555-0001',
+            password: 'password123',
             role: 'Employee'
           },
           department: 'Engineering',
@@ -187,8 +210,11 @@ export class SharedGoalService {
             userId: 1,
             username: 'john.doe',
             email: 'john.doe@company.com',
+            fullName: 'John Doe',
             firstName: 'John',
             lastName: 'Doe',
+            phoneNumber: '+1-555-0001',
+            password: 'password123',
             role: 'Employee'
           },
           department: 'Engineering',
@@ -216,7 +242,7 @@ export class SharedGoalService {
     return this.goalsSubject.value.filter(goal => goal.employee.employeeProfileId === employeeId);
   }
 
-  getManagerAssignedGoals(): Goal[] {
+  getAdminAssignedGoals(): Goal[] {
     return this.goalsSubject.value.filter(goal => !goal.createdBy || goal.createdBy !== 'self');
   }
 

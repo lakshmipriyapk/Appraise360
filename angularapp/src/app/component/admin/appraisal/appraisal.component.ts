@@ -70,7 +70,7 @@ export class AppraisalComponent implements OnInit {
       managerRating: [1, [Validators.required, Validators.min(1), Validators.max(5)]],
       status: ['Submitted', Validators.required],
       
-      // Manager Comments
+      // Admin Comments
       managerComments: ['']
     });
   }
@@ -127,6 +127,14 @@ export class AppraisalComponent implements OnInit {
         selfRating: 4,
         managerRating: 4.2,
         status: 'Completed',
+        cycleName: 'Q3 2024 Review',
+        appraisalDate: '2024-09-15',
+        periodStart: '2024-07-01',
+        periodEnd: '2024-09-30',
+        managerName: 'John Smith',
+        reviewerRole: 'Admin',
+        reviewDate: '2024-09-20',
+        managerComments: 'Excellent performance this quarter. Shows great initiative and technical skills.',
         employee: {
           employeeProfileId: 1,
           department: 'Engineering',
@@ -142,8 +150,11 @@ export class AppraisalComponent implements OnInit {
             userId: 1,
             username: 'john.doe',
             email: 'john.doe@company.com',
+            fullName: 'John Doe',
             firstName: 'John',
             lastName: 'Doe',
+            phoneNumber: '+1-555-0001',
+            password: 'password123',
             role: 'Employee'
           }
         },
@@ -160,6 +171,14 @@ export class AppraisalComponent implements OnInit {
         selfRating: 3,
         managerRating: 3.5,
         status: 'In Review',
+        cycleName: 'Q3 2024 Review',
+        appraisalDate: '2024-09-10',
+        periodStart: '2024-07-01',
+        periodEnd: '2024-09-30',
+        managerName: 'Jane Wilson',
+        reviewerRole: 'Admin',
+        reviewDate: '2024-09-25',
+        managerComments: 'Good progress on marketing initiatives. Needs improvement in analytics reporting.',
         employee: {
           employeeProfileId: 2,
           department: 'Marketing',
@@ -175,8 +194,11 @@ export class AppraisalComponent implements OnInit {
             userId: 2,
             username: 'jane.smith',
             email: 'jane.smith@company.com',
+            fullName: 'Jane Smith',
             firstName: 'Jane',
             lastName: 'Smith',
+            phoneNumber: '+1-555-0002',
+            password: 'password123',
             role: 'Employee'
           }
         },
@@ -193,6 +215,14 @@ export class AppraisalComponent implements OnInit {
         selfRating: 0,
         managerRating: 4.8,
         status: 'Submitted',
+        cycleName: 'Q3 2024 Review',
+        appraisalDate: '2024-09-05',
+        periodStart: '2024-07-01',
+        periodEnd: '2024-09-30',
+        managerName: 'Mike Johnson',
+        reviewerRole: 'Admin',
+        reviewDate: '2024-09-30',
+        managerComments: 'Outstanding sales performance. Exceeded all targets and showed excellent leadership.',
         employee: {
           employeeProfileId: 3,
           department: 'Sales',
@@ -208,8 +238,11 @@ export class AppraisalComponent implements OnInit {
             userId: 3,
             username: 'mike.wilson',
             email: 'mike.wilson@company.com',
+            fullName: 'Mike Wilson',
             firstName: 'Mike',
             lastName: 'Wilson',
+            phoneNumber: '+1-555-0003',
+            password: 'password123',
             role: 'Employee'
           }
         },
@@ -233,8 +266,7 @@ export class AppraisalComponent implements OnInit {
   applyFilters() {
     this.filteredAppraisals = this.appraisals.filter(appraisal => {
       const matchesSearch = !this.searchTerm ||
-        appraisal.employee.user.firstName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        appraisal.employee.user.lastName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        appraisal.employee.user.fullName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         appraisal.employee.user.email.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         appraisal.employee.designation.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         appraisal.employee.department.toLowerCase().includes(this.searchTerm.toLowerCase());
@@ -259,7 +291,7 @@ export class AppraisalComponent implements OnInit {
     this.appraisalForm.patchValue({
       status: 'Submitted',
       managerRating: 1,
-      reviewerRole: 'Manager',
+      reviewerRole: 'Admin',
       appraisalDate: new Date().toISOString().split('T')[0],
       reviewDate: new Date().toISOString().split('T')[0]
     });
@@ -272,7 +304,7 @@ export class AppraisalComponent implements OnInit {
     this.selectedAppraisal = appraisal;
     this.appraisalForm.patchValue({
       // Employee Details
-      employeeName: `${appraisal.employee.user.firstName} ${appraisal.employee.user.lastName}`,
+      employeeName: appraisal.employee.user.fullName,
       employeeId: appraisal.employee.employeeProfileId.toString(),
       
       // Appraisal Cycle Details
@@ -283,14 +315,14 @@ export class AppraisalComponent implements OnInit {
       
       // Reviewer Details
       managerName: appraisal.employee.reportingManager,
-      reviewerRole: 'Manager',
+      reviewerRole: 'Admin',
       reviewDate: new Date().toISOString().split('T')[0],
       
       // Performance Ratings
       managerRating: appraisal.managerRating,
       status: appraisal.status,
       
-      // Manager Comments
+      // Admin Comments
       managerComments: ''
     });
     this.showEditModal = true;
@@ -335,16 +367,22 @@ export class AppraisalComponent implements OnInit {
       const formData = this.appraisalForm.value;
       console.log('Creating appraisal with data:', formData);
       
-      // Parse employee name
-      const nameParts = formData.employeeName.split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
+      // Use employee name as fullName
+      const fullName = formData.employeeName;
       
       const appraisal: Appraisal = {
         appraisalId: 0, // Will be set by backend
         selfRating: 0, // Default value since self rating is removed
         managerRating: formData.managerRating,
         status: formData.status,
+        cycleName: formData.cycleName,
+        appraisalDate: formData.appraisalDate,
+        periodStart: formData.periodStart,
+        periodEnd: formData.periodEnd,
+        managerName: formData.managerName,
+        reviewerRole: formData.reviewerRole,
+        reviewDate: formData.reviewDate,
+        managerComments: formData.managerComments,
         employee: {
           employeeProfileId: parseInt(formData.employeeId),
           department: '', // Default value since removed from form
@@ -358,10 +396,13 @@ export class AppraisalComponent implements OnInit {
           currentGoals: [],
           user: {
             userId: parseInt(formData.employeeId),
-            username: `${firstName.toLowerCase()}.${lastName.toLowerCase()}`,
-            email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@company.com`,
-            firstName: firstName,
-            lastName: lastName,
+            username: `${fullName.toLowerCase().replace(' ', '.')}`,
+            email: `${fullName.toLowerCase().replace(' ', '.')}@company.com`,
+            fullName: fullName,
+            firstName: fullName.split(' ')[0] || '',
+            lastName: fullName.split(' ').slice(1).join(' ') || '',
+            phoneNumber: '+1-555-0000',
+            password: 'password123',
             role: 'Employee'
           }
         },
@@ -450,10 +491,8 @@ export class AppraisalComponent implements OnInit {
     if (this.appraisalForm.valid && this.selectedAppraisal) {
       const formData = this.appraisalForm.value;
       
-      // Parse employee name for updated appraisal
-      const nameParts = formData.employeeName.split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
+      // Use employee name as fullName
+      const fullName = formData.employeeName;
       
       const updatedAppraisal: Appraisal = {
         ...this.selectedAppraisal,
@@ -467,10 +506,13 @@ export class AppraisalComponent implements OnInit {
           user: {
             ...this.selectedAppraisal.employee.user,
             userId: parseInt(formData.employeeId),
-            firstName: firstName,
-            lastName: lastName,
-            username: `${firstName.toLowerCase()}.${lastName.toLowerCase()}`,
-            email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@company.com`
+            username: `${fullName.toLowerCase().replace(' ', '.')}`,
+            email: `${fullName.toLowerCase().replace(' ', '.')}@company.com`,
+            fullName: fullName,
+            firstName: fullName.split(' ')[0] || '',
+            lastName: fullName.split(' ').slice(1).join(' ') || '',
+            phoneNumber: '+1-555-0000',
+            password: 'password123'
           }
         },
         reviewCycle: {

@@ -88,7 +88,7 @@
           <i class="fas fa-user"></i>
         </div>
         <div class="profile-info">
-          <h3>{{ profile.user.firstName }} {{ profile.user.lastName }}</h3>
+                <h3>{{ profile.user.fullName }}</h3>
           <p class="profile-email">{{ profile.user.email }}</p>
         </div>
         <div class="profile-actions">
@@ -196,7 +196,7 @@
               [class.error]="employeeProfileForm.get('userId')?.invalid && employeeProfileForm.get('userId')?.touched">
               <option value="">Select a user</option>
               <option *ngFor="let user of users" [value]="user.userId">
-                {{ user.firstName }} {{ user.lastName }} ({{ user.email }})
+                {{ user.fullName }} ({{ user.email }})
               </option>
             </select>
             <div class="error-message" *ngIf="employeeProfileForm.get('userId')?.invalid && employeeProfileForm.get('userId')?.touched">

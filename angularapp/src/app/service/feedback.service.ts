@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Feedback } from '../model/feedback.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FeedbackService {
-  private apiUrl = 'http://localhost:8080/api/feedbacks';
+  private apiUrl = `${environment.apiUrl}/feedbacks`;
 
   constructor(private http: HttpClient) { }
 
@@ -29,6 +30,11 @@ export class FeedbackService {
 
   createFeedback(employeeId: number, reviewerId: number, feedback: Feedback): Observable<Feedback> {
     return this.http.post<Feedback>(`${this.apiUrl}/employee/${employeeId}/manager/${reviewerId}`, feedback);
+  }
+
+  // Simplified method for self feedback
+  createSelfFeedback(feedback: Feedback): Observable<Feedback> {
+    return this.http.post<Feedback>(this.apiUrl, feedback);
   }
 
   updateFeedback(feedback: Feedback): Observable<Feedback> {

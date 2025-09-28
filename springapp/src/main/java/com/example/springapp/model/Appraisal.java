@@ -28,6 +28,7 @@ public class Appraisal {
     @Column(nullable = false)
     private String status; // Submitted, In Review, Completed
 
+    // Additional fields from frontend
     @Column(name = "cycle_name")
     private String cycleName;
 

@@ -138,9 +138,12 @@ export class GoalComponent implements OnInit {
           user: { 
             userId: 1,
             username: 'john.doe',
+            email: 'john.doe@example.com',
+            fullName: 'John Doe',
             firstName: 'John', 
             lastName: 'Doe', 
-            email: 'john.doe@example.com',
+            phoneNumber: '+1-555-0001',
+            password: 'password123',
             role: 'employee'
           },
           department: 'Engineering',
@@ -170,9 +173,12 @@ export class GoalComponent implements OnInit {
           user: { 
             userId: 2,
             username: 'jane.smith',
+            email: 'jane.smith@example.com',
+            fullName: 'Jane Smith',
             firstName: 'Jane', 
             lastName: 'Smith', 
-            email: 'jane.smith@example.com',
+            phoneNumber: '+1-555-0002',
+            password: 'password123',
             role: 'employee'
           },
           department: 'Engineering',
@@ -211,8 +217,11 @@ export class GoalComponent implements OnInit {
             userId: 1,
             username: 'john.doe',
             email: 'john.doe@company.com',
+            fullName: 'John Doe',
             firstName: 'John',
             lastName: 'Doe',
+            phoneNumber: '+1-555-0001',
+            password: 'password123',
             role: 'Employee'
           },
           department: 'Engineering',
@@ -227,14 +236,28 @@ export class GoalComponent implements OnInit {
         },
         appraisal: {
           appraisalId: 1,
+          selfRating: 4.0,
+          managerRating: 4.2,
+          status: 'Completed',
+          cycleName: 'Q2 2024 Review',
+          appraisalDate: '2024-06-15',
+          periodStart: '2024-04-01',
+          periodEnd: '2024-06-30',
+          managerName: 'Jane Smith',
+          reviewerRole: 'Manager',
+          reviewDate: '2024-06-25',
+          managerComments: 'Good progress on project goals. Shows improvement in technical skills.',
           employee: {
             employeeProfileId: 1,
             user: {
               userId: 1,
               username: 'john.doe',
               email: 'john.doe@company.com',
+              fullName: 'John Doe',
               firstName: 'John',
               lastName: 'Doe',
+              phoneNumber: '+1-555-0001',
+              password: 'password123',
               role: 'Employee'
             },
             department: 'Engineering',
@@ -253,10 +276,7 @@ export class GoalComponent implements OnInit {
             status: 'Active',
             deadline: new Date('2024-06-30'),
             appraisals: []
-          },
-          selfRating: 4.0,
-          managerRating: 4.2,
-          status: 'Completed'
+          }
         }
       },
       {
@@ -270,8 +290,11 @@ export class GoalComponent implements OnInit {
             userId: 2,
             username: 'jane.smith',
             email: 'jane.smith@company.com',
+            fullName: 'Jane Smith',
             firstName: 'Jane',
             lastName: 'Smith',
+            phoneNumber: '+1-555-0002',
+            password: 'password123',
             role: 'Employee'
           },
           department: 'Engineering',
@@ -318,8 +341,11 @@ export class GoalComponent implements OnInit {
           userId: 1,
           username: 'john.doe',
           email: 'john.doe@company.com',
+          fullName: 'John Doe',
           firstName: 'John',
           lastName: 'Doe',
+          phoneNumber: '+1-555-0001',
+          password: 'password123',
           role: 'Employee'
         },
         department: 'Engineering',
@@ -338,8 +364,11 @@ export class GoalComponent implements OnInit {
           userId: 2,
           username: 'jane.smith',
           email: 'jane.smith@company.com',
+          fullName: 'Jane Smith',
           firstName: 'Jane',
           lastName: 'Smith',
+          phoneNumber: '+1-555-0002',
+          password: 'password123',
           role: 'Employee'
         },
         department: 'Engineering',
@@ -383,8 +412,11 @@ export class GoalComponent implements OnInit {
             userId: 1,
             username: 'john.doe',
             email: 'john.doe@company.com',
+            fullName: 'John Doe',
             firstName: 'John',
             lastName: 'Doe',
+            phoneNumber: '+1-555-0001',
+            password: 'password123',
             role: 'Employee'
           },
           department: 'Engineering',
@@ -521,8 +553,11 @@ export class GoalComponent implements OnInit {
             userId: 0,
             username: '',
             email: '',
+            fullName: '',
             firstName: '',
             lastName: '',
+            phoneNumber: '',
+            password: '',
             role: ''
           }
         },

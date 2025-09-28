@@ -1,14 +1,15 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { Observable, BehaviorSubject, timeout, catchError, throwError } from 'rxjs';
+import { tap, map } from 'rxjs/operators';
 import { User } from '../model/user.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8080/api/users';
+  private apiUrl = `${environment.apiUrl}/users`;
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
@@ -18,10 +19,73 @@ export class AuthService {
   }
 
   login(email: string, password: string): Observable<User> {
-    return this.http.post<User>(`${this.apiUrl}/login`, { email, password })
+    console.log('AuthService: Attempting email login with:', { email, password });
+    console.log('AuthService: Making request to:', `${this.apiUrl}/login`);
+    
+    return this.http.post<any>(`${this.apiUrl}/login`, { email, password })
       .pipe(
-        tap(user => {
+        timeout(3000), // 3 second timeout
+        catchError(error => {
+          console.error('AuthService: Email login error:', error);
+          return throwError(() => error);
+        }),
+        map(response => {
+          console.log('AuthService: Email login response received:', response);
+          // Extract user data from the response
+          const user: User = {
+            userId: response.userId,
+            username: response.username,
+            email: response.email,
+            fullName: response.fullName,
+            firstName: response.firstName,
+            lastName: response.lastName,
+            phoneNumber: response.phoneNumber,
+            password: response.password,
+            role: response.role,
+            employeeProfiles: response.employeeProfiles
+          };
+          console.log('AuthService: Email login successful, processed user:', user);
           this.setCurrentUser(user);
+          return user;
+        })
+      );
+  }
+
+  loginWithPhone(phoneNumber: string, password: string): Observable<User> {
+    console.log('=== AUTH SERVICE DEBUG START ===');
+    console.log('AuthService: loginWithPhone() called');
+    console.log('AuthService: Attempting phone login with:', { phoneNumber, password });
+    console.log('AuthService: Making request to:', `${this.apiUrl}/login`);
+    
+    const requestBody = { phoneNumber, password };
+    console.log('AuthService: Request body:', requestBody);
+    
+    return this.http.post<any>(`${this.apiUrl}/login`, requestBody)
+      .pipe(
+        timeout(3000), // 3 second timeout
+        catchError(error => {
+          console.error('AuthService: Phone login error:', error);
+          console.error('AuthService: Error details:', JSON.stringify(error, null, 2));
+          return throwError(() => error);
+        }),
+        map(response => {
+          console.log('AuthService: Phone login response received:', response);
+          // Extract user data from the response
+          const user: User = {
+            userId: response.userId,
+            username: response.username,
+            email: response.email,
+            fullName: response.fullName,
+            firstName: response.firstName,
+            lastName: response.lastName,
+            phoneNumber: response.phoneNumber,
+            password: response.password,
+            role: response.role,
+            employeeProfiles: response.employeeProfiles
+          };
+          console.log('AuthService: Phone login successful, processed user:', user);
+          this.setCurrentUser(user);
+          return user;
         })
       );
   }
@@ -36,8 +100,11 @@ export class AuthService {
           userId: email === 'admin@company.com' ? 1 : 2,
           username: email.split('@')[0],
           email: email,
+          fullName: email === 'admin@company.com' ? 'Admin User' : 'John Doe',
           firstName: email === 'admin@company.com' ? 'Admin' : 'John',
           lastName: email === 'admin@company.com' ? 'User' : 'Doe',
+          phoneNumber: '+1-555-0000',
+          password: 'password123',
           role: email === 'admin@company.com' ? 'Admin' : 'Employee'
         };
         
@@ -49,12 +116,15 @@ export class AuthService {
   }
 
   setCurrentUser(user: User): void {
+    console.log('AuthService: Setting current user:', user);
     this.currentUserSubject.next(user);
     localStorage.setItem('currentUser', JSON.stringify(user));
   }
 
   getCurrentUser(): User | null {
-    return this.currentUserSubject.value;
+    const user = this.currentUserSubject.value;
+    console.log('AuthService: Getting current user:', user);
+    return user;
   }
 
   isLoggedIn(): boolean {
@@ -82,11 +152,18 @@ export class AuthService {
     if (storedUser) {
       try {
         const user = JSON.parse(storedUser);
+        console.log('AuthService: Loading stored user:', user);
         this.currentUserSubject.next(user);
       } catch (error) {
         console.error('Error parsing stored user:', error);
         localStorage.removeItem('currentUser');
       }
     }
+  }
+
+  clearStoredUser(): void {
+    console.log('AuthService: Clearing stored user data');
+    this.currentUserSubject.next(null);
+    localStorage.removeItem('currentUser');
   }
 }

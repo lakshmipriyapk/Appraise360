@@ -86,7 +86,7 @@
               class="filter-select">
               <option value="">All Employees</option>
               <option *ngFor="let emp of employeeProfiles" [value]="emp.employeeProfileId">
-                {{ emp.user.firstName }} {{ emp.user.lastName }}
+                {{ emp.user.fullName }}
               </option>
             </select>
 
@@ -109,7 +109,7 @@
                     <i class="fas fa-user"></i>
                   </div>
                   <div class="info">
-                    <h4>{{ goal.employee.user.firstName }} {{ goal.employee.user.lastName }}</h4>
+                    <h4>{{ goal.employee.user.fullName }}</h4>
                     <p>{{ goal.employee.designation }} • {{ goal.employee.department }}</p>
                   </div>
                 </div>
@@ -144,7 +144,7 @@
               <div class="goal-details" *ngIf="goal.appraisal">
                 <div class="appraisal-info">
                   <span class="label">Linked to Appraisal:</span>
-                  <span class="appraisal-name">{{ goal.appraisal.employee.user.firstName }} {{ goal.appraisal.employee.user.lastName }} - {{ goal.appraisal.reviewCycle.cycleName }}</span>
+                  <span class="appraisal-name">{{ goal.appraisal.employee.user.fullName }} - {{ goal.appraisal.reviewCycle.cycleName }}</span>
                 </div>
               </div>
             </div>
@@ -320,7 +320,7 @@
     <div class="modal-body">
       <div class="delete-confirmation">
         <i class="fas fa-exclamation-triangle"></i>
-        <p>Are you sure you want to delete the goal "<strong>{{ selectedGoal?.title }}</strong>" for <strong>{{ selectedGoal?.employee?.user?.firstName }} {{ selectedGoal?.employee?.user?.lastName }}</strong>?</p>
+        <p>Are you sure you want to delete the goal "<strong>{{ selectedGoal?.title }}</strong>" for <strong>{{ selectedGoal?.employee?.user?.fullName }}</strong>?</p>
         <p class="warning-text">This action cannot be undone.</p>
       </div>
     </div>

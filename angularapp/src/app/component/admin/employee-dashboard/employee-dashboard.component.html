@@ -28,8 +28,8 @@
             <i class="fas fa-user"></i>
           </div>
           <div class="employee-details">
-            <h3>{{ currentEmployee.user.firstName }} {{ currentEmployee.user.lastName }}</h3>
-            <p>{{ currentEmployee.designation }}</p>
+            <h3>{{ currentEmployee.user.fullName || currentEmployee.user.username || 'No Name Found' }}</h3>
+            <p>{{ currentEmployee.designation || 'Not provided' }}</p>
           </div>
         </div>
       </div>
@@ -126,7 +126,7 @@
                 <div class="activity-content">
                   <h4>{{ feedback.feedbackType }} Feedback</h4>
                   <p>{{ feedback.comments }}</p>
-                  <span class="activity-time">{{ feedback.reviewer.firstName }} {{ feedback.reviewer.lastName }}</span>
+                  <span class="activity-time">{{ feedback.reviewer.fullName }}</span>
                 </div>
               </div>
             </div>
@@ -282,7 +282,7 @@
               </div>
               <p class="feedback-comment">{{ feedback.comments }}</p>
               <div class="feedback-footer">
-                <span class="reviewer">{{ feedback.reviewer.firstName }} {{ feedback.reviewer.lastName }}</span>
+                <span class="reviewer">{{ feedback.reviewer.fullName }}</span>
                 <span class="feedback-date">2 days ago</span>
               </div>
             </div>
@@ -737,8 +737,8 @@
                   <i class="fas fa-user"></i>
                 </div>
                 <div class="profile-info">
-                  <h3>{{ currentEmployee.user.firstName }} {{ currentEmployee.user.lastName }}</h3>
-                  <p>{{ currentEmployee.designation }}</p>
+                  <h3>{{ currentEmployee.user.fullName || currentEmployee.user.username || 'No Name Found' }}</h3>
+                  <p>{{ currentEmployee.designation || 'Not provided' }}</p>
                   <span class="employee-id">ID: {{ currentEmployee.employeeProfileId }}</span>
                 </div>
               </div>
@@ -750,23 +750,23 @@
                 </div>
                 <div class="detail-row">
                   <label>Department:</label>
-                  <span>{{ currentEmployee.department }}</span>
+                  <span>{{ currentEmployee.department || 'Not provided' }}</span>
                 </div>
                 <div class="detail-row">
                   <label>Date of Joining:</label>
-                  <span>{{ currentEmployee.dateOfJoining | date:'mediumDate' }}</span>
+                  <span>{{ currentEmployee.dateOfJoining ? (currentEmployee.dateOfJoining | date:'mediumDate') : 'Not provided' }}</span>
                 </div>
                 <div class="detail-row">
                   <label>Reporting Manager:</label>
-                  <span>{{ currentEmployee.reportingManager }}</span>
+                  <span>{{ currentEmployee.reportingManager || 'Not provided' }}</span>
                 </div>
                 <div class="detail-row">
                   <label>Current Project:</label>
-                  <span>{{ currentEmployee.currentProject }}</span>
+                  <span>{{ currentEmployee.currentProject || 'Not provided' }}</span>
                 </div>
                 <div class="detail-row">
                   <label>Current Team:</label>
-                  <span>{{ currentEmployee.currentTeam }}</span>
+                  <span>{{ currentEmployee.currentTeam || 'Not provided' }}</span>
                 </div>
               </div>
 
@@ -776,6 +776,7 @@
                   <span class="skill-tag" *ngFor="let skill of currentEmployee.skills">
                     {{ skill }}
                   </span>
+                  <p *ngIf="currentEmployee.skills.length === 0" class="no-data">No skills added yet</p>
                 </div>
               </div>
 
@@ -785,6 +786,7 @@
                   <span class="goal-tag" *ngFor="let goal of currentEmployee.currentGoals">
                     {{ goal }}
                   </span>
+                  <p *ngIf="currentEmployee.currentGoals.length === 0" class="no-data">No goals set yet</p>
                 </div>
               </div>
             </div>

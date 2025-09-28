@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import com.example.springapp.model.EmployeeProfile;
 import com.example.springapp.model.Feedback;
@@ -52,9 +53,9 @@ public class FeedbackController {
         return ResponseEntity.ok(feedbackService.getFeedbacksByEmployeeId(employeeId));
     }
 
-    @GetMapping("/manager/{managerId}")
-    public ResponseEntity<List<Feedback>> getFeedbacksByManager(@PathVariable Long managerId) {
-        return ResponseEntity.ok(feedbackService.getFeedbacksByManagerId(managerId));
+    @GetMapping("/reviewer/{reviewerId}")
+    public ResponseEntity<List<Feedback>> getFeedbacksByReviewer(@PathVariable Long reviewerId) {
+        return ResponseEntity.ok(feedbackService.getFeedbacksByReviewerId(reviewerId));
     }
 
     @PostMapping
@@ -69,27 +70,27 @@ public class FeedbackController {
                 .orElseThrow(() -> new RuntimeException("Employee not found with ID " + feedback.getEmployee().getEmployeeProfileId()));
         feedback.setEmployee(employee);
 
-        // Handle manager if provided
-        if (feedback.getManager() != null && feedback.getManager().getUserId() != null) {
-            User manager = userService.getUserById(feedback.getManager().getUserId())
-                    .orElseThrow(() -> new RuntimeException("Manager not found with ID " + feedback.getManager().getUserId()));
-            feedback.setManager(manager);
+        // Handle reviewer if provided
+        if (feedback.getReviewer() != null && feedback.getReviewer().getUserId() != null) {
+            User reviewer = userService.getUserById(feedback.getReviewer().getUserId())
+                    .orElseThrow(() -> new RuntimeException("Reviewer not found with ID " + feedback.getReviewer().getUserId()));
+            feedback.setReviewer(reviewer);
         }
 
         return ResponseEntity.ok(feedbackService.createFeedback(feedback));
     }
 
-    @PostMapping("/employee/{employeeId}/manager/{managerId}")
+    @PostMapping("/employee/{employeeId}/reviewer/{reviewerId}")
     public ResponseEntity<Feedback> createFeedbackWithIds(@PathVariable Long employeeId,
-                                                          @PathVariable Long managerId,
+                                                          @PathVariable Long reviewerId,
                                                           @RequestBody Feedback feedback) {
         EmployeeProfile employee = employeeService.getEmployeeProfileById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found with ID " + employeeId));
-        User manager = userService.getUserById(managerId)
-                .orElseThrow(() -> new RuntimeException("Manager not found with ID " + managerId));
+        User reviewer = userService.getUserById(reviewerId)
+                .orElseThrow(() -> new RuntimeException("Reviewer not found with ID " + reviewerId));
 
         feedback.setEmployee(employee);
-        feedback.setManager(manager);
+        feedback.setReviewer(reviewer);
 
         return ResponseEntity.ok(feedbackService.createFeedback(feedback));
     }

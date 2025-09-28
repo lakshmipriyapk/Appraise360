@@ -14,6 +14,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "employee_profile")
@@ -58,12 +59,15 @@ public class EmployeeProfile {
     private User user;
 
     @OneToMany(mappedBy = "employee", cascade = jakarta.persistence.CascadeType.ALL)
+    @JsonIgnore
     private List<Goal> goals;
 
     @OneToMany(mappedBy = "employee", cascade = jakarta.persistence.CascadeType.ALL)
+    @JsonIgnore
     private List<Appraisal> appraisals;
 
     @OneToMany(mappedBy = "employee", cascade = jakarta.persistence.CascadeType.ALL)
+    @JsonIgnore
     private List<Feedback> feedbacks;
 
     // Getters and setters

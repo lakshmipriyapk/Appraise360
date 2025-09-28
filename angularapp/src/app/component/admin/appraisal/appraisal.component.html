@@ -91,7 +91,7 @@
             <div *ngFor="let appraisal of filteredAppraisals" class="appraisal-card">
               <div class="appraisal-header">
                 <div class="appraisal-title">
-                  <h3>{{ appraisal.employee.user.firstName }} {{ appraisal.employee.user.lastName }}</h3>
+                  <h3>{{ appraisal.employee.user.fullName }}</h3>
                   <div class="appraisal-meta">
                     <span class="employee-info">{{ appraisal.employee.designation }} • {{ appraisal.employee.department }}</span>
                     <span class="appraisal-status" [ngClass]="getStatusClass(appraisal.status)">
@@ -315,7 +315,7 @@
     <div class="modal-body">
       <div class="delete-confirmation">
         <i class="fas fa-exclamation-triangle"></i>
-        <p>Are you sure you want to delete this appraisal for <strong>{{ selectedAppraisal?.employee?.user?.firstName }} {{ selectedAppraisal?.employee?.user?.lastName }}</strong>?</p>
+        <p>Are you sure you want to delete this appraisal for <strong>{{ selectedAppraisal?.employee?.user?.fullName }}</strong>?</p>
         <p class="warning-text">This action cannot be undone.</p>
       </div>
     </div>

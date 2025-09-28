@@ -13,7 +13,7 @@ export class SharedEmployeeService {
   public employeeProfiles$ = this.employeeProfilesSubject.asObservable();
 
   constructor() {
-    // Initialize with mock data
+    // Initialize with mock data (but don't set current employee automatically)
     this.initializeMockData();
   }
 
@@ -31,10 +31,13 @@ export class SharedEmployeeService {
       currentGoals: ['Complete Angular Training', 'Deliver Q3 Project Milestone', 'Improve Code Review Skills'],
       user: {
         userId: 1,
-        username: 'john.doe',
-        email: 'john.doe@company.com',
-        firstName: 'John',
-        lastName: 'Doe',
+        username: 'demo.user',
+        email: 'demo.user@company.com',
+        fullName: 'Demo User',
+        firstName: 'Demo',
+        lastName: 'User',
+        phoneNumber: '+1-555-0001',
+        password: 'password123',
         role: 'Employee'
       }
     };
@@ -47,8 +50,11 @@ export class SharedEmployeeService {
           userId: 2,
           username: 'jane.smith',
           email: 'jane.smith@company.com',
+          fullName: 'Jane Smith',
           firstName: 'Jane',
           lastName: 'Smith',
+          phoneNumber: '+1-555-0002',
+          password: 'password123',
           role: 'Employee'
         },
         department: 'Engineering',
@@ -67,8 +73,11 @@ export class SharedEmployeeService {
           userId: 3,
           username: 'mike.johnson',
           email: 'mike.johnson@company.com',
+          fullName: 'Mike Johnson',
           firstName: 'Mike',
           lastName: 'Johnson',
+          phoneNumber: '+1-555-0003',
+          password: 'password123',
           role: 'Manager'
         },
         department: 'Engineering',
@@ -83,7 +92,8 @@ export class SharedEmployeeService {
       }
     ];
 
-    this.currentEmployeeSubject.next(mockEmployee);
+    // Don't set current employee automatically - let the dashboard component set it based on logged-in user
+    // this.currentEmployeeSubject.next(mockEmployee);
     this.employeeProfilesSubject.next(mockProfiles);
   }
 
@@ -138,5 +148,9 @@ export class SharedEmployeeService {
     if (currentEmployee && currentEmployee.employeeProfileId === employeeId) {
       this.currentEmployeeSubject.next(null);
     }
+  }
+
+  clearCurrentEmployee() {
+    this.currentEmployeeSubject.next(null);
   }
 }

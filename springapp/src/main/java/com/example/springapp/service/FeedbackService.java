@@ -29,8 +29,8 @@ public class FeedbackService {
         return repo.findByEmployee_EmployeeProfileId(employeeProfileId);
     }
 
-    public List<Feedback> getFeedbacksByManagerId(Long managerId) {
-        return repo.findByManager_UserId(managerId);
+    public List<Feedback> getFeedbacksByReviewerId(Long reviewerId) {
+        return repo.findByReviewer_UserId(reviewerId);
     }
 
     public Feedback createFeedback(Feedback feedback) {
@@ -40,10 +40,7 @@ public class FeedbackService {
         
         // Set default values for new fields if not provided
         if (feedback.getFeedbackType() == null || feedback.getFeedbackType().isEmpty()) {
-            feedback.setFeedbackType("Self");
-        }
-        if (feedback.getIsAnonymous() == null) {
-            feedback.setIsAnonymous(false);
+            feedback.setFeedbackType("Self-Feedback");
         }
         if (feedback.getRating() == null) {
             feedback.setRating(0);
