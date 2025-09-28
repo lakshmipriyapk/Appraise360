@@ -1087,6 +1087,12 @@ export class EmployeeDashboardComponent implements OnInit {
   }
 
   submitEditProfile() {
+    console.log('=== PROFILE FORM SUBMISSION ===');
+    console.log('Form valid:', this.editProfileForm.valid);
+    console.log('Form errors:', this.editProfileForm.errors);
+    console.log('Current employee:', this.currentEmployee);
+    console.log('Form value:', this.editProfileForm.value);
+    
     if (this.editProfileForm.valid && this.currentEmployee) {
       const formData = this.editProfileForm.value;
       
@@ -1120,12 +1126,46 @@ export class EmployeeDashboardComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error saving profile to database:', error);
+          console.log('Error details:', error);
           
           // If update fails, try to create new profile
-          this.createEmployeeProfileInDatabase();
+          console.log('Update failed, trying to create new profile...');
+          this.createEmployeeProfileInDatabase().then(() => {
+            console.log('Profile created successfully after update failed');
+            alert('Profile created and saved to database successfully!');
+          }).catch((createError) => {
+            console.error('Error creating profile:', createError);
+            
+            // Check if it's a connection error
+            if (error.status === 0 || error.status === 404) {
+              console.log('Backend not accessible, saving locally only');
+              alert('Backend not accessible. Profile updated locally only.');
+            } else {
+              console.log('Database error, but saving locally');
+              alert('Database save failed, but profile updated locally.');
+            }
+            
+            // Even if database save fails, update local data
+            if (this.currentEmployee) {
+              this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee);
+            }
+            this.closeEditProfileModal();
+          });
         }
       });
     } else {
+      console.log('Form is invalid or no current employee');
+      console.log('Form valid:', this.editProfileForm.valid);
+      console.log('Current employee exists:', !!this.currentEmployee);
+      
+      // Log individual field errors
+      Object.keys(this.editProfileForm.controls).forEach(key => {
+        const control = this.editProfileForm.get(key);
+        if (control && control.errors) {
+          console.log(`Field ${key} errors:`, control.errors);
+        }
+      });
+      
       // Mark all fields as touched to show validation errors
       Object.keys(this.editProfileForm.controls).forEach(key => {
         this.editProfileForm.get(key)?.markAsTouched();
