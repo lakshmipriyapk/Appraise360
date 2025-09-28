@@ -29,7 +29,7 @@ export class FeedbackService {
   }
 
   createFeedback(employeeId: number, reviewerId: number, feedback: Feedback): Observable<Feedback> {
-    return this.http.post<Feedback>(`${this.apiUrl}/employee/${employeeId}/manager/${reviewerId}`, feedback);
+    return this.http.post<Feedback>(`${this.apiUrl}/employee/${employeeId}/reviewer/${reviewerId}`, feedback);
   }
 
   // Simplified method for self feedback

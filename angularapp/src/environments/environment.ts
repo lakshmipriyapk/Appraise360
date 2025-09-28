@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: '/api' // <- relative path so proxy forwards
+  apiUrl: 'http://localhost:8080/api' // <- direct connection to backend
 };

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { User } from '../model/user.model';
 import { environment } from '../../environments/environment';
@@ -13,7 +13,15 @@ export class UserService {
   constructor(private http: HttpClient) { }
 
   getAllUsers(): Observable<User[]> {
-    return this.http.get<User[]>(this.apiUrl);
+    const headers = new HttpHeaders({
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    });
+    
+    return this.http.get<User[]>(this.apiUrl, { 
+      headers: headers,
+      responseType: 'json'
+    });
   }
 
   getUserById(id: number): Observable<User> {
