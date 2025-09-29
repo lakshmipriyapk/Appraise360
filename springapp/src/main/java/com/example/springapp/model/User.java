@@ -13,7 +13,7 @@ import jakarta.persistence.Table;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-@Table(name = "user") // table name in your database
+@Table(name = "users") // table name in your database
 public class User {
 
     @Id

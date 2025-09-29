@@ -1,6 +1,5 @@
 package com.example.springapp.model;
 
-import java.time.LocalDate;
 import java.util.List;
 
 import jakarta.persistence.Column;
@@ -32,7 +31,7 @@ public class EmployeeProfile {
     private String designation;
 
     @Column(name = "date_of_joining")
-    private LocalDate dateOfJoining;
+    private String dateOfJoining;
 
     @Column(name = "reporting_manager")
     private String reportingManager;
@@ -80,8 +79,8 @@ public class EmployeeProfile {
     public String getDesignation() { return designation; }
     public void setDesignation(String designation) { this.designation = designation; }
 
-    public LocalDate getDateOfJoining() { return dateOfJoining; }
-    public void setDateOfJoining(LocalDate dateOfJoining) { this.dateOfJoining = dateOfJoining; }
+    public String getDateOfJoining() { return dateOfJoining; }
+    public void setDateOfJoining(String dateOfJoining) { this.dateOfJoining = dateOfJoining; }
 
     public String getReportingManager() { return reportingManager; }
     public void setReportingManager(String reportingManager) { this.reportingManager = reportingManager; }
