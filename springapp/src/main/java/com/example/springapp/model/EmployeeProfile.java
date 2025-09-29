@@ -13,6 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
 @Table(name = "employee_profiles")
@@ -88,9 +89,11 @@ public class EmployeeProfile {
     public String getCurrentTeam() { return currentTeam; }
     public void setCurrentTeam(String currentTeam) { this.currentTeam = currentTeam; }
 
+    @Schema(hidden = true)
     public List<String> getSkills() { 
         return skills != null && !skills.isEmpty() ? List.of(skills.split(",")) : List.of(); 
     }
+    @Schema(hidden = true)
     public void setSkills(List<String> skills) { 
         this.skills = skills != null && !skills.isEmpty() ? String.join(",", skills) : null; 
     }
@@ -102,9 +105,11 @@ public class EmployeeProfile {
     public Double getLastAppraisalRating() { return lastAppraisalRating; }
     public void setLastAppraisalRating(Double lastAppraisalRating) { this.lastAppraisalRating = lastAppraisalRating; }
 
+    @Schema(hidden = true)
     public List<String> getCurrentGoals() { 
         return currentGoals != null && !currentGoals.isEmpty() ? List.of(currentGoals.split(",")) : List.of(); 
     }
+    @Schema(hidden = true)
     public void setCurrentGoals(List<String> currentGoals) { 
         this.currentGoals = currentGoals != null && !currentGoals.isEmpty() ? String.join(",", currentGoals) : null; 
     }

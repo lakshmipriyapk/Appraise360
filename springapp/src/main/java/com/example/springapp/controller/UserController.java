@@ -46,8 +46,12 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<User> createUser(@RequestBody User user) {
-        User created = service.createUser(user);
-        return ResponseEntity.ok(created);
+        try {
+            User created = service.createUser(user);
+            return ResponseEntity.ok(created);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(409).build();
+        }
     }
 
     @PostMapping("/login")

@@ -26,11 +26,22 @@ public class UserService {
     }
 
     public User createUser(User user) {
+        // Validate uniqueness to avoid DB constraint violations
+        if (user.getEmail() != null && repo.findByEmail(user.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+        if (user.getUsername() != null && repo.findByUsername(user.getUsername()).isPresent()) {
+            throw new IllegalArgumentException("Username already exists");
+        }
+        if (user.getPhoneNumber() != null && repo.findByPhoneNumber(user.getPhoneNumber()).isPresent()) {
+            throw new IllegalArgumentException("Phone number already exists");
+        }
+
         // Set default values for new fields if not provided
         if (user.getRole() == null || user.getRole().isEmpty()) {
             user.setRole("Employee");
         }
-        
+
         // ensure bidirectional link
         if (user.getEmployeeProfiles() != null) {
             user.getEmployeeProfiles().forEach(profile -> profile.setUser(user));
