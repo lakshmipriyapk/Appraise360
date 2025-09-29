@@ -11,4 +11,5 @@ export interface Feedback {
   improvements?: string; // For self feedback
   employee: EmployeeProfile;
   reviewer: User; // Can be manager, peer, or self
+  createdDate?: Date; // When the feedback was created
 }

@@ -16,5 +16,6 @@ export interface Goal {
   appraisal?: Appraisal; // Optional: Many goals can belong to one appraisal
   createdBy?: string; // 'manager' or 'self' - indicates who created the goal
   category?: string; // Goal category like 'Professional Development', 'Skill Enhancement', etc.
+  createdDate?: Date; // When the goal was created
 }
   
