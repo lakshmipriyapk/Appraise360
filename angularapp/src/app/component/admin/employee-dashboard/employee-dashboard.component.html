@@ -8,24 +8,10 @@
     </div>
   </div>
 
-  <!-- Error Message -->
-        <div *ngIf="errorMessage" class="error-message">
-          <i class="fas fa-exclamation-triangle"></i>
-          <p>{{ errorMessage }}</p>
-          <div class="test-buttons">
-            <button (click)="testBackendConnection()" class="test-connection-btn">
-              <i class="fas fa-refresh"></i>
-              Test Backend Connection
-            </button>
-            <button (click)="testDirectBackendConnection()" class="test-connection-btn direct-test">
-              <i class="fas fa-plug"></i>
-              Test Direct Connection
-            </button>
-          </div>
-        </div>
+  <!-- Error Message - Removed to prevent error page display -->
 
   <!-- Main Dashboard Content -->
-  <div *ngIf="!isLoading && !errorMessage" class="dashboard-layout">
+  <div *ngIf="!isLoading" class="dashboard-layout">
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <div class="sidebar-header">

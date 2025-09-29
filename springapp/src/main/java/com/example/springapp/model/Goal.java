@@ -1,6 +1,7 @@
 package com.example.springapp.model;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,9 +11,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.PrePersist;
 
 @Entity
-@Table(name = "goal")
+@Table(name = "goals")
 public class Goal {
 
     @Id
@@ -48,6 +50,9 @@ public class Goal {
     private String createdBy; // 'manager' or 'self'
 
     private String category; // Technical, Behavioral, Leadership, Learning & Development
+
+    @jakarta.persistence.Column(name = "created_date")
+    private LocalDateTime createdDate;
 
     // Many goals belong to one employee
     @ManyToOne
@@ -96,9 +101,19 @@ public class Goal {
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
 
+    public LocalDateTime getCreatedDate() { return createdDate; }
+    public void setCreatedDate(LocalDateTime createdDate) { this.createdDate = createdDate; }
+
     public EmployeeProfile getEmployee() { return employee; }
     public void setEmployee(EmployeeProfile employee) { this.employee = employee; }
 
     public Appraisal getAppraisal() { return appraisal; }
     public void setAppraisal(Appraisal appraisal) { this.appraisal = appraisal; }
+
+    @PrePersist
+    private void onCreate() {
+        if (this.createdDate == null) {
+            this.createdDate = LocalDateTime.now();
+        }
+    }
 }

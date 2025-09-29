@@ -24,7 +24,7 @@ export class AuthService {
     
     return this.http.post<any>(`${this.apiUrl}/login`, { email, password })
       .pipe(
-        timeout(3000), // 3 second timeout
+        timeout(1500), // 1.5 second timeout for faster response
         catchError(error => {
           console.error('AuthService: Email login error:', error);
           return throwError(() => error);
@@ -62,7 +62,7 @@ export class AuthService {
     
     return this.http.post<any>(`${this.apiUrl}/login`, requestBody)
       .pipe(
-        timeout(3000), // 3 second timeout
+        timeout(1500), // 1.5 second timeout for faster response
         catchError(error => {
           console.error('AuthService: Phone login error:', error);
           console.error('AuthService: Error details:', JSON.stringify(error, null, 2));

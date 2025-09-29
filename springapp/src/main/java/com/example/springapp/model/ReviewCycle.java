@@ -13,7 +13,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "review_cycle")
+@Table(name = "review_cycles")
 public class ReviewCycle {
 
     @Id

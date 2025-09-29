@@ -8,6 +8,7 @@ import { UserService } from '../../../service/user.service';
 import { Feedback } from '../../../model/feedback.model';
 import { EmployeeProfile } from '../../../model/employee-profile.model';
 import { User } from '../../../model/user.model';
+import { AuthService } from '../../../service/auth.service';
 
 @Component({
   selector: 'app-feedback',
@@ -62,7 +63,8 @@ export class FeedbackComponent implements OnInit {
     private employeeProfileService: EmployeeProfileService,
     private userService: UserService,
     private fb: FormBuilder,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private authService: AuthService
   ) {
     this.feedbackForm = this.fb.group({
       employeeId: ['', Validators.required],
@@ -596,7 +598,7 @@ export class FeedbackComponent implements OnInit {
   }
 
   logout() {
-    // Add logout logic here
-    console.log('Logout clicked');
+    this.authService.logout();
+    this.router.navigate(['/website/landing']);
   }
 }

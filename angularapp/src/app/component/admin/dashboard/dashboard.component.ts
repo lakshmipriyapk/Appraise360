@@ -294,7 +294,8 @@ export class DashboardComponent implements OnInit {
   }
 
   logout() {
-    this.router.navigate(['/login']);
+    this.authService.logout();
+    this.router.navigate(['/website/landing']);
   }
 
   // Manager-specific methods

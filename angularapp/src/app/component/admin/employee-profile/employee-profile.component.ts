@@ -7,6 +7,7 @@ import { SharedEmployeeService } from '../../../service/shared-employee.service'
 import { UserService } from '../../../service/user.service';
 import { EmployeeProfile } from '../../../model/employee-profile.model';
 import { User } from '../../../model/user.model';
+import { AuthService } from '../../../service/auth.service';
 
 @Component({
   selector: 'app-employee-profile',
@@ -57,7 +58,8 @@ export class EmployeeProfileComponent implements OnInit {
     private sharedEmployeeService: SharedEmployeeService,
     private userService: UserService,
     private fb: FormBuilder,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private authService: AuthService
   ) {
     this.employeeProfileForm = this.fb.group({
       userId: ['', Validators.required],
@@ -520,8 +522,8 @@ export class EmployeeProfileComponent implements OnInit {
   }
 
   logout() {
-    // Add logout logic here
-    console.log('Logout clicked');
+    this.authService.logout();
+    this.router.navigate(['/website/landing']);
   }
 
   // Skills management

@@ -1,5 +1,7 @@
 package com.example.springapp.model;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -8,9 +10,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.PrePersist;
 
 @Entity
-@Table(name = "feedback")
+@Table(name = "feedbacks")
 public class Feedback {
 
     @Id
@@ -43,6 +46,9 @@ public class Feedback {
     @JoinColumn(name = "reviewer_id")
     private User reviewer; // Can be manager, peer, or self
 
+    @Column(name = "created_date")
+    private LocalDateTime createdDate;
+
     // Getters and setters
     public Long getFeedbackId() { return feedbackId; }
     public void setFeedbackId(Long feedbackId) { this.feedbackId = feedbackId; }
@@ -70,4 +76,14 @@ public class Feedback {
 
     public User getReviewer() { return reviewer; }
     public void setReviewer(User reviewer) { this.reviewer = reviewer; }
+
+    public LocalDateTime getCreatedDate() { return createdDate; }
+    public void setCreatedDate(LocalDateTime createdDate) { this.createdDate = createdDate; }
+
+    @PrePersist
+    private void onCreate() {
+        if (this.createdDate == null) {
+            this.createdDate = LocalDateTime.now();
+        }
+    }
 }

@@ -3,7 +3,6 @@ package com.example.springapp.model;
 import java.util.List;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -16,7 +15,7 @@ import jakarta.persistence.Table;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-@Table(name = "employee_profile")
+@Table(name = "employee_profiles")
 public class EmployeeProfile {
 
     @Id
@@ -42,16 +41,14 @@ public class EmployeeProfile {
     @Column(name = "current_team")
     private String currentTeam;
 
-    @ElementCollection
-    @Column(name = "skills")
-    private List<String> skills;
+    @Column(name = "skills", columnDefinition = "TEXT")
+    private String skills; // Store as comma-separated string
 
     @Column(name = "last_appraisal_rating")
     private Double lastAppraisalRating;
 
-    @ElementCollection
-    @Column(name = "current_goals")
-    private List<String> currentGoals;
+    @Column(name = "current_goals", columnDefinition = "TEXT")
+    private String currentGoals; // Store as comma-separated string
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id") // references User.user_id
@@ -91,14 +88,30 @@ public class EmployeeProfile {
     public String getCurrentTeam() { return currentTeam; }
     public void setCurrentTeam(String currentTeam) { this.currentTeam = currentTeam; }
 
-    public List<String> getSkills() { return skills; }
-    public void setSkills(List<String> skills) { this.skills = skills; }
+    public List<String> getSkills() { 
+        return skills != null && !skills.isEmpty() ? List.of(skills.split(",")) : List.of(); 
+    }
+    public void setSkills(List<String> skills) { 
+        this.skills = skills != null && !skills.isEmpty() ? String.join(",", skills) : null; 
+    }
+    
+    // Direct string access for JSON serialization
+    public String getSkillsString() { return skills; }
+    public void setSkillsString(String skills) { this.skills = skills; }
 
     public Double getLastAppraisalRating() { return lastAppraisalRating; }
     public void setLastAppraisalRating(Double lastAppraisalRating) { this.lastAppraisalRating = lastAppraisalRating; }
 
-    public List<String> getCurrentGoals() { return currentGoals; }
-    public void setCurrentGoals(List<String> currentGoals) { this.currentGoals = currentGoals; }
+    public List<String> getCurrentGoals() { 
+        return currentGoals != null && !currentGoals.isEmpty() ? List.of(currentGoals.split(",")) : List.of(); 
+    }
+    public void setCurrentGoals(List<String> currentGoals) { 
+        this.currentGoals = currentGoals != null && !currentGoals.isEmpty() ? String.join(",", currentGoals) : null; 
+    }
+    
+    // Direct string access for JSON serialization
+    public String getCurrentGoalsString() { return currentGoals; }
+    public void setCurrentGoalsString(String currentGoals) { this.currentGoals = currentGoals; }
 
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }

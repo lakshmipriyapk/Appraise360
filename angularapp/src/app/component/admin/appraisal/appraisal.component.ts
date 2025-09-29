@@ -5,6 +5,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { AppraisalService } from '../../../service/appraisal.service';
 import { SharedAppraisalService } from '../../../service/shared-appraisal.service';
 import { Appraisal } from '../../../model/appraisal.model';
+import { AuthService } from '../../../service/auth.service';
 
 @Component({
   selector: 'app-appraisal',
@@ -48,7 +49,8 @@ export class AppraisalComponent implements OnInit {
     private appraisalService: AppraisalService,
     private sharedAppraisalService: SharedAppraisalService,
     private fb: FormBuilder,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private authService: AuthService
   ) {
     this.appraisalForm = this.fb.group({
       // Employee Details
@@ -611,7 +613,7 @@ export class AppraisalComponent implements OnInit {
   }
 
   logout() {
-    // Add logout logic here
-    console.log('Logout clicked');
+    this.authService.logout();
+    this.router.navigate(['/website/landing']);
   }
 }

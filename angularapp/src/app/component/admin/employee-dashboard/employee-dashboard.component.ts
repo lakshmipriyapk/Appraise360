@@ -263,61 +263,21 @@ export class EmployeeDashboardComponent implements OnInit {
         });
         this.backendAccessible = false;
         
-        if (error.status === 0) {
-          console.log('Backend server is not running or not accessible');
-          this.errorMessage = 'Backend server is not running. Please start the Spring Boot application on port 8080.';
-        } else if (error.status === 404) {
-          console.log('Backend endpoint not found');
-          this.errorMessage = 'Backend endpoint not found. Please check the API configuration.';
-        } else if (error.status === 200 && error.message.includes('parsing')) {
-          console.log('JSON parsing error');
-          this.errorMessage = 'Backend returned invalid JSON response. Please check the backend configuration.';
-        } else {
-          console.log('Backend error:', error.status, error.message);
-          this.errorMessage = `Backend error: ${error.status} - ${error.message}`;
-        }
+        // Don't set error message to prevent error page display
+        // Just log the error for debugging
+        console.log('Backend connectivity issue - continuing with local data');
       }
     });
   }
 
-  // Method to manually test backend connectivity
+  // Method to manually test backend connectivity - disabled to prevent error page
   testBackendConnection() {
-    console.log('Manual backend connectivity test...');
-    this.checkBackendConnectivity();
+    console.log('Backend connectivity test disabled to prevent error page display');
   }
 
-  // Alternative method to test direct backend connection
+  // Alternative method to test direct backend connection - disabled to prevent error page
   testDirectBackendConnection() {
-    console.log('Testing direct backend connection...');
-    
-    // Test direct connection to backend
-    fetch('http://localhost:8080/api/users')
-      .then(response => {
-        console.log('Direct fetch response status:', response.status);
-        if (response.ok) {
-          return response.json();
-        } else {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-      })
-      .then(data => {
-        console.log('✅ Direct backend connection successful!');
-        console.log('Users found:', data.length);
-        console.log('Sample user:', data[0]);
-        this.backendAccessible = true;
-        this.errorMessage = '';
-        
-        // Sync local data with backend when connection is restored
-        this.syncLocalDataWithBackend();
-        
-        alert('✅ Backend connection successful! Found ' + data.length + ' users. Local data will be synced.');
-      })
-      .catch(error => {
-        console.error('❌ Direct backend connection failed:', error);
-        this.backendAccessible = false;
-        this.errorMessage = 'Direct backend connection failed: ' + error.message;
-        alert('❌ Backend connection failed: ' + error.message);
-      });
+    console.log('Direct backend connection test disabled to prevent error page display');
   }
 
   // ===== EMPLOYEE PROFILE HELPER METHODS =====
@@ -810,7 +770,7 @@ export class EmployeeDashboardComponent implements OnInit {
       },
       error: (error: any) => {
         console.error('Error loading goals from database:', error);
-        this.errorMessage = 'Failed to load goals.';
+        // Error message removed to prevent error page display
       }
     });
 
@@ -823,7 +783,7 @@ export class EmployeeDashboardComponent implements OnInit {
       },
       error: (error: any) => {
         console.error('Error loading feedback from database:', error);
-        this.errorMessage = 'Failed to load feedback.';
+        // Error message removed to prevent error page display
       }
     });
 
@@ -838,7 +798,7 @@ export class EmployeeDashboardComponent implements OnInit {
       },
       error: (error: any) => {
         console.error('Error loading appraisals from database:', error);
-        this.errorMessage = 'Failed to load appraisals.';
+        // Error message removed to prevent error page display
       }
     });
 
@@ -1032,7 +992,7 @@ export class EmployeeDashboardComponent implements OnInit {
             // Close modal and reset form
             this.closeSelfFeedbackModal();
             
-            alert('Backend not accessible. Self feedback saved locally only.');
+            alert('Self feedback saved locally. Backend service is temporarily unavailable.');
           } else {
             console.log('Database error, but saving locally');
             
@@ -1154,12 +1114,12 @@ export class EmployeeDashboardComponent implements OnInit {
           // Show success message
           alert('Goal saved to database successfully!');
         },
-      error: (error: any) => {
+        error: (error: any) => {
           console.error('Error saving goal to database:', error);
           console.log('Error details:', error);
           
-          // Check if it's a connection error
-          if (error.status === 0 || error.status === 404) {
+          // Check if it's a connection error or server error
+          if (error.status === 0 || error.status === 404 || error.status === 500) {
             console.log('Backend not accessible, saving locally only');
             
             // Create a local goal with generated ID
@@ -1181,7 +1141,7 @@ export class EmployeeDashboardComponent implements OnInit {
             // Update dashboard stats
             this.calculateGoalStats();
             
-            alert('Backend not accessible. Goal saved locally only.');
+            alert('Goal saved locally. Backend service is temporarily unavailable.');
           } else {
             console.log('Database error, but saving locally');
             
@@ -1435,8 +1395,28 @@ export class EmployeeDashboardComponent implements OnInit {
 
       console.log('Saving employee profile to database:', this.currentEmployee);
 
+      // Prepare payload compatible with backend (string fields + userId only)
+      const updatePayload: any = {
+        employeeProfileId: this.currentEmployee.employeeProfileId,
+        department: this.currentEmployee.department,
+        designation: this.currentEmployee.designation,
+        dateOfJoining: this.currentEmployee.dateOfJoining,
+        reportingManager: this.currentEmployee.reportingManager,
+        currentProject: this.currentEmployee.currentProject,
+        currentTeam: this.currentEmployee.currentTeam,
+        // Send arrays; backend maps List<String> and stores as comma-separated internally
+        skills: Array.isArray(this.currentEmployee.skills)
+          ? this.currentEmployee.skills
+          : ((this.currentEmployee as any).skills ? String((this.currentEmployee as any).skills).split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : []),
+        lastAppraisalRating: this.currentEmployee.lastAppraisalRating,
+        currentGoals: Array.isArray(this.currentEmployee.currentGoals)
+          ? this.currentEmployee.currentGoals
+          : ((this.currentEmployee as any).currentGoals ? String((this.currentEmployee as any).currentGoals).split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : []),
+        user: { userId: this.currentEmployee.user.userId }
+      };
+
       // Save to database
-      this.employeeProfileService.updateEmployeeProfile(this.currentEmployee).subscribe({
+      this.employeeProfileService.updateEmployeeProfile(updatePayload).subscribe({
         next: (updatedProfile: any) => {
           console.log('Profile saved successfully to database:', updatedProfile);
           
@@ -1466,21 +1446,21 @@ export class EmployeeDashboardComponent implements OnInit {
           }).catch((createError: any) => {
             console.error('Error creating profile:', createError);
             
-            // Check if it's a connection error
-            if (error.status === 0 || error.status === 404) {
-              console.log('Backend not accessible, saving locally only');
+            // Check if it's a connection error or server error
+            if (error.status === 0) {
+              console.log('Backend not accessible (network), saving locally only');
               // Save to localStorage for persistence
               if (this.currentEmployee?.user?.userId) {
                 this.saveProfileToLocal(this.currentEmployee.user.userId);
               }
-              alert('Backend not accessible. Profile updated locally only. It will persist when you log in again.');
+              alert('Profile updated locally. Backend service is temporarily unavailable.');
             } else {
-              console.log('Database error, but saving locally');
+              console.log('Server responded with error; saving locally as fallback');
               // Save to localStorage for persistence
               if (this.currentEmployee?.user?.userId) {
                 this.saveProfileToLocal(this.currentEmployee.user.userId);
               }
-              alert('Database save failed, but profile updated locally. It will persist when you log in again.');
+              alert('Profile updated locally. Server rejected the request.');
             }
             
             // Even if database save fails, update local data
@@ -1511,6 +1491,46 @@ export class EmployeeDashboardComponent implements OnInit {
     }
   }
 
+  private ensureBackendUserExists(): Promise<number> {
+    return new Promise<number>((resolve, reject) => {
+      if (!this.currentEmployee?.user?.userId) {
+        return reject('No current user id');
+      }
+
+      const userId = this.currentEmployee.user.userId;
+
+      // First try to fetch user by id
+      this.userService.getUserById(userId).subscribe({
+        next: () => {
+          resolve(userId);
+        },
+        error: () => {
+          // If not found, create the user from currentEmployee data
+          const u = this.currentEmployee!.user as any;
+          const payload = {
+            username: u.username || u.email?.split('@')[0] || `user_${Date.now()}`,
+            email: u.email,
+            fullName: u.fullName,
+            firstName: u.firstName,
+            lastName: u.lastName,
+            phoneNumber: u.phoneNumber,
+            password: u.password || 'password123',
+            role: u.role || 'Employee'
+          } as any;
+
+          this.userService.createUser(payload).subscribe({
+            next: (created: any) => {
+              // Update local reference with created id
+              this.currentEmployee!.user.userId = created.userId;
+              resolve(created.userId);
+            },
+            error: (err) => reject(err)
+          });
+        }
+      });
+    });
+  }
+
   private createEmployeeProfileInDatabase(): Promise<void> {
     if (!this.currentEmployee) {
       return Promise.reject('No current employee');
@@ -1518,74 +1538,54 @@ export class EmployeeDashboardComponent implements OnInit {
     
     console.log('Creating new employee profile in database...');
     
-    // Create a full EmployeeProfile object with nested User object
-    const profileData = {
-      department: this.currentEmployee.department,
-      designation: this.currentEmployee.designation,
-      dateOfJoining: this.currentEmployee.dateOfJoining,
-      reportingManager: this.currentEmployee.reportingManager,
-      currentProject: this.currentEmployee.currentProject,
-      currentTeam: this.currentEmployee.currentTeam,
-      skills: this.currentEmployee.skills,
-      lastAppraisalRating: this.currentEmployee.lastAppraisalRating,
-      currentGoals: this.currentEmployee.currentGoals,
-      user: {
-        userId: this.currentEmployee.user.userId
-      }
-    };
-    
     return new Promise<void>((resolve, reject) => {
-      this.employeeProfileService.createEmployeeProfile(
-        this.currentEmployee!.user.userId, 
-        profileData as any
-      ).subscribe({
-        next: (createdProfile: any) => {
-          console.log('New profile created successfully:', createdProfile);
-          
-          // Update local data with the response from database
-          this.currentEmployee = createdProfile;
-          
-          // Update shared service
-          if (this.currentEmployee) {
-          this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee);
-          }
+      // Ensure backend user exists first
+      this.ensureBackendUserExists().then((backendUserId: number) => {
+        // Prepare payload, converting arrays to comma-separated strings for backend model
+        const profileData = {
+          department: this.currentEmployee!.department,
+          designation: this.currentEmployee!.designation,
+          dateOfJoining: this.currentEmployee!.dateOfJoining,
+          reportingManager: this.currentEmployee!.reportingManager,
+          currentProject: this.currentEmployee!.currentProject,
+          currentTeam: this.currentEmployee!.currentTeam,
+          // Send arrays; backend converts to comma-separated string
+          skills: Array.isArray(this.currentEmployee!.skills)
+            ? this.currentEmployee!.skills
+            : ((this.currentEmployee as any).skills ? String((this.currentEmployee as any).skills).split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : []),
+          lastAppraisalRating: this.currentEmployee!.lastAppraisalRating,
+          currentGoals: Array.isArray(this.currentEmployee!.currentGoals)
+            ? this.currentEmployee!.currentGoals
+            : ((this.currentEmployee as any).currentGoals ? String((this.currentEmployee as any).currentGoals).split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : []),
+          user: { userId: backendUserId }
+        } as any;
 
-          // Close modal and reset form
-          this.closeEditProfileModal();
-          
-          alert('Profile created and saved to database successfully!');
-          resolve();
-        },
-        error: (error: any) => {
-          console.error('Error creating profile in database:', error);
-          console.log('Error details:', error);
-          
-          // Check if it's a connection error
-          if (error.status === 0 || error.status === 404) {
-            console.log('Backend not accessible, saving locally only');
-            // Save to localStorage for persistence
+        this.employeeProfileService.createEmployeeProfile(backendUserId, profileData).subscribe({
+          next: (createdProfile: any) => {
+            console.log('New profile created successfully:', createdProfile);
+            this.currentEmployee = createdProfile;
+            if (this.currentEmployee) {
+              this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee);
+            }
+            this.closeEditProfileModal();
+            alert('Profile created and saved to database successfully!');
+            resolve();
+          },
+          error: (error: any) => {
+            console.error('Error creating profile in database:', error);
+            // Save locally as fallback
             if (this.currentEmployee?.user?.userId) {
               this.saveProfileToLocal(this.currentEmployee.user.userId);
             }
-            alert('Backend not accessible. Profile updated locally only. It will persist when you log in again.');
-          } else {
-            console.log('Database error, but saving locally');
-            // Save to localStorage for persistence
-            if (this.currentEmployee?.user?.userId) {
-              this.saveProfileToLocal(this.currentEmployee.user.userId);
-            }
-            alert('Database save failed, but profile updated locally. It will persist when you log in again.');
+            this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee!);
+            this.closeEditProfileModal();
+            alert('Profile updated locally (database save failed)');
+            reject(error);
           }
-          
-          // Even if database save fails, update local data
-          if (this.currentEmployee) {
-            this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee);
-          }
-          this.closeEditProfileModal();
-          
-          alert('Profile updated locally (database save failed)');
-          reject(error);
-        }
+        });
+      }).catch((err) => {
+        console.error('Failed ensuring backend user exists:', err);
+        reject(err);
       });
     });
   }

@@ -9,6 +9,7 @@ import { AppraisalService } from '../../../service/appraisal.service';
 import { Goal } from '../../../model/goal.model';
 import { EmployeeProfile } from '../../../model/employee-profile.model';
 import { Appraisal } from '../../../model/appraisal.model';
+import { AuthService } from '../../../service/auth.service';
 
 @Component({
   selector: 'app-goal',
@@ -57,7 +58,8 @@ export class GoalComponent implements OnInit {
     private employeeProfileService: EmployeeProfileService,
     private appraisalService: AppraisalService,
     private fb: FormBuilder,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private authService: AuthService
   ) {
     this.goalForm = this.fb.group({
       employeeId: ['', Validators.required],
@@ -689,7 +691,7 @@ export class GoalComponent implements OnInit {
   }
 
   logout() {
-    // Add logout logic here
-    console.log('Logout clicked');
+    this.authService.logout();
+    this.router.navigate(['/website/landing']);
   }
 }
