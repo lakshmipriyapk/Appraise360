@@ -10,6 +10,6 @@ export interface Feedback {
   challenges?: string; // For self feedback
   improvements?: string; // For self feedback
   employee: EmployeeProfile;
-  reviewer: User; // Can be manager, peer, or self
+  reviewer?: User; // Can be manager, peer, or self (optional)
   createdDate?: Date; // When the feedback was created
 }

@@ -61,13 +61,13 @@ public class GoalController {
 
         // Get employee
         EmployeeProfile employee = employeeService.getEmployeeProfileById(goal.getEmployee().getEmployeeProfileId())
-                .orElseThrow(() -> new RuntimeException("Employee not found with ID " + goal.getEmployee().getEmployeeProfileId()));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Employee not found with ID " + goal.getEmployee().getEmployeeProfileId()));
         goal.setEmployee(employee);
 
         // Handle appraisal if provided
         if (goal.getAppraisal() != null && goal.getAppraisal().getAppraisalId() != null) {
             Appraisal appraisal = appraisalService.getAppraisalById(goal.getAppraisal().getAppraisalId())
-                    .orElseThrow(() -> new RuntimeException("Appraisal not found with ID " + goal.getAppraisal().getAppraisalId()));
+                    .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Appraisal not found with ID " + goal.getAppraisal().getAppraisalId()));
             goal.setAppraisal(appraisal);
         }
 
@@ -78,20 +78,20 @@ public class GoalController {
     public ResponseEntity<Goal> createGoalWithEmployeeId(@PathVariable Long employeeId,
                                                          @RequestBody Goal goal) {
         EmployeeProfile employee = employeeService.getEmployeeProfileById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found with ID " + employeeId));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Employee not found with ID " + employeeId));
         goal.setEmployee(employee);
 
         return ResponseEntity.ok(goalService.createGoal(goal));
     }
 
-    @PostMapping("/employee/{employeeId}/appraisal/{appraisalId}")
+    @PostMapping(value = "/employee/{employeeId}/appraisal/{appraisalId}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Goal> createGoalWithAppraisal(@PathVariable Long employeeId,
                                                         @PathVariable Long appraisalId,
                                                         @RequestBody Goal goal) {
         EmployeeProfile employee = employeeService.getEmployeeProfileById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found with ID " + employeeId));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Employee not found with ID " + employeeId));
         Appraisal appraisal = appraisalService.getAppraisalById(appraisalId)
-                .orElseThrow(() -> new RuntimeException("Appraisal not found with ID " + appraisalId));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Appraisal not found with ID " + appraisalId));
 
         goal.setEmployee(employee);
         goal.setAppraisal(appraisal);
@@ -99,7 +99,7 @@ public class GoalController {
         return ResponseEntity.ok(goalService.createGoal(goal));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Goal> updateGoal(@PathVariable Long id, @RequestBody Goal goal) {
         goal.setGoalId(id);
         return ResponseEntity.ok(goalService.updateGoal(goal));

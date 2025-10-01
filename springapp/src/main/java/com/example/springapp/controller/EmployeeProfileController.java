@@ -58,7 +58,7 @@ public class EmployeeProfileController {
 
         // Get user
         User user = userService.getUserById(profile.getUser().getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found with ID " + profile.getUser().getUserId()));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("User not found with ID " + profile.getUser().getUserId()));
 
         profile.setUser(user);
         EmployeeProfile created = profileService.createEmployeeProfile(profile);
@@ -71,7 +71,7 @@ public class EmployeeProfileController {
     public ResponseEntity<EmployeeProfile> createProfileForUser(@PathVariable Long userId,
                                                                 @RequestBody EmployeeProfile profile) {
         User user = userService.getUserById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with ID " + userId));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("User not found with ID " + userId));
 
         profile.setUser(user);
         EmployeeProfile created = profileService.createEmployeeProfile(profile);
@@ -79,10 +79,17 @@ public class EmployeeProfileController {
         return ResponseEntity.ok(created);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE, consumes = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<EmployeeProfile> updateProfile(@PathVariable Long id,
                                                          @RequestBody EmployeeProfile profile) {
         profile.setEmployeeProfileId(id);
+
+        // Reattach user if provided by id
+        if (profile.getUser() != null && profile.getUser().getUserId() != null) {
+            User user = userService.getUserById(profile.getUser().getUserId())
+                    .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("User not found with ID " + profile.getUser().getUserId()));
+            profile.setUser(user);
+        }
         return ResponseEntity.ok(profileService.updateEmployeeProfile(profile));
     }
 

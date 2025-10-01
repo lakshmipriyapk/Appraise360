@@ -122,7 +122,8 @@
                 <div class="activity-content">
                   <h4>{{ feedback.feedbackType }} Feedback</h4>
                   <p>{{ feedback.comments }}</p>
-                  <span class="activity-time">{{ feedback.reviewer.fullName }}</span>
+                  <span class="activity-time" *ngIf="feedback.reviewer as r">{{ r.fullName }}</span>
+                  <span class="activity-time" *ngIf="!feedback.reviewer">Self</span>
                 </div>
               </div>
             </div>
@@ -278,7 +279,8 @@
               </div>
               <p class="feedback-comment">{{ feedback.comments }}</p>
               <div class="feedback-footer">
-                <span class="reviewer">{{ feedback.reviewer.fullName }}</span>
+                <span class="reviewer" *ngIf="feedback.reviewer as r">{{ r.fullName }}</span>
+                <span class="reviewer" *ngIf="!feedback.reviewer">Self</span>
                 <span class="feedback-date">2 days ago</span>
               </div>
             </div>

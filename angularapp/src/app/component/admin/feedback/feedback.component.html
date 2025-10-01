@@ -143,8 +143,13 @@
                 </div>
                 <div class="reviewer-info">
                   <span class="label">Reviewer:</span>
-                  <span class="reviewer-name">{{ feedback.reviewer.fullName }}</span>
-                  <span class="reviewer-role">({{ feedback.reviewer.role }})</span>
+                  <ng-container *ngIf="feedback.reviewer as r; else selfReviewer">
+                    <span class="reviewer-name">{{ r.fullName }}</span>
+                    <span class="reviewer-role">({{ r.role }})</span>
+                  </ng-container>
+                  <ng-template #selfReviewer>
+                    <span class="reviewer-name">Self</span>
+                  </ng-template>
                 </div>
                 <div class="rating-info" *ngIf="feedback.rating">
                   <span class="label">Rating:</span>
@@ -190,38 +195,34 @@
     <form [formGroup]="feedbackForm" (ngSubmit)="showCreateModal ? createFeedback() : updateFeedback()">
       <div class="modal-body">
         <div class="form-group">
-          <label for="employeeId">Employee *</label>
-          <select 
-            id="employeeId" 
-            formControlName="employeeId" 
+          <label for="employeeName">Employee Name *</label>
+          <input 
+            id="employeeName"
+            type="text"
             class="form-control"
-            [class.error]="feedbackForm.get('employeeId')?.invalid && feedbackForm.get('employeeId')?.touched">
-            <option value="">Select an employee</option>
-            <option *ngFor="let emp of employeeProfiles" [value]="emp.employeeProfileId">
-              {{ emp.user.firstName }} {{ emp.user.lastName }} ({{ emp.user.email }})
-            </option>
-          </select>
-          <div class="error-message" *ngIf="feedbackForm.get('employeeId')?.invalid && feedbackForm.get('employeeId')?.touched">
-            Please select an employee
+            formControlName="employeeName"
+            placeholder="Enter employee name"
+            [class.error]="feedbackForm.get('employeeName')?.invalid && feedbackForm.get('employeeName')?.touched" />
+          <div class="error-message" *ngIf="feedbackForm.get('employeeName')?.invalid && feedbackForm.get('employeeName')?.touched">
+            Employee name is required
           </div>
         </div>
 
         <div class="form-group">
-          <label for="reviewerId">Reviewer *</label>
-          <select 
-            id="reviewerId" 
-            formControlName="reviewerId" 
+          <label for="employeeId">Employee ID *</label>
+          <input 
+            id="employeeId"
+            type="number"
             class="form-control"
-            [class.error]="feedbackForm.get('reviewerId')?.invalid && feedbackForm.get('reviewerId')?.touched">
-            <option value="">Select a reviewer</option>
-            <option *ngFor="let user of users" [value]="user.userId">
-              {{ user.firstName }} {{ user.lastName }} ({{ user.role }})
-            </option>
-          </select>
-          <div class="error-message" *ngIf="feedbackForm.get('reviewerId')?.invalid && feedbackForm.get('reviewerId')?.touched">
-            Please select a reviewer
+            formControlName="employeeId"
+            placeholder="Enter employee ID"
+            [class.error]="feedbackForm.get('employeeId')?.invalid && feedbackForm.get('employeeId')?.touched" />
+          <div class="error-message" *ngIf="feedbackForm.get('employeeId')?.invalid && feedbackForm.get('employeeId')?.touched">
+            Employee ID is required
           </div>
         </div>
+
+        
 
         <div class="form-group">
           <label for="feedbackType">Feedback Type *</label>

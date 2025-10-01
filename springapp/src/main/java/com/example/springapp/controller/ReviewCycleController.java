@@ -18,6 +18,7 @@ import com.example.springapp.service.ReviewCycleService;
 
 @RestController
 @RequestMapping("/api/reviewCycles")
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class ReviewCycleController {
 
     private final ReviewCycleService service;

@@ -69,13 +69,13 @@ public class FeedbackController {
 
         // Get employee
         EmployeeProfile employee = employeeService.getEmployeeProfileById(feedback.getEmployee().getEmployeeProfileId())
-                .orElseThrow(() -> new RuntimeException("Employee not found with ID " + feedback.getEmployee().getEmployeeProfileId()));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Employee not found with ID " + feedback.getEmployee().getEmployeeProfileId()));
         feedback.setEmployee(employee);
 
         // Handle reviewer if provided
         if (feedback.getReviewer() != null && feedback.getReviewer().getUserId() != null) {
             User reviewer = userService.getUserById(feedback.getReviewer().getUserId())
-                    .orElseThrow(() -> new RuntimeException("Reviewer not found with ID " + feedback.getReviewer().getUserId()));
+                    .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Reviewer not found with ID " + feedback.getReviewer().getUserId()));
             feedback.setReviewer(reviewer);
         }
 
@@ -87,9 +87,9 @@ public class FeedbackController {
                                                           @PathVariable Long reviewerId,
                                                           @RequestBody Feedback feedback) {
         EmployeeProfile employee = employeeService.getEmployeeProfileById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found with ID " + employeeId));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Employee not found with ID " + employeeId));
         User reviewer = userService.getUserById(reviewerId)
-                .orElseThrow(() -> new RuntimeException("Reviewer not found with ID " + reviewerId));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Reviewer not found with ID " + reviewerId));
 
         feedback.setEmployee(employee);
         feedback.setReviewer(reviewer);
@@ -97,7 +97,7 @@ public class FeedbackController {
         return ResponseEntity.ok(feedbackService.createFeedback(feedback));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Feedback> updateFeedback(@PathVariable Long id, @RequestBody Feedback feedback) {
         feedback.setFeedbackId(id);
         return ResponseEntity.ok(feedbackService.updateFeedback(feedback));

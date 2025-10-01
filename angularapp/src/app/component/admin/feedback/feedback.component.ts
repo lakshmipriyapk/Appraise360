@@ -67,8 +67,8 @@ export class FeedbackComponent implements OnInit {
     private authService: AuthService
   ) {
     this.feedbackForm = this.fb.group({
+      employeeName: ['', Validators.required],
       employeeId: ['', Validators.required],
-      reviewerId: ['', Validators.required],
       feedbackType: ['', Validators.required],
       comments: ['', Validators.required],
       rating: [null, [Validators.min(1), Validators.max(5)]]
@@ -377,13 +377,13 @@ export class FeedbackComponent implements OnInit {
         feedback.employee.user.firstName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         feedback.employee.user.lastName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         feedback.employee.user.email.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        feedback.reviewer.firstName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        feedback.reviewer.lastName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        (feedback.reviewer && feedback.reviewer.firstName.toLowerCase().includes(this.searchTerm.toLowerCase())) ||
+        (feedback.reviewer && feedback.reviewer.lastName.toLowerCase().includes(this.searchTerm.toLowerCase())) ||
         feedback.comments.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         feedback.feedbackType.toLowerCase().includes(this.searchTerm.toLowerCase());
 
       const matchesEmployee = !this.employeeFilter || feedback.employee.employeeProfileId.toString() === this.employeeFilter;
-      const matchesReviewer = !this.reviewerFilter || feedback.reviewer.userId.toString() === this.reviewerFilter;
+      const matchesReviewer = !this.reviewerFilter || (feedback.reviewer && feedback.reviewer.userId.toString() === this.reviewerFilter);
       const matchesFeedbackType = !this.feedbackTypeFilter || feedback.feedbackType === this.feedbackTypeFilter;
 
       return matchesSearch && matchesEmployee && matchesReviewer && matchesFeedbackType;
@@ -428,8 +428,8 @@ export class FeedbackComponent implements OnInit {
   openEditModal(feedback: Feedback) {
     this.selectedFeedback = feedback;
     this.feedbackForm.patchValue({
+      employeeName: feedback.employee.user.fullName,
       employeeId: feedback.employee.employeeProfileId,
-      reviewerId: feedback.reviewer.userId,
       feedbackType: feedback.feedbackType,
       comments: feedback.comments,
       rating: feedback.rating
@@ -458,7 +458,6 @@ export class FeedbackComponent implements OnInit {
     if (this.feedbackForm.valid) {
       const formData = this.feedbackForm.value;
       const selectedEmployee = this.employeeProfiles.find(emp => emp.employeeProfileId === formData.employeeId);
-      const selectedReviewer = this.users.find(user => user.userId === formData.reviewerId);
       
       const feedback: Feedback = {
         feedbackId: 0, // Will be set by backend
@@ -487,21 +486,11 @@ export class FeedbackComponent implements OnInit {
             password: '',
             role: ''
           }
-        },
-        reviewer: selectedReviewer || {
-          userId: formData.reviewerId,
-          username: '',
-          email: '',
-          fullName: '',
-          firstName: '',
-          lastName: '',
-          phoneNumber: '',
-          password: '',
-          role: ''
         }
       };
 
-      this.feedbackService.createFeedback(formData.employeeId, formData.reviewerId, feedback).subscribe({
+      // Use simple POST without reviewer
+      this.feedbackService.createSelfFeedback(feedback).subscribe({
         next: (response: any) => {
           this.successMessage = 'Feedback created successfully!';
           this.loadFeedbacks();
@@ -524,15 +513,13 @@ export class FeedbackComponent implements OnInit {
     if (this.feedbackForm.valid && this.selectedFeedback) {
       const formData = this.feedbackForm.value;
       const selectedEmployee = this.employeeProfiles.find(emp => emp.employeeProfileId === formData.employeeId);
-      const selectedReviewer = this.users.find(user => user.userId === formData.reviewerId);
       
       const feedback: Feedback = {
         ...this.selectedFeedback,
         feedbackType: formData.feedbackType,
         comments: formData.comments,
         rating: formData.rating,
-        employee: selectedEmployee || this.selectedFeedback.employee,
-        reviewer: selectedReviewer || this.selectedFeedback.reviewer
+        employee: selectedEmployee || this.selectedFeedback.employee
       };
 
       this.feedbackService.updateFeedback(feedback).subscribe({
