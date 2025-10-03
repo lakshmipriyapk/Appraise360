@@ -1,19 +1,8 @@
 package com.example.springapp.model;
 
 import java.util.List;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "employee_profiles")
@@ -21,112 +10,64 @@ public class EmployeeProfile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "employee_profile_id")
     private Long employeeProfileId;
 
-    @Column(length = 255)
     private String department;
-
-    @Column(length = 255)
     private String designation;
-
-    @Column(name = "date_of_joining")
     private String dateOfJoining;
-
-    @Column(name = "reporting_manager")
     private String reportingManager;
-
-    @Column(name = "current_project")
     private String currentProject;
-
-    @Column(name = "current_team")
     private String currentTeam;
-
-    @Column(name = "skills", columnDefinition = "TEXT")
-    private String skills; // Store as comma-separated string
-
-    @Column(name = "last_appraisal_rating")
+    @Column(columnDefinition = "TEXT")
+    private String skills;
     private Double lastAppraisalRating;
-
-    @Column(name = "current_goals", columnDefinition = "TEXT")
-    private String currentGoals; // Store as comma-separated string
+    @Column(columnDefinition = "TEXT")
+    private String currentGoals;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id") // references User.user_id
+    @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties({"employeeProfiles"})
     private User user;
 
-    @OneToMany(mappedBy = "employee", cascade = jakarta.persistence.CascadeType.ALL)
-    @JsonIgnore
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties({"employee", "appraisal"})
     private List<Goal> goals;
 
-    @OneToMany(mappedBy = "employee", cascade = jakarta.persistence.CascadeType.ALL)
-    @JsonIgnore
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties({"employee"})
     private List<Appraisal> appraisals;
 
-    @OneToMany(mappedBy = "employee", cascade = jakarta.persistence.CascadeType.ALL)
-    @JsonIgnore
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties({"employee", "reviewer"})
     private List<Feedback> feedbacks;
 
-    // Getters and setters
+    // getters and setters
     public Long getEmployeeProfileId() { return employeeProfileId; }
     public void setEmployeeProfileId(Long employeeProfileId) { this.employeeProfileId = employeeProfileId; }
-
     public String getDepartment() { return department; }
     public void setDepartment(String department) { this.department = department; }
-
     public String getDesignation() { return designation; }
     public void setDesignation(String designation) { this.designation = designation; }
-
     public String getDateOfJoining() { return dateOfJoining; }
     public void setDateOfJoining(String dateOfJoining) { this.dateOfJoining = dateOfJoining; }
-
     public String getReportingManager() { return reportingManager; }
     public void setReportingManager(String reportingManager) { this.reportingManager = reportingManager; }
-
     public String getCurrentProject() { return currentProject; }
     public void setCurrentProject(String currentProject) { this.currentProject = currentProject; }
-
     public String getCurrentTeam() { return currentTeam; }
     public void setCurrentTeam(String currentTeam) { this.currentTeam = currentTeam; }
-
-    @Schema(hidden = true)
-    public List<String> getSkills() { 
-        return skills != null && !skills.isEmpty() ? List.of(skills.split(",")) : List.of(); 
-    }
-    @Schema(hidden = true)
-    public void setSkills(List<String> skills) { 
-        this.skills = skills != null && !skills.isEmpty() ? String.join(",", skills) : null; 
-    }
-    
-    // Direct string access for JSON serialization
-    public String getSkillsString() { return skills; }
-    public void setSkillsString(String skills) { this.skills = skills; }
-
+    public String getSkills() { return skills; }
+    public void setSkills(String skills) { this.skills = skills; }
     public Double getLastAppraisalRating() { return lastAppraisalRating; }
     public void setLastAppraisalRating(Double lastAppraisalRating) { this.lastAppraisalRating = lastAppraisalRating; }
-
-    @Schema(hidden = true)
-    public List<String> getCurrentGoals() { 
-        return currentGoals != null && !currentGoals.isEmpty() ? List.of(currentGoals.split(",")) : List.of(); 
-    }
-    @Schema(hidden = true)
-    public void setCurrentGoals(List<String> currentGoals) { 
-        this.currentGoals = currentGoals != null && !currentGoals.isEmpty() ? String.join(",", currentGoals) : null; 
-    }
-    
-    // Direct string access for JSON serialization
-    public String getCurrentGoalsString() { return currentGoals; }
-    public void setCurrentGoalsString(String currentGoals) { this.currentGoals = currentGoals; }
-
+    public String getCurrentGoals() { return currentGoals; }
+    public void setCurrentGoals(String currentGoals) { this.currentGoals = currentGoals; }
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
-
     public List<Goal> getGoals() { return goals; }
     public void setGoals(List<Goal> goals) { this.goals = goals; }
-
     public List<Appraisal> getAppraisals() { return appraisals; }
     public void setAppraisals(List<Appraisal> appraisals) { this.appraisals = appraisals; }
-
     public List<Feedback> getFeedbacks() { return feedbacks; }
     public void setFeedbacks(List<Feedback> feedbacks) { this.feedbacks = feedbacks; }
 }

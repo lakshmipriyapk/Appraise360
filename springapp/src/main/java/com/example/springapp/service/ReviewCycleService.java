@@ -26,14 +26,6 @@ public class ReviewCycleService {
     }
 
     public ReviewCycle createReviewCycle(ReviewCycle cycle) {
-        // Set default values for new fields if not provided
-        if (cycle.getStatus() == null || cycle.getStatus().isEmpty()) {
-            cycle.setStatus("Scheduled");
-        }
-        if (cycle.getDeadline() == null) {
-            throw new IllegalArgumentException("Deadline is required for ReviewCycle");
-        }
-        
         return repo.save(cycle);
     }
 

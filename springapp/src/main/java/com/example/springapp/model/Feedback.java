@@ -1,16 +1,8 @@
 package com.example.springapp.model;
 
 import java.time.LocalDateTime;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.PrePersist;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "feedbacks")
@@ -20,34 +12,38 @@ public class Feedback {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long feedbackId;
 
-    @Column(name = "feedback_type")
-    private String feedbackType; // Peer Feedback, Manager Feedback, Self-Feedback
-
+    private String feedbackType; // Peer, Manager, Self
     @Column(columnDefinition = "TEXT")
     private String comments;
 
-    private Integer rating; // Optional rating (1-5)
-
-    // Additional fields for self-feedback form
-    @Column(columnDefinition = "TEXT")
-    private String achievements; // For self feedback
+    private Integer rating; // 1-5
 
     @Column(columnDefinition = "TEXT")
-    private String challenges; // For self feedback
-
+    private String achievements;
     @Column(columnDefinition = "TEXT")
-    private String improvements; // For self feedback
+    private String challenges;
+    @Column(columnDefinition = "TEXT")
+    private String improvements;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id")
+    @JsonIgnoreProperties({"goals", "appraisals", "feedbacks", "hibernateLazyInitializer", "handler"})
     private EmployeeProfile employee;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewer_id")
-    private User reviewer; // Can be manager, peer, or self
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private User reviewer;
 
     @Column(name = "created_date")
     private LocalDateTime createdDate;
+
+    @PrePersist
+    private void onCreate() {
+        if (this.createdDate == null) {
+            this.createdDate = LocalDateTime.now();
+        }
+    }
 
     // Getters and setters
     public Long getFeedbackId() { return feedbackId; }
@@ -79,11 +75,4 @@ public class Feedback {
 
     public LocalDateTime getCreatedDate() { return createdDate; }
     public void setCreatedDate(LocalDateTime createdDate) { this.createdDate = createdDate; }
-
-    @PrePersist
-    private void onCreate() {
-        if (this.createdDate == null) {
-            this.createdDate = LocalDateTime.now();
-        }
-    }
 }

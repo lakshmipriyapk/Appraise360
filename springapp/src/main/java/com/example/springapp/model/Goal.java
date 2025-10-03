@@ -3,6 +3,8 @@ package com.example.springapp.model;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -57,11 +59,13 @@ public class Goal {
     // Many goals belong to one employee
     @ManyToOne
     @JoinColumn(name = "employee_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private EmployeeProfile employee;
 
     // Optional: Many goals can belong to one appraisal
     @ManyToOne
     @JoinColumn(name = "appraisal_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Appraisal appraisal;
 
     // Getters and setters

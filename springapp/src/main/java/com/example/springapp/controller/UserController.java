@@ -3,25 +3,14 @@ package com.example.springapp.controller;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.*;
 
 import com.example.springapp.model.User;
-import com.example.springapp.model.LoginRequest;
 import com.example.springapp.service.UserService;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
+@CrossOrigin(origins = "*")
 public class UserController {
 
     private final UserService service;
@@ -30,54 +19,38 @@ public class UserController {
         this.service = service;
     }
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(service.getAllUsers());
+    @GetMapping
+    public List<User> getAllUsers() {
+        return service.getAllUsers();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        Optional<User> user = service.getUserById(id);
-        return user.map(ResponseEntity::ok)
-                   .orElse(ResponseEntity.notFound().build());
+    public Optional<User> getUser(@PathVariable Long id) {
+        return service.getUserById(id);
     }
 
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        try {
-            User created = service.createUser(user);
-            return ResponseEntity.ok(created);
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(409).build();
-        }
-    }
-
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-        try {
-            User user = service.authenticateUser(loginRequest.getEmail(), loginRequest.getPhoneNumber(), loginRequest.getPassword());
-            if (user != null) {
-                return ResponseEntity.ok(user);
-            } else {
-                return ResponseEntity.status(401).body("Invalid credentials");
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Login failed: " + e.getMessage());
-        }
+    public User createUser(@RequestBody User user) {
+        return service.createUser(user);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User user) {
+    public User updateUser(@PathVariable Long id, @RequestBody User user) {
         user.setUserId(id);
-        User updated = service.updateUser(user);
-        return ResponseEntity.ok(updated);
+        return service.updateUser(user);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+    public void deleteUser(@PathVariable Long id) {
         service.deleteUser(id);
-        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/login")
+    public User login(@RequestBody User loginRequest) {
+        return service.authenticateUser(
+                loginRequest.getEmail(),
+                loginRequest.getPhoneNumber(),
+                loginRequest.getPassword()
+        );
     }
 }

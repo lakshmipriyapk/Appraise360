@@ -1,15 +1,8 @@
 package com.example.springapp.model;
 
 import java.time.LocalDate;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "appraisals")
@@ -19,46 +12,28 @@ public class Appraisal {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long appraisalId;
 
-    @Column(name = "self_rating")
     private Integer selfRating;
-
-    @Column(name = "manager_rating")
     private Integer managerRating;
-
-    @Column(nullable = false)
     private String status; // Submitted, In Review, Completed
-
-    // Additional fields from frontend
-    @Column(name = "cycle_name")
     private String cycleName;
-
-    @Column(name = "appraisal_date")
     private LocalDate appraisalDate;
-
-    @Column(name = "period_start")
     private LocalDate periodStart;
-
-    @Column(name = "period_end")
     private LocalDate periodEnd;
-
-    @Column(name = "manager_name")
     private String managerName;
-
-    @Column(name = "reviewer_role")
     private String reviewerRole;
-
-    @Column(name = "review_date")
     private LocalDate reviewDate;
 
-    @Column(name = "manager_comments", columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String managerComments;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id")
+    @JsonIgnoreProperties({"goals", "appraisals", "feedbacks", "hibernateLazyInitializer", "handler"})
     private EmployeeProfile employee;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cycle_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private ReviewCycle reviewCycle;
 
     // Getters and setters

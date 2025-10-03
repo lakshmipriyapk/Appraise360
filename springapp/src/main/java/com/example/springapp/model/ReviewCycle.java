@@ -1,16 +1,8 @@
 package com.example.springapp.model;
 
 import java.time.LocalDate;
-import java.util.List;
-
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "review_cycles")
@@ -20,31 +12,41 @@ public class ReviewCycle {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long cycleId;
 
-    @Column(name = "cycle_name", nullable = false)
+    @Column(nullable = false)
     private String cycleName;
 
     @Column(nullable = false)
-    private String status; // Scheduled, In Progress, Completed
+    @JsonFormat(pattern = "yyyy-MM-dd") // Important for JSON -> LocalDate
+    private LocalDate startDate;
 
     @Column(nullable = false)
-    private LocalDate deadline;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate endDate;
 
-    @OneToMany(mappedBy = "reviewCycle", cascade = CascadeType.ALL)
-    private List<Appraisal> appraisals;
+    @Column(nullable = false)
+    private String status; // Active, Inactive
 
-    // Getters and setters
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    public ReviewCycle() {} // No-arg constructor required
+
+    // Getters and Setters
     public Long getCycleId() { return cycleId; }
     public void setCycleId(Long cycleId) { this.cycleId = cycleId; }
 
     public String getCycleName() { return cycleName; }
     public void setCycleName(String cycleName) { this.cycleName = cycleName; }
 
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
-    public LocalDate getDeadline() { return deadline; }
-    public void setDeadline(LocalDate deadline) { this.deadline = deadline; }
-
-    public List<Appraisal> getAppraisals() { return appraisals; }
-    public void setAppraisals(List<Appraisal> appraisals) { this.appraisals = appraisals; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 }
