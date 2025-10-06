@@ -998,6 +998,11 @@
   margin-top: 0.5rem;
 }
 
+.header-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .profile-content {
   max-width: 800px;
 }

@@ -150,7 +150,7 @@ export class EmployeeDashboardComponent implements OnInit {
     const timeoutId = setTimeout(() => {
       console.log('Backend request timed out, creating basic profile');
       this.createBasicEmployeeProfile(userId);
-    }, 3000); // 3 second timeout
+    }, 5000); // 5 second timeout
     
     // Try to get the real employee profile from the backend
     this.employeeProfileService.getAllEmployeeProfiles().subscribe({
@@ -200,6 +200,13 @@ export class EmployeeDashboardComponent implements OnInit {
           console.log('Employee Profile ID:', userProfile.employeeProfileId);
           console.log('Department:', userProfile.department);
           console.log('Designation:', userProfile.designation);
+          console.log('Skills:', userProfile.skills);
+          console.log('Current Goals:', userProfile.currentGoals);
+          console.log('Reporting Manager:', userProfile.reportingManager);
+          console.log('Current Project:', userProfile.currentProject);
+          console.log('Current Team:', userProfile.currentTeam);
+          console.log('Date of Joining:', userProfile.dateOfJoining);
+          console.log('Last Appraisal Rating:', userProfile.lastAppraisalRating);
           
           this.currentEmployee = userProfile;
           this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee);
@@ -583,18 +590,11 @@ export class EmployeeDashboardComponent implements OnInit {
     
     // Clear any existing employee data first
     this.sharedEmployeeService.clearCurrentEmployee();
-    this.loadCurrentUser();
-    this.loadDashboardData();
     
-    // Load locally saved data
-    this.loadLocalData();
+    // Load current user and employee data
+    this.loadCurrentUserAndEmployeeData();
     
-    // Force refresh user data to ensure we have the latest
-    setTimeout(() => {
-      this.refreshUserData();
-    }, 100);
-    
-    // Safety timeout - force stop loading after 5 seconds no matter what
+    // Safety timeout - force stop loading after 10 seconds
     setTimeout(() => {
       if (this.isLoading) {
         console.log('Safety timeout: Force stopping loading state');
@@ -604,57 +604,35 @@ export class EmployeeDashboardComponent implements OnInit {
         if (!this.currentEmployee) {
           const currentUser = this.authService.getCurrentUser();
           if (currentUser) {
+            console.log('Creating basic employee profile due to timeout');
             this.createBasicEmployeeProfile(currentUser.userId || 0);
           }
         }
       }
-    }, 5000); // 5 second safety timeout
-    
-    // Subscribe to shared goal data with enhanced filtering
-    this.sharedGoalService.goals$.subscribe(goals => {
-      if (goals && goals.length > 0 && this.currentEmployee) {
-        console.log('=== FILTERING SHARED GOALS FOR EMPLOYEE ===');
-        console.log('All shared goals:', goals.length);
-        console.log('Current employee:', this.currentEmployee?.user?.fullName);
-        
-        // Enhanced filtering for current employee
-        const employeeGoals = goals.filter(goal => {
-          const matchesEmployeeProfileId = goal.employee?.employeeProfileId === this.currentEmployee?.employeeProfileId;
-          const matchesUserId = goal.employee?.user?.userId === this.currentEmployee?.user?.userId;
-          const matchesEmail = goal.employee?.user?.email === this.currentEmployee?.user?.email;
-          const matchesUsername = goal.employee?.user?.username === this.currentEmployee?.user?.username;
-          
-          return matchesEmployeeProfileId || matchesUserId || matchesEmail || matchesUsername;
-        });
-        
-        console.log('✅ Filtered shared goals for employee:', employeeGoals.length);
-        this.currentGoals = employeeGoals;
-        this.calculateGoalStats();
-      }
-    });
+    }, 10000); // 10 second safety timeout
+  }
 
-    // Subscribe to shared appraisal data with enhanced filtering
-    this.sharedAppraisalService.appraisals$.subscribe(appraisals => {
-      if (appraisals && appraisals.length > 0 && this.currentEmployee) {
-        console.log('=== FILTERING SHARED APPRAISALS FOR EMPLOYEE ===');
-        console.log('All shared appraisals:', appraisals.length);
-        console.log('Current employee:', this.currentEmployee?.user?.fullName);
-        
-        // Enhanced filtering for current employee
-        const employeeAppraisals = appraisals.filter(appraisal => {
-          const matchesEmployeeProfileId = appraisal.employee?.employeeProfileId === this.currentEmployee?.employeeProfileId;
-          const matchesUserId = appraisal.employee?.user?.userId === this.currentEmployee?.user?.userId;
-          const matchesEmail = appraisal.employee?.user?.email === this.currentEmployee?.user?.email;
-          const matchesUsername = appraisal.employee?.user?.username === this.currentEmployee?.user?.username;
-          
-          return matchesEmployeeProfileId || matchesUserId || matchesEmail || matchesUsername;
-        });
-        
-        console.log('✅ Filtered shared appraisals for employee:', employeeAppraisals.length);
-        this.appraisals = employeeAppraisals;
-        this.calculateAppraisalStats();
-      }
-    });
+  // New method to load current user and employee data
+  loadCurrentUserAndEmployeeData() {
+    console.log('=== LOADING CURRENT USER AND EMPLOYEE DATA ===');
+    
+    // Get current user from auth service
+    const currentUser = this.authService.getCurrentUser();
+    console.log('Current user from auth service:', currentUser);
+    
+    if (currentUser) {
+      console.log('✅ Current user found:', currentUser.fullName);
+      console.log('User ID:', currentUser.userId);
+      console.log('User Email:', currentUser.email);
+      console.log('User Role:', currentUser.role);
+      
+      // Load employee profile for this user
+      this.loadEmployeeProfileByUserId(currentUser.userId || 0);
+    } else {
+      console.log('❌ No current user found in auth service');
+      this.isLoading = false;
+      this.errorMessage = 'No user logged in. Please login again.';
+    }
   }
 
   loadDashboardData() {
@@ -844,6 +822,7 @@ export class EmployeeDashboardComponent implements OnInit {
     }
 
     // Load goals from database (both self-created and manager-assigned)
+    console.log('🎯 Loading goals for employee ID:', this.currentEmployee.employeeProfileId);
     this.goalService.getGoalsByEmployee(this.currentEmployee.employeeProfileId || 0).subscribe({
       next: (goals) => {
         console.log('✅ Goals loaded from database for employee:', goals.length);
@@ -871,6 +850,7 @@ export class EmployeeDashboardComponent implements OnInit {
     });
 
     // Load feedback from database (both self and manager feedback)
+    console.log('🎯 Loading feedback for employee ID:', this.currentEmployee.employeeProfileId);
     this.feedbackService.getFeedbacksByEmployee(this.currentEmployee.employeeProfileId || 0).subscribe({
       next: (feedback) => {
         console.log('✅ Feedback loaded from database for employee:', feedback.length);
@@ -902,6 +882,7 @@ export class EmployeeDashboardComponent implements OnInit {
     });
 
     // Load appraisals from database
+    console.log('🎯 Loading appraisals for employee ID:', this.currentEmployee.employeeProfileId);
     this.appraisalService.getAppraisalsByEmployee(this.currentEmployee.employeeProfileId || 0).subscribe({
       next: (appraisals) => {
         console.log('✅ Appraisals loaded from database for employee:', appraisals.length);
@@ -1135,42 +1116,115 @@ export class EmployeeDashboardComponent implements OnInit {
 
   // Helper method to get skills as array
   getSkillsArray(): string[] {
-    if (!this.currentEmployee) return [];
-    
-    if (Array.isArray(this.currentEmployee.skills)) {
-      return this.currentEmployee.skills;
-    } else if (typeof this.currentEmployee.skills === 'string') {
-      return this.currentEmployee.skills.split(',').map(skill => skill.trim()).filter(skill => skill.length > 0);
+    if (!this.currentEmployee) {
+      console.log('❌ No current employee for skills');
+      return [];
     }
     
+    console.log('🔍 Getting skills for employee:', this.currentEmployee.user?.fullName);
+    console.log('Raw skills data:', this.currentEmployee.skills);
+    console.log('Skills type:', typeof this.currentEmployee.skills);
+    
+    if (Array.isArray(this.currentEmployee.skills)) {
+      console.log('✅ Skills is already an array:', this.currentEmployee.skills);
+      return this.currentEmployee.skills;
+    } else if (typeof this.currentEmployee.skills === 'string' && this.currentEmployee.skills.trim()) {
+      const skillsArray = this.currentEmployee.skills.split(',').map(skill => skill.trim()).filter(skill => skill.length > 0);
+      console.log('✅ Converted skills string to array:', skillsArray);
+      return skillsArray;
+    }
+    
+    console.log('❌ No valid skills found');
     return [];
   }
 
   // Helper method to get current goals as array
   getCurrentGoalsArray(): string[] {
-    if (!this.currentEmployee) return [];
-    
-    if (Array.isArray(this.currentEmployee.currentGoals)) {
-      return this.currentEmployee.currentGoals;
-    } else if (typeof this.currentEmployee.currentGoals === 'string') {
-      return this.currentEmployee.currentGoals.split(',').map(goal => goal.trim()).filter(goal => goal.length > 0);
+    if (!this.currentEmployee) {
+      console.log('❌ No current employee for goals');
+      return [];
     }
     
+    console.log('🔍 Getting current goals for employee:', this.currentEmployee.user?.fullName);
+    console.log('Raw current goals data:', this.currentEmployee.currentGoals);
+    console.log('Current goals type:', typeof this.currentEmployee.currentGoals);
+    
+    if (Array.isArray(this.currentEmployee.currentGoals)) {
+      console.log('✅ Current goals is already an array:', this.currentEmployee.currentGoals);
+      return this.currentEmployee.currentGoals;
+    } else if (typeof this.currentEmployee.currentGoals === 'string' && this.currentEmployee.currentGoals.trim()) {
+      const goalsArray = this.currentEmployee.currentGoals.split(',').map(goal => goal.trim()).filter(goal => goal.length > 0);
+      console.log('✅ Converted current goals string to array:', goalsArray);
+      return goalsArray;
+    }
+    
+    console.log('❌ No valid current goals found');
     return [];
   }
 
-  // Method to refresh employee data
-  refreshEmployeeData() {
-    console.log('=== REFRESHING EMPLOYEE DATA ===');
-    this.isLoading = true;
+  // Method to set test data for debugging
+  setTestData() {
+    console.log('=== SETTING TEST DATA FOR DEBUGGING ===');
     
-    // Reload current user and profile
-    const currentUser = this.authService.getCurrentUser();
-    if (currentUser) {
-      this.loadEmployeeProfileByUserId(currentUser.userId || 0);
+    const testEmployee: EmployeeProfile = {
+      employeeProfileId: 3,
+      department: 'IT',
+      designation: 'Full Stack Developer',
+      dateOfJoining: '2023-02-10',
+      reportingManager: 'Manager A',
+      currentProject: 'Project Gamma',
+      currentTeam: 'Team Alpha',
+      skills: 'Vue.js, Python, PostgreSQL',
+      currentGoals: 'Implement Feature Z',
+      lastAppraisalRating: 4.0,
+      user: {
+        userId: 3,
+        username: 'lakshmi123',
+        email: 'lakshmipriya15042002@gmail.com',
+        password: 'Lakshmi@2002',
+        firstName: 'Lakshmipriya',
+        lastName: 'P K',
+        fullName: 'Lakshmipriya P K',
+        phoneNumber: '8197757797',
+        role: 'Employee'
+      }
+    };
+    
+    this.currentEmployee = testEmployee;
+    this.isLoading = false;
+    
+    console.log('✅ Test data set:', testEmployee);
+    console.log('Skills array:', this.getSkillsArray());
+    console.log('Current goals array:', this.getCurrentGoalsArray());
+  }
+
+  // Method to debug profile section
+  debugProfileSection() {
+    console.log('=== DEBUGGING PROFILE SECTION ===');
+    console.log('isLoading:', this.isLoading);
+    console.log('currentEmployee:', this.currentEmployee);
+    
+    if (this.currentEmployee) {
+      console.log('Employee Name:', this.currentEmployee.user?.fullName);
+      console.log('Employee Email:', this.currentEmployee.user?.email);
+      console.log('Employee Phone:', this.currentEmployee.user?.phoneNumber);
+      console.log('Employee Username:', this.currentEmployee.user?.username);
+      console.log('Department:', this.currentEmployee.department);
+      console.log('Designation:', this.currentEmployee.designation);
+      console.log('Date of Joining:', this.currentEmployee.dateOfJoining);
+      console.log('Reporting Manager:', this.currentEmployee.reportingManager);
+      console.log('Current Project:', this.currentEmployee.currentProject);
+      console.log('Current Team:', this.currentEmployee.currentTeam);
+      console.log('Skills:', this.currentEmployee.skills);
+      console.log('Current Goals:', this.currentEmployee.currentGoals);
+      console.log('Last Appraisal Rating:', this.currentEmployee.lastAppraisalRating);
+      
+      console.log('Skills Array:', this.getSkillsArray());
+      console.log('Current Goals Array:', this.getCurrentGoalsArray());
+      
+      console.log('Dashboard Stats:', this.dashboardStats);
     } else {
-      this.isLoading = false;
-      console.error('No current user found for refresh');
+      console.log('❌ No current employee found');
     }
   }
 

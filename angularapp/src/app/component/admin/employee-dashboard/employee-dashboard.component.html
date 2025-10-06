@@ -723,10 +723,20 @@
         <div *ngIf="activeSection === 'profile'" class="profile-section">
           <div class="section-header">
             <h2>Employee Profile</h2>
-            <button class="btn-secondary" (click)="openEditProfileModal()">
-              <i class="fas fa-edit"></i>
-              Edit Profile
-            </button>
+            <div class="header-buttons">
+              <button class="btn-secondary" (click)="setTestData()">
+                <i class="fas fa-flask"></i>
+                Set Test Data
+              </button>
+              <button class="btn-secondary" (click)="debugProfileSection()">
+                <i class="fas fa-bug"></i>
+                Debug Profile
+              </button>
+              <button class="btn-secondary" (click)="openEditProfileModal()">
+                <i class="fas fa-edit"></i>
+                Edit Profile
+              </button>
+            </div>
           </div>
 
           <!-- Loading State -->
@@ -825,6 +835,8 @@
                   <p *ngIf="getSkillsArray().length === 0" class="no-data">
                     <i class="fas fa-info-circle"></i>
                     No skills added yet
+                    <br>
+                    <small>Raw skills data: {{ currentEmployee.skills || 'null' }}</small>
                   </p>
                 </div>
               </div>
@@ -842,6 +854,8 @@
                   <p *ngIf="getCurrentGoalsArray().length === 0" class="no-data">
                     <i class="fas fa-info-circle"></i>
                     No goals set yet
+                    <br>
+                    <small>Raw current goals data: {{ currentEmployee.currentGoals || 'null' }}</small>
                   </p>
                 </div>
               </div>
