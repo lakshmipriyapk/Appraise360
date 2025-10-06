@@ -3,7 +3,11 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ReviewCycleService } from '../../../service/review-cycle.service';
+import { EmployeeProfileService } from '../../../service/employee-profile.service';
+import { AppraisalService } from '../../../service/appraisal.service';
 import { ReviewCycle } from '../../../model/review-cycle.model';
+import { EmployeeProfile } from '../../../model/employee-profile.model';
+import { Appraisal } from '../../../model/appraisal.model';
 
 @Component({
   selector: 'app-review-cycle',
@@ -14,7 +18,7 @@ import { ReviewCycle } from '../../../model/review-cycle.model';
 })
 export class ReviewCycleComponent implements OnInit {
   menuItems = [
-    { title: 'Dashboard', route: '/dashboard', icon: 'fa-tachometer-alt' },
+    { title: 'Admin Dashboard', route: '/admin-dashboard', icon: 'fa-tachometer-alt' },
     { title: 'Appraisal', route: '/appraisal', icon: 'fa-clipboard-check' },
     { title: 'Employee Profile', route: '/employee-profile', icon: 'fa-user' },
     { title: 'Feedback', route: '/feedback', icon: 'fa-comments' },
@@ -48,11 +52,18 @@ export class ReviewCycleComponent implements OnInit {
   constructor(
     public router: Router,
     private reviewCycleService: ReviewCycleService,
+    private employeeProfileService: EmployeeProfileService,
+    private appraisalService: AppraisalService,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef
   ) {
     this.reviewCycleForm = this.fb.group({
-      cycleName: ['', Validators.required]
+      cycleName: ['', Validators.required],
+      description: [''],
+      startDate: ['', Validators.required],
+      endDate: ['', Validators.required],
+      deadline: [''],
+      status: ['Scheduled', Validators.required]
     });
   }
 
@@ -65,22 +76,21 @@ export class ReviewCycleComponent implements OnInit {
     this.errorMessage = '';
     this.cdr.markForCheck();
 
-    // Use setTimeout to prevent blocking
-    setTimeout(() => {
-      this.reviewCycleService.getAllReviewCycles().subscribe({
-        next: (data: any) => {
-          this.reviewCycles = data;
-          this.filteredReviewCycles = data;
-          this.isLoading = false;
-          this.cdr.markForCheck();
-        },
-        error: (error: any) => {
-          console.error('Error loading review cycles, using mock data:', error);
-          // Load mock data for development
-          this.loadMockReviewCycles();
-        }
-      });
-    }, 100);
+    this.reviewCycleService.getAllReviewCycles().subscribe({
+      next: (data: ReviewCycle[]) => {
+        console.log('Review cycles loaded from database:', data);
+        this.reviewCycles = data;
+        this.filteredReviewCycles = data;
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (error: any) => {
+        console.error('Error loading review cycles:', error);
+        this.errorMessage = 'Unable to load review cycles from database. Please check your connection.';
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   loadMockReviewCycles() {
@@ -90,36 +100,46 @@ export class ReviewCycleComponent implements OnInit {
         cycleId: 1,
         cycleName: 'Q1 2024 Performance Review',
         status: 'Completed',
-        deadline: new Date('2024-03-31'),
-        appraisals: []
+        startDate: '2024-01-01',
+        endDate: '2024-03-31',
+        deadline: '2024-03-25',
+        description: 'First quarter performance review cycle for 2024. Focus on goal achievement and skill development.'
       },
       {
         cycleId: 2,
         cycleName: 'Q2 2024 Performance Review',
         status: 'Completed',
-        deadline: new Date('2024-06-30'),
-        appraisals: []
+        startDate: '2024-04-01',
+        endDate: '2024-06-30',
+        deadline: '2024-06-25',
+        description: 'Second quarter performance review cycle for 2024. Emphasis on mid-year objectives and team collaboration.'
       },
       {
         cycleId: 3,
         cycleName: 'Q3 2024 Performance Review',
         status: 'In Progress',
-        deadline: new Date('2024-09-30'),
-        appraisals: []
+        startDate: '2024-07-01',
+        endDate: '2024-09-30',
+        deadline: '2024-09-25',
+        description: 'Third quarter performance review cycle for 2024. Focus on project completion and leadership development.'
       },
       {
         cycleId: 4,
         cycleName: 'Annual 2024 Review',
         status: 'Scheduled',
-        deadline: new Date('2024-12-31'),
-        appraisals: []
+        startDate: '2024-10-01',
+        endDate: '2024-12-31',
+        deadline: '2024-12-20',
+        description: 'Annual comprehensive performance review for 2024. Complete evaluation of yearly goals and career development.'
       },
       {
         cycleId: 5,
         cycleName: 'Mid-Year 2024 Review',
         status: 'Completed',
-        deadline: new Date('2024-06-15'),
-        appraisals: []
+        startDate: '2024-04-01',
+        endDate: '2024-06-15',
+        deadline: '2024-06-10',
+        description: 'Mid-year performance check-in for 2024. Quick assessment of progress and goal adjustments.'
       }
     ];
 
@@ -153,7 +173,12 @@ export class ReviewCycleComponent implements OnInit {
   openEditModal(reviewCycle: ReviewCycle) {
     this.selectedReviewCycle = reviewCycle;
     this.reviewCycleForm.patchValue({
-      cycleName: reviewCycle.cycleName
+      cycleName: reviewCycle.cycleName,
+      description: reviewCycle.description || '',
+      startDate: reviewCycle.startDate,
+      endDate: reviewCycle.endDate,
+      deadline: reviewCycle.deadline || '',
+      status: reviewCycle.status
     });
     this.showEditModal = true;
     this.errorMessage = '';
@@ -195,9 +220,11 @@ export class ReviewCycleComponent implements OnInit {
       const newReviewCycle: ReviewCycle = {
         cycleId: Date.now(), // Generate temporary ID
         cycleName: formData.cycleName,
-        status: 'Scheduled',
-        deadline: new Date(formData.deadline || new Date()),
-        appraisals: []
+        description: formData.description || '',
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        deadline: formData.deadline || '',
+        status: formData.status
       };
 
       // Add to local list immediately
@@ -238,10 +265,14 @@ export class ReviewCycleComponent implements OnInit {
       const reviewCycle: ReviewCycle = {
         ...this.selectedReviewCycle,
         cycleName: formData.cycleName,
-        deadline: new Date(formData.deadline || this.selectedReviewCycle.deadline)
+        description: formData.description || '',
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        deadline: formData.deadline || '',
+        status: formData.status
       };
 
-      this.reviewCycleService.updateReviewCycle(reviewCycle).subscribe({
+      this.reviewCycleService.updateReviewCycle(this.selectedReviewCycle.cycleId || 0, reviewCycle).subscribe({
         next: (response: any) => {
           this.successMessage = 'Review cycle updated successfully!';
           this.loadReviewCycles();
@@ -262,7 +293,7 @@ export class ReviewCycleComponent implements OnInit {
 
   deleteReviewCycle() {
     if (this.selectedReviewCycle) {
-      this.reviewCycleService.deleteReviewCycle(this.selectedReviewCycle.cycleId).subscribe({
+      this.reviewCycleService.deleteReviewCycle(this.selectedReviewCycle.cycleId || 0).subscribe({
         next: () => {
           this.successMessage = 'Review cycle deleted successfully!';
           this.loadReviewCycles();
@@ -280,7 +311,7 @@ export class ReviewCycleComponent implements OnInit {
   }
 
   getAppraisalCount(reviewCycle: ReviewCycle): number {
-    return reviewCycle.appraisals ? reviewCycle.appraisals.length : 0;
+    return 0; // No appraisals field in ReviewCycle model
   }
 
   viewEmployeesInCycle(reviewCycle: ReviewCycle) {
@@ -290,16 +321,24 @@ export class ReviewCycleComponent implements OnInit {
   }
 
   loadEmployeesInCycle(reviewCycle: ReviewCycle) {
-    // Use the actual employees from the review cycle
-    // If the cycle has appraisals, use those; otherwise, use empty array
-    if (reviewCycle.appraisals && reviewCycle.appraisals.length > 0) {
-      this.employeesInCycle = reviewCycle.appraisals;
-    } else {
-      // For new cycles or cycles without employees, show empty state
+    if (!reviewCycle.cycleId) {
+      console.error('Review cycle ID is required');
       this.employeesInCycle = [];
+      return;
     }
 
-    console.log(`Loaded ${this.employeesInCycle.length} employees for cycle ${reviewCycle.cycleName}:`, this.employeesInCycle);
+    this.appraisalService.getAppraisalsByCycle(reviewCycle.cycleId).subscribe({
+      next: (appraisals: Appraisal[]) => {
+        console.log(`Loaded ${appraisals.length} appraisals for cycle ${reviewCycle.cycleName}:`, appraisals);
+        this.employeesInCycle = appraisals;
+        this.cdr.markForCheck();
+      },
+      error: (error: any) => {
+        console.error('Error loading employees in cycle:', error);
+        this.employeesInCycle = [];
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   openAddEmployeesModal() {
@@ -309,90 +348,18 @@ export class ReviewCycleComponent implements OnInit {
   }
 
   loadAllEmployees() {
-    // Mock data for all available employees
-    // In real implementation, this would call the employee service
-    this.allEmployees = [
-      {
-        employeeProfileId: 1,
-        user: {
-          userId: 1,
-          username: 'john.doe',
-          email: 'john.doe@company.com',
-          firstName: 'John',
-          lastName: 'Doe',
-          role: 'Employee'
-        },
-        department: 'Engineering',
-        designation: 'Software Engineer',
-        dateOfJoining: '2023-01-15',
-        reportingManager: 'John Smith',
-        currentProject: 'Performance Appraisal System',
-        currentTeam: 'Full Stack Team',
-        skills: ['Angular', 'Spring Boot', 'TypeScript'],
-        lastAppraisalRating: 4.2,
-        currentGoals: ['Complete Angular Training']
+    this.employeeProfileService.getAllEmployeeProfiles().subscribe({
+      next: (employees: EmployeeProfile[]) => {
+        console.log('Loaded all employees:', employees);
+        this.allEmployees = employees;
+        this.cdr.markForCheck();
       },
-      {
-        employeeProfileId: 2,
-        user: {
-          userId: 2,
-          username: 'jane.smith',
-          email: 'jane.smith@company.com',
-          firstName: 'Jane',
-          lastName: 'Smith',
-          role: 'Employee'
-        },
-        department: 'Marketing',
-        designation: 'Marketing Specialist',
-        dateOfJoining: '2023-03-20',
-        reportingManager: 'Jane Wilson',
-        currentProject: 'Brand Campaign',
-        currentTeam: 'Marketing Team',
-        skills: ['Digital Marketing', 'Content Creation'],
-        lastAppraisalRating: 3.5,
-        currentGoals: ['Increase brand awareness']
-      },
-      {
-        employeeProfileId: 3,
-        user: {
-          userId: 3,
-          username: 'mike.johnson',
-          email: 'mike.johnson@company.com',
-          firstName: 'Mike',
-          lastName: 'Johnson',
-          role: 'Employee'
-        },
-        department: 'Sales',
-        designation: 'Sales Representative',
-        dateOfJoining: '2023-02-10',
-        reportingManager: 'Sarah Davis',
-        currentProject: 'Q4 Sales Target',
-        currentTeam: 'Sales Team',
-        skills: ['Sales', 'Customer Relations'],
-        lastAppraisalRating: 4.0,
-        currentGoals: ['Achieve sales targets']
-      },
-      {
-        employeeProfileId: 4,
-        user: {
-          userId: 4,
-          username: 'lisa.wilson',
-          email: 'lisa.wilson@company.com',
-          firstName: 'Lisa',
-          lastName: 'Wilson',
-          role: 'Employee'
-        },
-        department: 'HR',
-        designation: 'HR Specialist',
-        dateOfJoining: '2023-04-05',
-        reportingManager: 'Tom Brown',
-        currentProject: 'Recruitment Drive',
-        currentTeam: 'HR Team',
-        skills: ['Recruitment', 'Employee Relations'],
-        lastAppraisalRating: 4.5,
-        currentGoals: ['Improve hiring process']
+      error: (error: any) => {
+        console.error('Error loading all employees:', error);
+        this.allEmployees = [];
+        this.cdr.markForCheck();
       }
-    ];
+    });
   }
 
   toggleEmployeeSelection(employeeId: number) {
@@ -418,39 +385,70 @@ export class ReviewCycleComponent implements OnInit {
       return;
     }
 
-    // Add selected employees to the review cycle
-    const employeesToAdd = this.allEmployees.filter(emp => 
-      this.selectedEmployees.includes(emp.employeeProfileId)
-    );
-
-    // Create appraisals for the selected employees
-    const newAppraisals = employeesToAdd.map(emp => ({
-      appraisalId: Date.now() + Math.random(), // Generate unique ID
-      selfRating: 0,
-      managerRating: 0,
-      status: 'Draft',
-      employee: emp,
-      reviewCycle: this.selectedReviewCycle
-    }));
-
-    // Add to the current cycle's appraisals
-    if (this.selectedReviewCycle) {
-      this.selectedReviewCycle.appraisals = [...(this.selectedReviewCycle.appraisals || []), ...newAppraisals];
-      
-      // Update the local list
-      const index = this.reviewCycles.findIndex(rc => rc.cycleId === this.selectedReviewCycle!.cycleId);
-      if (index !== -1) {
-        this.reviewCycles[index] = this.selectedReviewCycle;
-        this.applyFilters();
-        this.cdr.markForCheck();
-      }
+    if (!this.selectedReviewCycle?.cycleId) {
+      this.errorMessage = 'No review cycle selected.';
+      return;
     }
 
-    // Update the employees in cycle list
-    this.employeesInCycle = [...this.employeesInCycle, ...newAppraisals];
+    // Create appraisals for the selected employees
+    const employeesToAdd = this.allEmployees.filter(emp => 
+      this.selectedEmployees.includes(emp.employeeProfileId || 0)
+    );
 
-    this.successMessage = `Successfully added ${employeesToAdd.length} employee(s) to the review cycle.`;
-    this.closeAddEmployeesModal();
+    let successCount = 0;
+    let errorCount = 0;
+
+    // Add each employee to the review cycle using the correct API endpoint
+    employeesToAdd.forEach(employee => {
+      const appraisalData: Appraisal = {
+        status: 'Draft',
+        selfRating: 0,
+        managerRating: 0,
+        cycleName: this.selectedReviewCycle!.cycleName,
+        periodStart: this.selectedReviewCycle!.startDate,
+        periodEnd: this.selectedReviewCycle!.endDate,
+        managerComments: '',
+        reviewerRole: 'Manager'
+      };
+
+      console.log(`Adding employee ${employee.user?.fullName} (ID: ${employee.employeeProfileId}) to cycle ${this.selectedReviewCycle!.cycleName} (ID: ${this.selectedReviewCycle!.cycleId})`);
+
+      // Use the createAppraisalWithIds method which takes employeeId and cycleId as path parameters
+      this.appraisalService.createAppraisalWithIds(
+        employee.employeeProfileId!, 
+        this.selectedReviewCycle!.cycleId!, 
+        appraisalData
+      ).subscribe({
+        next: (response: Appraisal) => {
+          successCount++;
+          console.log(`Successfully added employee ${employee.user?.fullName} to cycle ${this.selectedReviewCycle!.cycleName}`, response);
+          
+          if (successCount + errorCount === employeesToAdd.length) {
+            if (errorCount === 0) {
+              this.successMessage = `Successfully added ${successCount} employee(s) to the review cycle.`;
+            } else {
+              this.successMessage = `Added ${successCount} employee(s) successfully. ${errorCount} failed.`;
+            }
+            // Refresh the employees in cycle list
+            this.loadEmployeesInCycle(this.selectedReviewCycle!);
+            this.closeAddEmployeesModal();
+          }
+        },
+        error: (error: any) => {
+          errorCount++;
+          console.error(`Error adding employee ${employee.user?.fullName} to cycle:`, error);
+          
+          if (successCount + errorCount === employeesToAdd.length) {
+            if (successCount > 0) {
+              this.successMessage = `Added ${successCount} employee(s) successfully. ${errorCount} failed.`;
+            } else {
+              this.errorMessage = `Failed to add employees to the review cycle.`;
+            }
+            this.closeAddEmployeesModal();
+          }
+        }
+      });
+    });
   }
 
   navigateTo(route: string) {

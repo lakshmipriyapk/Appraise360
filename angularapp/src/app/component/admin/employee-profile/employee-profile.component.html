@@ -62,16 +62,10 @@
     </div>
   </div>
 
-  <!-- Messages -->
-  <div class="messages" *ngIf="errorMessage || successMessage">
-    <div class="alert alert-error" *ngIf="errorMessage">
+        <!-- Error Message -->
+        <div class="error-message" *ngIf="errorMessage">
       <i class="fas fa-exclamation-circle"></i>
       {{ errorMessage }}
-    </div>
-    <div class="alert alert-success" *ngIf="successMessage">
-      <i class="fas fa-check-circle"></i>
-      {{ successMessage }}
-    </div>
   </div>
 
   <!-- Loading State -->
@@ -80,21 +74,67 @@
     <p>Loading employee profiles...</p>
   </div>
 
-  <!-- Employee Profiles Grid -->
-  <div class="employee-profiles-grid" *ngIf="!isLoading">
-    <div *ngFor="let profile of filteredEmployeeProfiles" class="employee-profile-card">
+        <!-- Employee Profiles List -->
+        <div class="employee-profiles-list" *ngIf="!isLoading && !showDetailView">
+          <div class="list-header">
+            <h3>Employee List</h3>
+            <span class="count">{{ filteredEmployeeProfiles.length }} employees</span>
+          </div>
+          
+          <div class="table-container">
+            <table class="employee-table">
+              <thead>
+                <tr>
+                  <th>Employee ID</th>
+                  <th>Full Name</th>
+                  <th>Department</th>
+                  <th>Designation</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let profile of filteredEmployeeProfiles" class="employee-row">
+                  <td>{{ profile.employeeId }}</td>
+                  <td>{{ profile.fullName }}</td>
+                  <td>
+                    <span class="department-badge">{{ profile.department }}</span>
+                  </td>
+                  <td>{{ profile.designation }}</td>
+                  <td>{{ profile.email }}</td>
+                  <td>{{ profile.phoneNumber || 'Not provided' }}</td>
+                  <td>
+                    <div class="action-buttons">
+                      <button class="btn btn-sm btn-primary" (click)="viewEmployeeDetails(profile)" title="View Details">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Employee Detail View -->
+        <div class="employee-detail-view" *ngIf="showDetailView && selectedEmployeeProfile">
+          <div class="detail-header">
+            <button class="btn btn-secondary" (click)="closeDetailView()">
+              <i class="fas fa-arrow-left"></i> Back to List
+            </button>
+            <h3>Employee Profile Details</h3>
+          </div>
+
+          <div class="profile-detail-card">
       <div class="profile-header">
         <div class="profile-avatar">
           <i class="fas fa-user"></i>
         </div>
         <div class="profile-info">
-                <h3>{{ profile.user.fullName }}</h3>
-          <p class="profile-email">{{ profile.user.email }}</p>
-        </div>
-        <div class="profile-actions">
-          <button class="btn btn-sm btn-primary" (click)="openEditModal(profile)" title="View Details & Update Rating">
-            <i class="fas fa-eye"></i> View Details
-          </button>
+                <h3>{{ selectedEmployeeProfile.fullName }}</h3>
+                <p>{{ selectedEmployeeProfile.designation }}</p>
+                <span class="employee-id">ID: {{ selectedEmployeeProfile.employeeId }}</span>
         </div>
       </div>
 
@@ -104,23 +144,31 @@
           <h4 class="section-title">Basic Information</h4>
           <div class="detail-item">
             <span class="detail-label">Employee ID:</span>
-            <span class="detail-value">{{ profile.employeeProfileId }}</span>
+                  <span class="detail-value">{{ selectedEmployeeProfile.employeeId }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Full Name:</span>
+                  <span class="detail-value">{{ selectedEmployeeProfile.fullName }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Email:</span>
+                  <span class="detail-value">{{ selectedEmployeeProfile.email }}</span>
           </div>
           <div class="detail-item">
-            <span class="detail-label">Designation:</span>
-            <span class="detail-value">{{ profile.designation }}</span>
+                  <span class="detail-label">Phone Number:</span>
+                  <span class="detail-value">{{ selectedEmployeeProfile.phoneNumber || 'Not provided' }}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">Department:</span>
-            <span class="detail-value department-badge">{{ profile.department }}</span>
+                  <span class="detail-value department-badge">{{ selectedEmployeeProfile.department }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Designation:</span>
+                  <span class="detail-value">{{ selectedEmployeeProfile.designation }}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">Date of Joining:</span>
-            <span class="detail-value">{{ formatDate(profile.dateOfJoining) }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="detail-label">Contact:</span>
-            <span class="detail-value">{{ profile.user.email }}</span>
+                  <span class="detail-value">{{ formatDate(selectedEmployeeProfile.dateOfJoining) }}</span>
           </div>
         </div>
 
@@ -128,21 +176,21 @@
         <div class="detail-section">
           <h4 class="section-title">Work Details</h4>
           <div class="detail-item">
-            <span class="detail-label">Reporting Manager:</span>
-            <span class="detail-value">{{ profile.reportingManager }}</span>
-          </div>
-          <div class="detail-item" *ngIf="profile.currentProject">
             <span class="detail-label">Current Project:</span>
-            <span class="detail-value">{{ profile.currentProject }}</span>
+                  <span class="detail-value">{{ selectedEmployeeProfile.currentProject || 'Not assigned' }}</span>
           </div>
-          <div class="detail-item" *ngIf="profile.currentTeam">
+                <div class="detail-item">
             <span class="detail-label">Current Team:</span>
-            <span class="detail-value">{{ profile.currentTeam }}</span>
+                  <span class="detail-value">{{ selectedEmployeeProfile.currentTeam || 'Not assigned' }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Reporting Manager:</span>
+                  <span class="detail-value">{{ selectedEmployeeProfile.reportingManager || 'Not assigned' }}</span>
           </div>
-          <div class="detail-item" *ngIf="profile.skills && profile.skills.length > 0">
+                <div class="detail-item" *ngIf="selectedEmployeeProfile.skills">
             <span class="detail-label">Skills:</span>
             <div class="skills-container">
-              <span *ngFor="let skill of profile.skills" class="skill-badge">{{ skill }}</span>
+                    <span *ngFor="let skill of selectedEmployeeProfile.skills.split(',')" class="skill-badge">{{ skill.trim() }}</span>
             </div>
           </div>
         </div>
@@ -152,207 +200,21 @@
           <h4 class="section-title">Performance Summary</h4>
           <div class="detail-item">
             <span class="detail-label">Last Appraisal Rating:</span>
-            <span class="detail-value" [ngClass]="getRatingClass(profile.lastAppraisalRating)">
-              {{ profile.lastAppraisalRating }}/5
+                  <span class="detail-value" [ngClass]="getRatingClass(selectedEmployeeProfile.lastAppraisalRating)">
+                    {{ selectedEmployeeProfile.lastAppraisalRating || 'No rating yet' }}
             </span>
           </div>
-          <div class="detail-item" *ngIf="profile.currentGoals && profile.currentGoals.length > 0">
-            <span class="detail-label">Current Goals:</span>
-            <div class="goals-container">
-              <span *ngFor="let goal of profile.currentGoals" class="goal-item">{{ goal }}</span>
-            </div>
-          </div>
-        </div>
+              </div>
       </div>
     </div>
   </div>
 
   <!-- Empty State -->
-  <div class="empty-state" *ngIf="!isLoading && filteredEmployeeProfiles.length === 0">
+        <div class="empty-state" *ngIf="!isLoading && filteredEmployeeProfiles.length === 0 && !showDetailView">
     <i class="fas fa-users"></i>
     <h3>No Employee Profiles Found</h3>
     <p *ngIf="searchTerm || departmentFilter">Try adjusting your search criteria</p>
     <p *ngIf="!searchTerm && !departmentFilter">No employee profiles are available yet</p>
-  </div>
-
-  <!-- Create/Edit Modal -->
-  <div class="modal-overlay" *ngIf="showCreateModal || showEditModal" (click)="closeModals()">
-    <div class="modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>Employee Profile Details</h2>
-        <button class="btn-close" (click)="closeModals()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <form [formGroup]="employeeProfileForm" (ngSubmit)="showCreateModal ? createEmployeeProfile() : updateEmployeeProfile()">
-        <div class="modal-body">
-          <div class="form-group">
-            <label for="userId">User *</label>
-            <select 
-              id="userId" 
-              formControlName="userId" 
-              class="form-control"
-              [class.error]="employeeProfileForm.get('userId')?.invalid && employeeProfileForm.get('userId')?.touched">
-              <option value="">Select a user</option>
-              <option *ngFor="let user of users" [value]="user.userId">
-                {{ user.fullName }} ({{ user.email }})
-              </option>
-            </select>
-            <div class="error-message" *ngIf="employeeProfileForm.get('userId')?.invalid && employeeProfileForm.get('userId')?.touched">
-              Please select a user
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="department">Department *</label>
-            <input 
-              type="text" 
-              id="department" 
-              formControlName="department" 
-              placeholder="Enter department"
-              class="form-control"
-              [class.error]="employeeProfileForm.get('department')?.invalid && employeeProfileForm.get('department')?.touched">
-            <div class="error-message" *ngIf="employeeProfileForm.get('department')?.invalid && employeeProfileForm.get('department')?.touched">
-              Department is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="designation">Designation *</label>
-            <input 
-              type="text" 
-              id="designation" 
-              formControlName="designation" 
-              placeholder="Enter designation"
-              class="form-control"
-              [class.error]="employeeProfileForm.get('designation')?.invalid && employeeProfileForm.get('designation')?.touched">
-            <div class="error-message" *ngIf="employeeProfileForm.get('designation')?.invalid && employeeProfileForm.get('designation')?.touched">
-              Designation is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="dateOfJoining">Date of Joining *</label>
-            <input 
-              type="date" 
-              id="dateOfJoining" 
-              formControlName="dateOfJoining" 
-              class="form-control"
-              [class.error]="employeeProfileForm.get('dateOfJoining')?.invalid && employeeProfileForm.get('dateOfJoining')?.touched">
-            <div class="error-message" *ngIf="employeeProfileForm.get('dateOfJoining')?.invalid && employeeProfileForm.get('dateOfJoining')?.touched">
-              Date of joining is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="reportingManager">Reporting Manager *</label>
-            <input 
-              type="text" 
-              id="reportingManager" 
-              formControlName="reportingManager" 
-              placeholder="Enter reporting manager name"
-              class="form-control"
-              [class.error]="employeeProfileForm.get('reportingManager')?.invalid && employeeProfileForm.get('reportingManager')?.touched">
-            <div class="error-message" *ngIf="employeeProfileForm.get('reportingManager')?.invalid && employeeProfileForm.get('reportingManager')?.touched">
-              Reporting manager is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="currentProject">Current Project</label>
-            <input 
-              type="text" 
-              id="currentProject" 
-              formControlName="currentProject" 
-              placeholder="Enter current project"
-              class="form-control">
-          </div>
-
-          <div class="form-group">
-            <label for="currentTeam">Current Team</label>
-            <input 
-              type="text" 
-              id="currentTeam" 
-              formControlName="currentTeam" 
-              placeholder="Enter current team"
-              class="form-control">
-          </div>
-
-          <div class="form-group">
-            <label>Skills</label>
-            <div class="array-input">
-              <div class="input-with-button">
-                <input 
-                  type="text" 
-                  [(ngModel)]="newSkill" 
-                  placeholder="Enter a skill"
-                  class="form-control"
-                  (keyup.enter)="addSkill()">
-                <button type="button" class="btn btn-sm btn-primary" (click)="addSkill()">
-                  <i class="fas fa-plus"></i>
-                </button>
-              </div>
-              <div class="array-items" *ngIf="skillsArray.length > 0">
-                <span *ngFor="let skill of skillsArray" class="array-item">
-                  {{ skill }}
-                  <button type="button" class="remove-btn" (click)="removeSkill(skill)">
-                    <i class="fas fa-times"></i>
-                  </button>
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="lastAppraisalRating">Last Appraisal Rating</label>
-            <select 
-              id="lastAppraisalRating" 
-              formControlName="lastAppraisalRating" 
-              class="form-control">
-              <option value="0">No Rating</option>
-              <option value="1">1 - Poor</option>
-              <option value="2">2 - Below Average</option>
-              <option value="3">3 - Average</option>
-              <option value="4">4 - Good</option>
-              <option value="5">5 - Excellent</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Current Goals</label>
-            <div class="array-input">
-              <div class="input-with-button">
-                <input 
-                  type="text" 
-                  [(ngModel)]="newGoal" 
-                  placeholder="Enter a goal"
-                  class="form-control"
-                  (keyup.enter)="addGoal()">
-                <button type="button" class="btn btn-sm btn-primary" (click)="addGoal()">
-                  <i class="fas fa-plus"></i>
-                </button>
-              </div>
-              <div class="array-items" *ngIf="goalsArray.length > 0">
-                <span *ngFor="let goal of goalsArray" class="array-item">
-                  {{ goal }}
-                  <button type="button" class="remove-btn" (click)="removeGoal(goal)">
-                    <i class="fas fa-times"></i>
-                  </button>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
-          <button type="submit" class="btn btn-primary" [disabled]="employeeProfileForm.invalid">
-            Update Rating
-          </button>
-        </div>
-      </form>
-    </div>
   </div>
 
       </div> <!-- End employee-profile-container -->

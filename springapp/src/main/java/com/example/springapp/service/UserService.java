@@ -26,17 +26,6 @@ public class UserService {
     }
 
     public User createUser(User user) {
-        // Validate uniqueness to avoid DB constraint violations
-        if (user.getEmail() != null && repo.findByEmail(user.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Email already exists");
-        }
-        if (user.getUsername() != null && repo.findByUsername(user.getUsername()).isPresent()) {
-            throw new IllegalArgumentException("Username already exists");
-        }
-        if (user.getPhoneNumber() != null && repo.findByPhoneNumber(user.getPhoneNumber()).isPresent()) {
-            throw new IllegalArgumentException("Phone number already exists");
-        }
-
         // Set default values for new fields if not provided
         if (user.getRole() == null || user.getRole().isEmpty()) {
             user.setRole("Employee");
@@ -62,23 +51,45 @@ public class UserService {
     }
 
     public User authenticateUser(String email, String phoneNumber, String password) {
-        Optional<User> userOpt = null;
+        System.out.println("=== AUTHENTICATION DEBUG ===");
+        System.out.println("Email: " + email);
+        System.out.println("Phone: " + phoneNumber);
+        System.out.println("Password: " + password);
+        
+        Optional<User> userOpt = Optional.empty();
         
         // Try to find user by email first, then by phone number
-        if (email != null && !email.isEmpty()) {
-            userOpt = repo.findByEmail(email);
-        } else if (phoneNumber != null && !phoneNumber.isEmpty()) {
-            userOpt = repo.findByPhoneNumber(phoneNumber);
+        if (email != null && !email.trim().isEmpty()) {
+            System.out.println("Searching by email: " + email);
+            userOpt = repo.findByEmail(email.trim());
+        } else if (phoneNumber != null && !phoneNumber.trim().isEmpty()) {
+            System.out.println("Searching by phone: " + phoneNumber);
+            userOpt = repo.findByPhoneNumber(phoneNumber.trim());
         }
         
-        if (userOpt != null && userOpt.isPresent()) {
+        if (userOpt.isPresent()) {
             User user = userOpt.get();
+            System.out.println("User found: " + user.getEmail() + ", Role: " + user.getRole());
+            System.out.println("Stored password: '" + user.getPassword() + "'");
+            System.out.println("Provided password: '" + password + "'");
+            System.out.println("Password length stored: " + (user.getPassword() != null ? user.getPassword().length() : "null"));
+            System.out.println("Password length provided: " + (password != null ? password.length() : "null"));
+            
             // For now, we're doing plain text comparison
             // In production, you should use BCrypt or similar
-            if (password.equals(user.getPassword())) {
+            if (password != null && password.equals(user.getPassword())) {
+                System.out.println("Password match! Authentication successful.");
                 return user;
+            } else {
+                System.out.println("Password mismatch!");
+                System.out.println("Stored: '" + user.getPassword() + "'");
+                System.out.println("Provided: '" + password + "'");
             }
+        } else {
+            System.out.println("No user found with provided credentials.");
         }
-        return null;
+        
+        // If no user found or password doesn't match, throw exception
+        throw new RuntimeException("Invalid credentials");
     }
 }

@@ -1,0 +1,543 @@
+/* Layout */
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.sidebar {
+  width: 250px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+}
+
+.sidebar .logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.sidebar .logo i {
+  margin-right: 10px;
+  color: #ffd700;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar li {
+  margin-bottom: 10px;
+  cursor: pointer;
+  padding: 12px 15px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.sidebar li:hover {
+  background-color: rgba(255,255,255,0.1);
+  transform: translateX(5px);
+}
+
+.sidebar li.active {
+  background-color: rgba(255,255,255,0.2);
+  font-weight: bold;
+}
+
+.sidebar li i {
+  margin-right: 10px;
+  width: 20px;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  background: white;
+  padding: 20px 30px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.topbar-left h1 {
+  margin: 0;
+  color: #333;
+  font-size: 1.8rem;
+}
+
+.subtitle {
+  margin: 5px 0 0 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #666;
+}
+
+.user-info i {
+  font-size: 1.2rem;
+  color: #667eea;
+}
+
+.logout-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.logout-btn:hover {
+  background: #c82333;
+}
+
+.dashboard-content {
+  flex: 1;
+  padding: 30px;
+}
+
+/* Appraisal Container */
+.appraisal-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Employee Info Card */
+.employee-info-card {
+  background: white;
+  border-radius: 10px;
+  padding: 25px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.employee-info-card h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 1.3rem;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-item .label {
+  font-weight: 600;
+  color: #666;
+}
+
+.info-item .value {
+  color: #333;
+  font-weight: 500;
+}
+
+/* Loading State */
+.loading-state {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error State */
+.error-state {
+  text-align: center;
+  padding: 40px;
+  color: #dc3545;
+}
+
+.error-state i {
+  font-size: 3rem;
+  margin-bottom: 20px;
+}
+
+.error-state h3 {
+  margin: 0 0 10px 0;
+  color: #dc3545;
+}
+
+/* Success Message */
+.success-message {
+  background: #d4edda;
+  color: #155724;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  border: 1px solid #c3e6cb;
+}
+
+.success-message i {
+  margin-right: 10px;
+}
+
+/* Appraisals Section */
+.appraisals-section h3 {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 1.4rem;
+}
+
+.appraisals-list {
+  display: grid;
+  gap: 20px;
+}
+
+.appraisal-card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.appraisal-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.appraisal-card.selected {
+  border-color: #667eea;
+  background: #f8f9ff;
+}
+
+.appraisal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.appraisal-header h4 {
+  margin: 0;
+  color: #333;
+}
+
+.status-badge {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-submitted {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-in-review {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.status-completed {
+  background: #d4edda;
+  color: #155724;
+}
+
+.appraisal-details {
+  margin-bottom: 15px;
+}
+
+.rating-section {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 15px;
+}
+
+.rating-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rating-label {
+  font-weight: 600;
+  color: #666;
+}
+
+.rating-value {
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.rating-excellent {
+  background: #d4edda;
+  color: #155724;
+}
+
+.rating-good {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.rating-average {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.rating-poor {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.comments-section {
+  margin-bottom: 10px;
+}
+
+.comments-label {
+  font-weight: 600;
+  color: #666;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.comments-text {
+  margin: 0;
+  color: #333;
+  line-height: 1.5;
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.appraisal-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.readonly-indicator {
+  color: #666;
+  font-style: italic;
+}
+
+.readonly-indicator i {
+  margin-right: 5px;
+}
+
+/* Appraisal Form */
+.appraisal-form-section {
+  background: white;
+  border-radius: 10px;
+  padding: 25px;
+  margin-top: 30px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.appraisal-form-section h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 1.3rem;
+}
+
+.appraisal-form {
+  max-width: 600px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #e9ecef;
+  border-radius: 5px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 0.8rem;
+  margin-top: 5px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+  margin-top: 30px;
+}
+
+/* Buttons */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background: #667eea;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #5a6fd8;
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.empty-state i {
+  font-size: 4rem;
+  color: #ccc;
+  margin-bottom: 20px;
+}
+
+.empty-state h3 {
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.empty-state p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    padding: 15px;
+  }
+  
+  .sidebar ul {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
+  }
+  
+  .sidebar li {
+    white-space: nowrap;
+    margin-bottom: 0;
+  }
+  
+  .topbar {
+    padding: 15px 20px;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .dashboard-content {
+    padding: 20px;
+  }
+  
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .rating-section {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+}
+
+
+
+
+
+

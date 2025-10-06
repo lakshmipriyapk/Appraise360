@@ -45,16 +45,17 @@ export class SharedAppraisalService {
         reportingManager: 'Jane Smith',
         currentProject: 'Performance Appraisal System',
         currentTeam: 'Full Stack Team',
-        skills: ['Angular', 'Spring Boot', 'TypeScript'],
+        skills: 'Angular, Spring Boot, TypeScript',
         lastAppraisalRating: 4.2,
-        currentGoals: []
+        currentGoals: ''
       },
       reviewCycle: {
         cycleId: 1,
         cycleName: 'Q3 2024 Review',
         status: 'Completed',
-        deadline: new Date('2024-09-30'),
-        appraisals: []
+        startDate: '2024-07-01',
+        endDate: '2024-09-30',
+        description: 'Q3 Performance Review Cycle'
       }
     },
     {
@@ -89,16 +90,17 @@ export class SharedAppraisalService {
         reportingManager: 'Mike Johnson',
         currentProject: 'Platform Modernization',
         currentTeam: 'Leadership Team',
-        skills: ['Leadership', 'Project Management'],
+        skills: 'Leadership, Project Management',
         lastAppraisalRating: 3.8,
-        currentGoals: []
+        currentGoals: ''
       },
       reviewCycle: {
         cycleId: 2,
         cycleName: 'Q4 2024 Review',
         status: 'In Progress',
-        deadline: new Date('2024-12-31'),
-        appraisals: []
+        startDate: '2024-10-01',
+        endDate: '2024-12-31',
+        description: 'Q4 Performance Review Cycle'
       }
     }
   ];
@@ -113,7 +115,7 @@ export class SharedAppraisalService {
 
   getAppraisalsByEmployee(employeeProfileId: number): Appraisal[] {
     return this.appraisalsSubject.value.filter(appraisal => 
-      appraisal.employee.employeeProfileId === employeeProfileId
+      appraisal.employee?.employeeProfileId === employeeProfileId
     );
   }
 

@@ -20,4 +20,7 @@ public interface EmployeeProfileRepository extends JpaRepository<EmployeeProfile
 
     // Find profiles by reporting manager
     List<EmployeeProfile> findByReportingManager(String reportingManager);
+    
+    // Find profiles by user's full name (case insensitive)
+    List<EmployeeProfile> findByUserFullNameContainingIgnoreCase(String fullName);
 }

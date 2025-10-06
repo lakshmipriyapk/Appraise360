@@ -76,7 +76,7 @@
               class="filter-select">
               <option value="">All Employees</option>
               <option *ngFor="let emp of employeeProfiles" [value]="emp.employeeProfileId">
-                {{ emp.user.fullName }}
+                {{ emp.user?.fullName }}
               </option>
             </select>
 
@@ -117,9 +117,11 @@
                   <div class="avatar">
                     <i class="fas fa-user"></i>
                   </div>
-                  <div class="info">
-                    <h4>{{ feedback.employee.user.fullName }}</h4>
-                    <p>{{ feedback.employee.designation }} • {{ feedback.employee.department }}</p>
+                  <div class="employee-name-badge">
+                    {{ feedback.reviewer?.fullName || 'Unknown Reviewer' }}
+                  </div>
+                  <div class="info" *ngIf="feedback.employee?.designation || feedback.employee?.department">
+                    <p>{{ feedback.employee?.designation || 'No Designation' }} • {{ feedback.employee?.department || 'No Department' }}</p>
                   </div>
                 </div>
                 <div class="feedback-actions">
@@ -137,19 +139,9 @@
               <div class="feedback-info">
                 <div class="feedback-type">
                   <span class="label">Type:</span>
-                  <span class="type-badge" [ngClass]="getFeedbackTypeClass(feedback.feedbackType)">
+                  <span class="type-badge" [ngClass]="getFeedbackTypeClass(feedback.feedbackType || '')">
                     {{ feedback.feedbackType }}
                   </span>
-                </div>
-                <div class="reviewer-info">
-                  <span class="label">Reviewer:</span>
-                  <ng-container *ngIf="feedback.reviewer as r; else selfReviewer">
-                    <span class="reviewer-name">{{ r.fullName }}</span>
-                    <span class="reviewer-role">({{ r.role }})</span>
-                  </ng-container>
-                  <ng-template #selfReviewer>
-                    <span class="reviewer-name">Self</span>
-                  </ng-template>
                 </div>
                 <div class="rating-info" *ngIf="feedback.rating">
                   <span class="label">Rating:</span>
@@ -186,7 +178,7 @@
 <div class="modal-overlay" *ngIf="showCreateModal || showEditModal" (click)="closeModals()">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h2>{{ showCreateModal ? 'Add Feedback' : 'Edit Feedback' }}</h2>
+      <h2>{{ showCreateModal ? 'Add Manager Feedback' : 'Edit Manager Feedback' }}</h2>
       <button class="btn-close" (click)="closeModals()">
         <i class="fas fa-times"></i>
       </button>
@@ -196,30 +188,27 @@
       <div class="modal-body">
         <div class="form-group">
           <label for="employeeName">Employee Name *</label>
-          <input 
+          <select 
             id="employeeName"
-            type="text"
             class="form-control"
             formControlName="employeeName"
-            placeholder="Enter employee name"
-            [class.error]="feedbackForm.get('employeeName')?.invalid && feedbackForm.get('employeeName')?.touched" />
+            [disabled]="showEditModal"
+            [class.error]="feedbackForm.get('employeeName')?.invalid && feedbackForm.get('employeeName')?.touched"
+            (change)="onEmployeeSelectionChange($event)">
+            <option value="">Select an employee</option>
+            <option *ngFor="let emp of employeeProfiles" [value]="emp.user?.fullName">
+              {{ emp.user?.fullName }} - {{ emp.designation }} ({{ emp.department }})
+            </option>
+          </select>
           <div class="error-message" *ngIf="feedbackForm.get('employeeName')?.invalid && feedbackForm.get('employeeName')?.touched">
-            Employee name is required
+            Please select an employee
           </div>
-        </div>
-
-        <div class="form-group">
-          <label for="employeeId">Employee ID *</label>
-          <input 
-            id="employeeId"
-            type="number"
-            class="form-control"
-            formControlName="employeeId"
-            placeholder="Enter employee ID"
-            [class.error]="feedbackForm.get('employeeId')?.invalid && feedbackForm.get('employeeId')?.touched" />
-          <div class="error-message" *ngIf="feedbackForm.get('employeeId')?.invalid && feedbackForm.get('employeeId')?.touched">
-            Employee ID is required
+          <div class="error-message" *ngIf="employeeNameError">
+            {{ employeeNameError }}
           </div>
+          <small class="form-text text-muted" *ngIf="showEditModal">
+            Employee name is pre-filled for this feedback
+          </small>
         </div>
 
         
@@ -230,7 +219,8 @@
             id="feedbackType" 
             formControlName="feedbackType" 
             class="form-control"
-            [class.error]="feedbackForm.get('feedbackType')?.invalid && feedbackForm.get('feedbackType')?.touched">
+            [class.error]="feedbackForm.get('feedbackType')?.invalid && feedbackForm.get('feedbackType')?.touched"
+            [disabled]="showEditModal">
             <option value="">Select feedback type</option>
             <option *ngFor="let type of feedbackTypes" [value]="type.value">
               {{ type.label }}
@@ -239,6 +229,12 @@
           <div class="error-message" *ngIf="feedbackForm.get('feedbackType')?.invalid && feedbackForm.get('feedbackType')?.touched">
             Please select a feedback type
           </div>
+          <small class="form-text text-muted" *ngIf="showEditModal">
+            Manager feedback is always "Manager Feedback"
+          </small>
+          <small class="form-text text-muted" *ngIf="showCreateModal">
+            Default: Manager Feedback (for manager reviews)
+          </small>
         </div>
 
         <div class="form-group">
@@ -273,12 +269,54 @@
             Please select a valid rating (1-5)
           </div>
         </div>
+
+        <div class="form-group">
+          <label for="achievements">Achievements (Optional)</label>
+          <textarea 
+            id="achievements" 
+            formControlName="achievements" 
+            placeholder="Enter employee achievements and accomplishments..."
+            rows="3"
+            class="form-control"
+            [class.error]="feedbackForm.get('achievements')?.invalid && feedbackForm.get('achievements')?.touched"></textarea>
+          <div class="error-message" *ngIf="feedbackForm.get('achievements')?.invalid && feedbackForm.get('achievements')?.touched">
+            Please enter valid achievements
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="challenges">Challenges (Optional)</label>
+          <textarea 
+            id="challenges" 
+            formControlName="challenges" 
+            placeholder="Enter areas where employee faces challenges or needs improvement..."
+            rows="3"
+            class="form-control"
+            [class.error]="feedbackForm.get('challenges')?.invalid && feedbackForm.get('challenges')?.touched"></textarea>
+          <div class="error-message" *ngIf="feedbackForm.get('challenges')?.invalid && feedbackForm.get('challenges')?.touched">
+            Please enter valid challenges
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="improvements">Improvements (Optional)</label>
+          <textarea 
+            id="improvements" 
+            formControlName="improvements" 
+            placeholder="Enter suggestions for improvement and development areas..."
+            rows="3"
+            class="form-control"
+            [class.error]="feedbackForm.get('improvements')?.invalid && feedbackForm.get('improvements')?.touched"></textarea>
+          <div class="error-message" *ngIf="feedbackForm.get('improvements')?.invalid && feedbackForm.get('improvements')?.touched">
+            Please enter valid improvements
+          </div>
+        </div>
       </div>
 
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
-        <button type="submit" class="btn btn-primary" [disabled]="feedbackForm.invalid">
-          {{ showCreateModal ? 'Create Feedback' : 'Update Feedback' }}
+        <button type="submit" class="btn btn-primary" [disabled]="showCreateModal && feedbackForm.invalid">
+          {{ showCreateModal ? 'Submit Manager Feedback' : 'Update Manager Feedback' }}
         </button>
       </div>
     </form>

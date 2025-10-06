@@ -134,7 +134,7 @@ export class EmployeeDashboardComponent implements OnInit {
       console.log('Current user from AuthService:', user);
       if (user) {
         // Try to load real data from backend first
-        this.loadEmployeeProfileByUserId(user.userId);
+        this.loadEmployeeProfileByUserId(user.userId || 0);
       } else {
         // No user found, stop loading immediately
         this.isLoading = false;
@@ -143,35 +143,85 @@ export class EmployeeDashboardComponent implements OnInit {
   }
 
   loadEmployeeProfileByUserId(userId: number) {
-    console.log('Loading employee profile for user ID:', userId);
+    console.log('=== LOADING EMPLOYEE PROFILE BY USER ID ===');
+    console.log('User ID:', userId);
     
     // Set a timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
       console.log('Backend request timed out, creating basic profile');
       this.createBasicEmployeeProfile(userId);
-    }, 2000); // 2 second timeout
+    }, 3000); // 3 second timeout
     
     // Try to get the real employee profile from the backend
     this.employeeProfileService.getAllEmployeeProfiles().subscribe({
       next: (profiles) => {
         clearTimeout(timeoutId); // Clear timeout since we got a response
-        console.log('Received profiles from backend:', profiles);
+        console.log('=== ALL EMPLOYEE PROFILES FROM DATABASE ===');
+        console.log('Total profiles found:', profiles.length);
+        profiles.forEach((profile, index) => {
+          console.log(`Profile ${index + 1}:`, {
+            employeeProfileId: profile.employeeProfileId,
+            userId: profile.user?.userId,
+            fullName: profile.user?.fullName,
+            email: profile.user?.email,
+            username: profile.user?.username
+          });
+        });
         
-        // Find the profile for the current user
-        const userProfile = profiles.find(profile => profile.user.userId === userId);
+        console.log('Looking for profile with user ID:', userId);
+        
+        // Find the profile for the current user - try multiple ways
+        let userProfile = profiles.find(profile => profile.user?.userId === userId);
+        
+        // If not found by userId, try by employeeProfileId
+        if (!userProfile) {
+          console.log('Not found by userId, trying by employeeProfileId...');
+          userProfile = profiles.find(profile => profile.employeeProfileId === userId);
+        }
+        
+        // If still not found, try by username or email
+        if (!userProfile) {
+          console.log('Not found by employeeProfileId, trying by username/email...');
+          const currentUser = this.authService.getCurrentUser();
+          if (currentUser) {
+            console.log('Current user from AuthService:', currentUser);
+            userProfile = profiles.find(profile => 
+              profile.user?.username === currentUser.username ||
+              profile.user?.email === currentUser.email ||
+              profile.user?.fullName === currentUser.fullName
+            );
+          }
+        }
+        
         if (userProfile) {
-          console.log('Found employee profile in database:', userProfile);
+          console.log('✅ EMPLOYEE PROFILE FOUND IN DATABASE:', userProfile);
+          console.log('Employee Name:', userProfile.user?.fullName);
+          console.log('Employee Email:', userProfile.user?.email);
+          console.log('Employee Profile ID:', userProfile.employeeProfileId);
+          console.log('Department:', userProfile.department);
+          console.log('Designation:', userProfile.designation);
+          
           this.currentEmployee = userProfile;
           this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee);
           this.isLoading = false; // Stop loading
+          
+          // Load related data after profile is found
+          this.loadRelatedData();
+          
+          // Ensure data filtering after a short delay
+          setTimeout(() => {
+            this.ensureDataFiltering();
+          }, 500);
         } else {
-          console.log('No employee profile found in database, creating basic profile');
+          console.log('❌ NO EMPLOYEE PROFILE FOUND IN DATABASE');
+          console.log('Creating basic profile for user ID:', userId);
           this.createBasicEmployeeProfile(userId);
         }
       },
       error: (error: any) => {
         clearTimeout(timeoutId); // Clear timeout since we got an error
-        console.error('Error loading employee profiles from backend:', error);
+        console.error('❌ ERROR LOADING EMPLOYEE PROFILES FROM BACKEND:', error);
+        console.log('Creating basic profile as fallback...');
         this.createBasicEmployeeProfile(userId);
       }
     });
@@ -202,16 +252,16 @@ export class EmployeeDashboardComponent implements OnInit {
       reportingManager: '', // Empty - employee will fill
       currentProject: '', // Empty - employee will fill
       currentTeam: '', // Empty - employee will fill
-      skills: [], // Empty - employee will fill
-      currentGoals: [], // Empty - employee will fill
+      skills: '', // Empty - employee will fill
+      currentGoals: '', // Empty - employee will fill
       lastAppraisalRating: 0 // Default
     };
     
     console.log('Created basic currentEmployee with only signup data:', this.currentEmployee);
-    console.log('Employee name will be:', this.currentEmployee.user.fullName);
-    console.log('User object details:', this.currentEmployee.user);
-    console.log('User fullName property:', this.currentEmployee.user.fullName);
-    console.log('User username property:', this.currentEmployee.user.username);
+    console.log('Employee name will be:', this.currentEmployee?.user?.fullName);
+    console.log('User object details:', this.currentEmployee?.user);
+    console.log('User fullName property:', this.currentEmployee?.user?.fullName);
+    console.log('User username property:', this.currentEmployee?.user?.username);
     
     // Update the shared service with the current employee
     if (this.currentEmployee) {
@@ -221,6 +271,14 @@ export class EmployeeDashboardComponent implements OnInit {
     // Always stop loading when creating basic profile
     this.isLoading = false;
     console.log('Loading stopped, dashboard should now be visible');
+    
+    // Load related data even for basic profile
+    this.loadRelatedData();
+    
+    // Ensure data filtering after a short delay
+    setTimeout(() => {
+      this.ensureDataFiltering();
+    }, 500);
   }
 
   refreshUserData() {
@@ -470,10 +528,10 @@ export class EmployeeDashboardComponent implements OnInit {
 
   // Sync local goals with backend
   private syncLocalGoalsWithBackend(userId: number) {
-    const localGoals = this.currentGoals.filter(goal => goal.goalId > 1000000); // Local goals have high IDs
+    const localGoals = this.currentGoals.filter(goal => (goal.goalId || 0) > 1000000); // Local goals have high IDs
     
     localGoals.forEach(goal => {
-      this.goalService.createGoalWithEmployeeId(this.currentEmployee!.employeeProfileId, goal).subscribe({
+      this.goalService.createGoalWithEmployeeId(this.currentEmployee!.employeeProfileId || 0, goal).subscribe({
         next: (savedGoal) => {
           console.log('Local goal synced with backend:', savedGoal);
           // Update the goal with the real ID from backend
@@ -492,12 +550,12 @@ export class EmployeeDashboardComponent implements OnInit {
 
   // Sync local feedback with backend
   private syncLocalFeedbackWithBackend(userId: number) {
-    const localFeedback = this.recentFeedback.filter(feedback => feedback.feedbackId > 1000000); // Local feedback has high IDs
+    const localFeedback = this.recentFeedback.filter(feedback => (feedback.feedbackId || 0) > 1000000); // Local feedback has high IDs
     
     localFeedback.forEach(feedback => {
       this.feedbackService.createFeedbackWithIds(
-        this.currentEmployee!.employeeProfileId,
-        this.currentEmployee!.user.userId,
+        this.currentEmployee!.employeeProfileId || 0,
+        this.currentEmployee!.user?.userId || 0,
         feedback
       ).subscribe({
         next: (savedFeedback) => {
@@ -517,6 +575,7 @@ export class EmployeeDashboardComponent implements OnInit {
   }
 
   ngOnInit() {
+    console.log('=== EMPLOYEE DASHBOARD INITIALIZATION ===');
     console.log('Employee Dashboard ngOnInit - starting...');
     
     // Check backend connectivity first
@@ -545,41 +604,53 @@ export class EmployeeDashboardComponent implements OnInit {
         if (!this.currentEmployee) {
           const currentUser = this.authService.getCurrentUser();
           if (currentUser) {
-            this.createBasicEmployeeProfile(currentUser.userId);
+            this.createBasicEmployeeProfile(currentUser.userId || 0);
           }
         }
       }
     }, 5000); // 5 second safety timeout
     
-    // Don't use shared service data - only use real logged-in user data
-    // this.sharedEmployeeService.currentEmployee$.subscribe(employee => {
-    //   console.log('Shared service employee data:', employee);
-    //   console.log('Current employee before check:', this.currentEmployee);
-    //   if (employee && !this.currentEmployee) {
-    //     // Only use shared employee data if we don't have current user data
-    //     console.log('Using shared employee data:', employee);
-    //     this.currentEmployee = employee;
-    //   }
-    // });
-    
-    // Subscribe to shared goal data
+    // Subscribe to shared goal data with enhanced filtering
     this.sharedGoalService.goals$.subscribe(goals => {
-      if (goals && goals.length > 0) {
-        // Filter goals for current employee
-        const employeeGoals = goals.filter(goal => 
-          goal.employee.employeeProfileId === this.currentEmployee?.employeeProfileId
-        );
+      if (goals && goals.length > 0 && this.currentEmployee) {
+        console.log('=== FILTERING SHARED GOALS FOR EMPLOYEE ===');
+        console.log('All shared goals:', goals.length);
+        console.log('Current employee:', this.currentEmployee?.user?.fullName);
+        
+        // Enhanced filtering for current employee
+        const employeeGoals = goals.filter(goal => {
+          const matchesEmployeeProfileId = goal.employee?.employeeProfileId === this.currentEmployee?.employeeProfileId;
+          const matchesUserId = goal.employee?.user?.userId === this.currentEmployee?.user?.userId;
+          const matchesEmail = goal.employee?.user?.email === this.currentEmployee?.user?.email;
+          const matchesUsername = goal.employee?.user?.username === this.currentEmployee?.user?.username;
+          
+          return matchesEmployeeProfileId || matchesUserId || matchesEmail || matchesUsername;
+        });
+        
+        console.log('✅ Filtered shared goals for employee:', employeeGoals.length);
         this.currentGoals = employeeGoals;
+        this.calculateGoalStats();
       }
     });
 
-    // Subscribe to shared appraisal data
+    // Subscribe to shared appraisal data with enhanced filtering
     this.sharedAppraisalService.appraisals$.subscribe(appraisals => {
-      if (appraisals && appraisals.length > 0) {
-        // Filter appraisals for current employee
-        const employeeAppraisals = appraisals.filter(appraisal => 
-          appraisal.employee.employeeProfileId === this.currentEmployee?.employeeProfileId
-        );
+      if (appraisals && appraisals.length > 0 && this.currentEmployee) {
+        console.log('=== FILTERING SHARED APPRAISALS FOR EMPLOYEE ===');
+        console.log('All shared appraisals:', appraisals.length);
+        console.log('Current employee:', this.currentEmployee?.user?.fullName);
+        
+        // Enhanced filtering for current employee
+        const employeeAppraisals = appraisals.filter(appraisal => {
+          const matchesEmployeeProfileId = appraisal.employee?.employeeProfileId === this.currentEmployee?.employeeProfileId;
+          const matchesUserId = appraisal.employee?.user?.userId === this.currentEmployee?.user?.userId;
+          const matchesEmail = appraisal.employee?.user?.email === this.currentEmployee?.user?.email;
+          const matchesUsername = appraisal.employee?.user?.username === this.currentEmployee?.user?.username;
+          
+          return matchesEmployeeProfileId || matchesUserId || matchesEmail || matchesUsername;
+        });
+        
+        console.log('✅ Filtered shared appraisals for employee:', employeeAppraisals.length);
         this.appraisals = employeeAppraisals;
         this.calculateAppraisalStats();
       }
@@ -606,7 +677,7 @@ export class EmployeeDashboardComponent implements OnInit {
     this.employeeProfileService.getAllEmployeeProfiles().subscribe({
       next: (profiles) => {
         // Find the profile for the current user
-        const userProfile = profiles.find(profile => profile.user.userId === userId);
+        const userProfile = profiles.find(profile => profile.user?.userId === userId);
         if (userProfile) {
           this.currentEmployee = userProfile;
           this.loadRelatedData();
@@ -634,9 +705,9 @@ export class EmployeeDashboardComponent implements OnInit {
       reportingManager: 'John Smith',
       currentProject: 'Performance Appraisal System',
       currentTeam: 'Full Stack Team',
-      skills: ['Angular', 'Spring Boot', 'TypeScript', 'Java', 'SQL'],
+      skills: 'Angular, Spring Boot, TypeScript, Java, SQL',
       lastAppraisalRating: 4.2,
-      currentGoals: ['Complete Angular Training', 'Deliver Q3 Project Milestone', 'Improve Code Review Skills'],
+      currentGoals: 'Complete Angular Training, Deliver Q3 Project Milestone, Improve Code Review Skills',
       user: {
         userId: 1,
         username: 'john.doe',
@@ -657,21 +728,21 @@ export class EmployeeDashboardComponent implements OnInit {
         title: 'Complete Angular Training',
         description: 'Finish the comprehensive Angular course and certification',
         status: 'In Progress',
-        employee: this.currentEmployee
+        employee: this.currentEmployee!
       },
       {
         goalId: 2,
         title: 'Deliver Q3 Project Milestone',
         description: 'Complete the performance appraisal system development',
         status: 'Completed',
-        employee: this.currentEmployee
+        employee: this.currentEmployee!
       },
       {
         goalId: 3,
         title: 'Improve Code Review Skills',
         description: 'Participate in more code reviews and provide constructive feedback',
         status: 'Pending',
-        employee: this.currentEmployee
+        employee: this.currentEmployee!
       }
     ];
 
@@ -682,7 +753,7 @@ export class EmployeeDashboardComponent implements OnInit {
         feedbackType: 'Admin Feedback',
         comments: 'Great progress on the recent project! Your Angular skills have improved significantly.',
         rating: 4,
-        employee: this.currentEmployee,
+        employee: this.currentEmployee!,
         reviewer: {
           userId: 2,
           username: 'admin.smith',
@@ -700,7 +771,7 @@ export class EmployeeDashboardComponent implements OnInit {
         feedbackType: 'Peer Feedback',
         comments: 'Very helpful during team meetings and always willing to share knowledge.',
         rating: 5,
-        employee: this.currentEmployee,
+        employee: this.currentEmployee!,
         reviewer: {
           userId: 3,
           username: 'peer.jones',
@@ -730,13 +801,14 @@ export class EmployeeDashboardComponent implements OnInit {
         reviewerRole: 'Admin',
         reviewDate: '2024-09-20',
         managerComments: 'Excellent performance this quarter. Shows great initiative and technical skills.',
-        employee: this.currentEmployee,
+        employee: this.currentEmployee!,
         reviewCycle: {
           cycleId: 1,
           cycleName: 'Q3 2024 Review',
           status: 'Completed',
-          deadline: new Date('2024-09-30'),
-          appraisals: []
+          startDate: '2024-07-01',
+          endDate: '2024-09-30',
+          description: ''
         }
       }
     ];
@@ -757,53 +829,302 @@ export class EmployeeDashboardComponent implements OnInit {
       return;
     }
 
-    console.log('Loading related data from database for employee:', this.currentEmployee.user.fullName);
+    console.log('=== LOADING EMPLOYEE-SPECIFIC DATA ===');
+    console.log('Employee:', this.currentEmployee?.user?.fullName);
+    console.log('Employee Profile ID:', this.currentEmployee.employeeProfileId);
+    console.log('Employee User ID:', this.currentEmployee?.user?.userId);
+    console.log('Employee Email:', this.currentEmployee?.user?.email);
+    console.log('Employee Username:', this.currentEmployee?.user?.username);
+
+    // Special logging for Lakshmipriya P K
+    if (this.currentEmployee?.user?.fullName?.includes('Lakshmipriya')) {
+      console.log('🎯 LAKSHMIPRIYA P K DETECTED - LOADING HER SPECIFIC DATA');
+      console.log('Her Employee Profile ID:', this.currentEmployee.employeeProfileId);
+      console.log('Her User ID:', this.currentEmployee?.user?.userId);
+    }
 
     // Load goals from database (both self-created and manager-assigned)
-    this.goalService.getGoalsByEmployeeId(this.currentEmployee.employeeProfileId).subscribe({
+    this.goalService.getGoalsByEmployee(this.currentEmployee.employeeProfileId || 0).subscribe({
       next: (goals) => {
-        console.log('Goals loaded from database:', goals);
+        console.log('✅ Goals loaded from database for employee:', goals.length);
+        console.log('Goals:', goals.map(g => g.title));
+        
+        // Special logging for Lakshmipriya P K
+        if (this.currentEmployee?.user?.fullName?.includes('Lakshmipriya')) {
+          console.log('🎯 LAKSHMIPRIYA P K GOALS:', goals);
+          goals.forEach(goal => {
+            console.log(`  - ${goal.title} (Status: ${goal.status}, Priority: ${goal.priority})`);
+          });
+        }
+        
         this.currentGoals = goals;
         // Update shared service with individual goals
         goals.forEach(goal => this.sharedGoalService.addGoal(goal));
         this.calculateGoalStats();
       },
       error: (error: any) => {
-        console.error('Error loading goals from database:', error);
-        // Error message removed to prevent error page display
+        console.error('❌ Error loading goals from database:', error);
+        console.log('🔄 Falling back to load all goals and filter...');
+        // Try to load all goals and filter by employee
+        this.loadAllGoalsAndFilter();
       }
     });
 
     // Load feedback from database (both self and manager feedback)
-    this.feedbackService.getFeedbacksByEmployeeId(this.currentEmployee.employeeProfileId).subscribe({
+    this.feedbackService.getFeedbacksByEmployee(this.currentEmployee.employeeProfileId || 0).subscribe({
       next: (feedback) => {
-        console.log('Feedback loaded from database:', feedback);
+        console.log('✅ Feedback loaded from database for employee:', feedback.length);
+        console.log('Feedback types:', feedback.map(f => f.feedbackType));
+        
+        // Special logging for Lakshmipriya P K
+        if (this.currentEmployee?.user?.fullName?.includes('Lakshmipriya')) {
+          console.log('🎯 LAKSHMIPRIYA P K FEEDBACK:', feedback);
+          feedback.forEach(fb => {
+            console.log(`  - ${fb.feedbackType} (Rating: ${fb.rating}, Comments: ${fb.comments?.substring(0, 50)}...)`);
+          });
+        }
+        
         this.recentFeedback = feedback;
-        this.calculateGoalStats();
+        this.dashboardStats.feedbackCount = feedback.length;
+        
+        // Find self feedback
+        this.currentSelfFeedback = feedback.find(f => f.feedbackType === 'Self Assessment');
+        if (this.currentSelfFeedback) {
+          console.log('✅ Found self feedback for employee');
+        }
       },
       error: (error: any) => {
-        console.error('Error loading feedback from database:', error);
-        // Error message removed to prevent error page display
+        console.error('❌ Error loading feedback from database:', error);
+        console.log('🔄 Falling back to load all feedback and filter...');
+        // Try to load all feedback and filter by employee
+        this.loadAllFeedbackAndFilter();
       }
     });
 
     // Load appraisals from database
-    this.appraisalService.getAppraisalsByEmployeeId(this.currentEmployee.employeeProfileId).subscribe({
+    this.appraisalService.getAppraisalsByEmployee(this.currentEmployee.employeeProfileId || 0).subscribe({
       next: (appraisals) => {
-        console.log('Appraisals loaded from database:', appraisals);
+        console.log('✅ Appraisals loaded from database for employee:', appraisals.length);
+        console.log('Appraisals:', appraisals.map(a => `ID: ${a.appraisalId}, Status: ${a.status}`));
+        
+        // Special logging for Lakshmipriya P K
+        if (this.currentEmployee?.user?.fullName?.includes('Lakshmipriya')) {
+          console.log('🎯 LAKSHMIPRIYA P K APPRAISALS:', appraisals);
+          appraisals.forEach(appraisal => {
+            console.log(`  - Appraisal ID: ${appraisal.appraisalId} (Status: ${appraisal.status}, Rating: ${appraisal.managerRating})`);
+          });
+        }
+        
         this.appraisals = appraisals;
         // Update shared service with individual appraisals
         appraisals.forEach(appraisal => this.sharedAppraisalService.addAppraisal(appraisal));
         this.calculateAppraisalStats();
       },
       error: (error: any) => {
-        console.error('Error loading appraisals from database:', error);
-        // Error message removed to prevent error page display
+        console.error('❌ Error loading appraisals from database:', error);
+        console.log('🔄 Falling back to load all appraisals and filter...');
+        // Try to load all appraisals and filter by employee
+        this.loadAllAppraisalsAndFilter();
       }
     });
 
     // Set loading to false after all data loading is initiated
     this.isLoading = false;
+  }
+
+  // Fallback methods to load all data and filter by employee
+  loadAllGoalsAndFilter() {
+    this.goalService.getAllGoals().subscribe({
+      next: (allGoals) => {
+        console.log('=== LOADING ALL GOALS AND FILTERING ===');
+        console.log('All goals from database:', allGoals.length);
+        console.log('Current employee:', this.currentEmployee?.user?.fullName);
+        console.log('Employee Profile ID:', this.currentEmployee?.employeeProfileId);
+        console.log('Employee User ID:', this.currentEmployee?.user?.userId);
+        
+        // Enhanced filtering with multiple criteria
+        this.currentGoals = allGoals.filter(goal => {
+          const matchesEmployeeProfileId = goal.employee?.employeeProfileId === this.currentEmployee?.employeeProfileId;
+          const matchesUserId = goal.employee?.user?.userId === this.currentEmployee?.user?.userId;
+          const matchesEmail = goal.employee?.user?.email === this.currentEmployee?.user?.email;
+          const matchesUsername = goal.employee?.user?.username === this.currentEmployee?.user?.username;
+          
+          const isMatch = matchesEmployeeProfileId || matchesUserId || matchesEmail || matchesUsername;
+          
+          if (isMatch) {
+            console.log('✅ Goal matches employee:', goal.title);
+          }
+          
+          return isMatch;
+        });
+        
+        console.log('✅ Filtered goals for employee:', this.currentGoals.length);
+        console.log('Goals:', this.currentGoals.map(g => g.title));
+        this.calculateGoalStats();
+      },
+      error: (error) => {
+        console.error('Error loading all goals:', error);
+      }
+    });
+  }
+
+  loadAllFeedbackAndFilter() {
+    this.feedbackService.getAllFeedbacks().subscribe({
+      next: (allFeedback) => {
+        console.log('=== LOADING ALL FEEDBACK AND FILTERING ===');
+        console.log('All feedback from database:', allFeedback.length);
+        console.log('Current employee:', this.currentEmployee?.user?.fullName);
+        console.log('Employee Profile ID:', this.currentEmployee?.employeeProfileId);
+        console.log('Employee User ID:', this.currentEmployee?.user?.userId);
+        
+        // Enhanced filtering with multiple criteria
+        this.recentFeedback = allFeedback.filter(feedback => {
+          const matchesEmployeeProfileId = feedback.employee?.employeeProfileId === this.currentEmployee?.employeeProfileId;
+          const matchesUserId = feedback.employee?.user?.userId === this.currentEmployee?.user?.userId;
+          const matchesEmail = feedback.employee?.user?.email === this.currentEmployee?.user?.email;
+          const matchesUsername = feedback.employee?.user?.username === this.currentEmployee?.user?.username;
+          const matchesReviewerId = feedback.reviewer?.userId === this.currentEmployee?.user?.userId;
+          
+          const isMatch = matchesEmployeeProfileId || matchesUserId || matchesEmail || matchesUsername || matchesReviewerId;
+          
+          if (isMatch) {
+            console.log('✅ Feedback matches employee:', feedback.feedbackType, '-', feedback.comments?.substring(0, 50) + '...');
+          }
+          
+          return isMatch;
+        });
+        
+        console.log('✅ Filtered feedback for employee:', this.recentFeedback.length);
+        console.log('Feedback types:', this.recentFeedback.map(f => f.feedbackType));
+        this.dashboardStats.feedbackCount = this.recentFeedback.length;
+        
+        // Find self feedback
+        this.currentSelfFeedback = this.recentFeedback.find(f => f.feedbackType === 'Self Assessment');
+        if (this.currentSelfFeedback) {
+          console.log('✅ Found self feedback for employee');
+        }
+      },
+      error: (error) => {
+        console.error('Error loading all feedback:', error);
+      }
+    });
+  }
+
+  loadAllAppraisalsAndFilter() {
+    this.appraisalService.getAllAppraisals().subscribe({
+      next: (allAppraisals) => {
+        console.log('=== LOADING ALL APPRAISALS AND FILTERING ===');
+        console.log('All appraisals from database:', allAppraisals.length);
+        console.log('Current employee:', this.currentEmployee?.user?.fullName);
+        console.log('Employee Profile ID:', this.currentEmployee?.employeeProfileId);
+        console.log('Employee User ID:', this.currentEmployee?.user?.userId);
+        
+        // Enhanced filtering with multiple criteria
+        this.appraisals = allAppraisals.filter(appraisal => {
+          const matchesEmployeeProfileId = appraisal.employee?.employeeProfileId === this.currentEmployee?.employeeProfileId;
+          const matchesUserId = appraisal.employee?.user?.userId === this.currentEmployee?.user?.userId;
+          const matchesEmail = appraisal.employee?.user?.email === this.currentEmployee?.user?.email;
+          const matchesUsername = appraisal.employee?.user?.username === this.currentEmployee?.user?.username;
+          
+          const isMatch = matchesEmployeeProfileId || matchesUserId || matchesEmail || matchesUsername;
+          
+          if (isMatch) {
+            console.log('✅ Appraisal matches employee:', appraisal.appraisalId, '- Status:', appraisal.status);
+          }
+          
+          return isMatch;
+        });
+        
+        console.log('✅ Filtered appraisals for employee:', this.appraisals.length);
+        console.log('Appraisals:', this.appraisals.map(a => `ID: ${a.appraisalId}, Status: ${a.status}`));
+        this.calculateAppraisalStats();
+      },
+      error: (error) => {
+        console.error('Error loading all appraisals:', error);
+      }
+    });
+  }
+
+  // Method to refresh all employee-specific data
+  refreshEmployeeData() {
+    console.log('=== REFRESHING ALL EMPLOYEE-SPECIFIC DATA ===');
+    console.log('Current employee:', this.currentEmployee?.user?.fullName);
+    
+    if (!this.currentEmployee) {
+      console.error('Cannot refresh data: currentEmployee is null');
+      return;
+    }
+    
+    // Clear existing data
+    this.currentGoals = [];
+    this.recentFeedback = [];
+    this.appraisals = [];
+    this.currentSelfFeedback = null;
+    
+    // Reload all data
+    this.loadRelatedData();
+  }
+
+  // Method to ensure data is filtered correctly
+  ensureDataFiltering() {
+    console.log('=== ENSURING DATA FILTERING FOR EMPLOYEE ===');
+    console.log('Current employee:', this.currentEmployee?.user?.fullName);
+    
+    if (!this.currentEmployee) {
+      console.error('Cannot filter data: currentEmployee is null');
+      return;
+    }
+    
+    // Filter goals
+    if (this.currentGoals.length > 0) {
+      const originalGoalsCount = this.currentGoals.length;
+      this.currentGoals = this.currentGoals.filter(goal => {
+        const matchesEmployeeProfileId = goal.employee?.employeeProfileId === this.currentEmployee?.employeeProfileId;
+        const matchesUserId = goal.employee?.user?.userId === this.currentEmployee?.user?.userId;
+        const matchesEmail = goal.employee?.user?.email === this.currentEmployee?.user?.email;
+        const matchesUsername = goal.employee?.user?.username === this.currentEmployee?.user?.username;
+        
+        return matchesEmployeeProfileId || matchesUserId || matchesEmail || matchesUsername;
+      });
+      console.log(`✅ Goals filtered: ${originalGoalsCount} → ${this.currentGoals.length}`);
+    }
+    
+    // Filter feedback
+    if (this.recentFeedback.length > 0) {
+      const originalFeedbackCount = this.recentFeedback.length;
+      this.recentFeedback = this.recentFeedback.filter(feedback => {
+        const matchesEmployeeProfileId = feedback.employee?.employeeProfileId === this.currentEmployee?.employeeProfileId;
+        const matchesUserId = feedback.employee?.user?.userId === this.currentEmployee?.user?.userId;
+        const matchesEmail = feedback.employee?.user?.email === this.currentEmployee?.user?.email;
+        const matchesUsername = feedback.employee?.user?.username === this.currentEmployee?.user?.username;
+        const matchesReviewerId = feedback.reviewer?.userId === this.currentEmployee?.user?.userId;
+        
+        return matchesEmployeeProfileId || matchesUserId || matchesEmail || matchesUsername || matchesReviewerId;
+      });
+      console.log(`✅ Feedback filtered: ${originalFeedbackCount} → ${this.recentFeedback.length}`);
+      
+      // Update self feedback
+      this.currentSelfFeedback = this.recentFeedback.find(f => f.feedbackType === 'Self Assessment');
+    }
+    
+    // Filter appraisals
+    if (this.appraisals.length > 0) {
+      const originalAppraisalsCount = this.appraisals.length;
+      this.appraisals = this.appraisals.filter(appraisal => {
+        const matchesEmployeeProfileId = appraisal.employee?.employeeProfileId === this.currentEmployee?.employeeProfileId;
+        const matchesUserId = appraisal.employee?.user?.userId === this.currentEmployee?.user?.userId;
+        const matchesEmail = appraisal.employee?.user?.email === this.currentEmployee?.user?.email;
+        const matchesUsername = appraisal.employee?.user?.username === this.currentEmployee?.user?.username;
+        
+        return matchesEmployeeProfileId || matchesUserId || matchesEmail || matchesUsername;
+      });
+      console.log(`✅ Appraisals filtered: ${originalAppraisalsCount} → ${this.appraisals.length}`);
+    }
+    
+    // Recalculate stats
+    this.calculateGoalStats();
+    this.calculateAppraisalStats();
+    this.dashboardStats.feedbackCount = this.recentFeedback.length;
   }
 
   calculateGoalStats() {
@@ -812,12 +1133,53 @@ export class EmployeeDashboardComponent implements OnInit {
     this.dashboardStats.pendingGoals = this.currentGoals.filter(g => g.status === 'Pending' || g.status === 'In Progress').length;
   }
 
+  // Helper method to get skills as array
+  getSkillsArray(): string[] {
+    if (!this.currentEmployee) return [];
+    
+    if (Array.isArray(this.currentEmployee.skills)) {
+      return this.currentEmployee.skills;
+    } else if (typeof this.currentEmployee.skills === 'string') {
+      return this.currentEmployee.skills.split(',').map(skill => skill.trim()).filter(skill => skill.length > 0);
+    }
+    
+    return [];
+  }
+
+  // Helper method to get current goals as array
+  getCurrentGoalsArray(): string[] {
+    if (!this.currentEmployee) return [];
+    
+    if (Array.isArray(this.currentEmployee.currentGoals)) {
+      return this.currentEmployee.currentGoals;
+    } else if (typeof this.currentEmployee.currentGoals === 'string') {
+      return this.currentEmployee.currentGoals.split(',').map(goal => goal.trim()).filter(goal => goal.length > 0);
+    }
+    
+    return [];
+  }
+
+  // Method to refresh employee data
+  refreshEmployeeData() {
+    console.log('=== REFRESHING EMPLOYEE DATA ===');
+    this.isLoading = true;
+    
+    // Reload current user and profile
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser) {
+      this.loadEmployeeProfileByUserId(currentUser.userId || 0);
+    } else {
+      this.isLoading = false;
+      console.error('No current user found for refresh');
+    }
+  }
+
   calculateAppraisalStats() {
     if (this.appraisals.length > 0) {
       const latestAppraisal = this.appraisals[this.appraisals.length - 1];
-      this.dashboardStats.lastAppraisalRating = latestAppraisal.managerRating;
+      this.dashboardStats.lastAppraisalRating = latestAppraisal.managerRating || 0;
       
-      const totalRating = this.appraisals.reduce((sum, appraisal) => sum + appraisal.managerRating, 0);
+      const totalRating = this.appraisals.reduce((sum, appraisal) => sum + (appraisal.managerRating || 0), 0);
       this.dashboardStats.averageRating = totalRating / this.appraisals.length;
     }
   }
@@ -913,7 +1275,7 @@ export class EmployeeDashboardComponent implements OnInit {
         challenges: formData.challenges,
         improvements: formData.improvements,
         employee: { employeeProfileId: this.currentEmployee.employeeProfileId }, // Send only ID
-        reviewer: { userId: this.currentEmployee.user.userId } // Send only ID
+        reviewer: { userId: this.currentEmployee?.user?.userId } // Send only ID
       };
 
       console.log('Saving self feedback to database:', feedbackData);
@@ -945,8 +1307,8 @@ export class EmployeeDashboardComponent implements OnInit {
     this.ensureEmployeeProfileExists().then(() => {
     // Save to database using employee and reviewer IDs
     this.feedbackService.createFeedbackWithIds(
-        this.currentEmployee!.employeeProfileId,
-        this.currentEmployee!.user.userId,
+        this.currentEmployee!.employeeProfileId || 0,
+        this.currentEmployee!.user?.userId || 0,
       feedbackData
     ).subscribe({
       next: (savedFeedback: any) => {
@@ -1095,7 +1457,7 @@ export class EmployeeDashboardComponent implements OnInit {
     // Ensure employee profile exists in database first
     this.ensureEmployeeProfileExists().then(() => {
     // Save to database using employee ID
-      this.goalService.createGoalWithEmployeeId(this.currentEmployee!.employeeProfileId, newGoal).subscribe({
+      this.goalService.createGoalWithEmployeeId(this.currentEmployee!.employeeProfileId || 0, newGoal).subscribe({
       next: (savedGoal: any) => {
           console.log('Goal saved successfully to database:', savedGoal);
           
@@ -1200,7 +1562,7 @@ export class EmployeeDashboardComponent implements OnInit {
     console.log('Saving goal status update to database:', goal);
 
     // Save to database
-    this.goalService.updateGoal(goal).subscribe({
+    this.goalService.updateGoal(goal.goalId || 0, goal).subscribe({
       next: (updatedGoal: any) => {
         console.log('Goal status updated successfully in database:', updatedGoal);
         
@@ -1258,7 +1620,7 @@ export class EmployeeDashboardComponent implements OnInit {
       const requestData = {
         requestId: 0, // Will be set by backend
         requesterId: this.currentEmployee.employeeProfileId,
-        requesterName: this.currentEmployee.user.fullName,
+        requesterName: this.currentEmployee?.user?.fullName,
         requestee: formData.requestee,
         feedbackType: formData.feedbackType,
         message: formData.message,
@@ -1278,13 +1640,13 @@ export class EmployeeDashboardComponent implements OnInit {
         comments: `Feedback request: ${formData.message}`,
         rating: 0, // No rating for requests
         employee: { employeeProfileId: this.currentEmployee.employeeProfileId }, // Send only ID
-        reviewer: { userId: this.currentEmployee.user.userId }, // Send only ID
+        reviewer: { userId: this.currentEmployee?.user?.userId }, // Send only ID
         createdDate: new Date().toISOString().split('T')[0], // Convert to YYYY-MM-DD format
         status: 'Requested'
       };
 
       // Save to database
-      this.feedbackService.createSelfFeedback(feedbackData).subscribe({
+      this.feedbackService.createFeedback(feedbackData).subscribe({
         next: (savedFeedback: any) => {
           console.log('Feedback request saved successfully to database:', savedFeedback);
           
@@ -1351,19 +1713,19 @@ export class EmployeeDashboardComponent implements OnInit {
   openEditProfileModal() {
     if (this.currentEmployee) {
       // Split fullName into firstName and lastName for the form
-      const nameParts = this.currentEmployee.user.fullName.split(' ');
+      const nameParts = this.currentEmployee?.user?.fullName?.split(' ') || [];
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
       
       this.editProfileForm.patchValue({
         firstName: firstName,
         lastName: lastName,
-        email: this.currentEmployee.user.email,
+        email: this.currentEmployee?.user?.email,
         designation: this.currentEmployee.designation,
         department: this.currentEmployee.department,
         currentProject: this.currentEmployee.currentProject,
         currentTeam: this.currentEmployee.currentTeam,
-        skills: this.currentEmployee.skills?.join(', ')
+        skills: this.currentEmployee.skills || ''
       });
     }
     this.showEditProfileModal = true;
@@ -1385,8 +1747,8 @@ export class EmployeeDashboardComponent implements OnInit {
       const formData = this.editProfileForm.value;
       
       // Update the current employee data
-      this.currentEmployee.user.fullName = `${formData.firstName} ${formData.lastName}`.trim();
-      this.currentEmployee.user.email = formData.email;
+      this.currentEmployee!.user!.fullName = `${formData.firstName} ${formData.lastName}`.trim();
+      this.currentEmployee!.user!.email = formData.email;
       this.currentEmployee.designation = formData.designation;
       this.currentEmployee.department = formData.department;
       this.currentEmployee.currentProject = formData.currentProject;
@@ -1412,11 +1774,11 @@ export class EmployeeDashboardComponent implements OnInit {
         currentGoals: Array.isArray(this.currentEmployee.currentGoals)
           ? this.currentEmployee.currentGoals
           : ((this.currentEmployee as any).currentGoals ? String((this.currentEmployee as any).currentGoals).split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : []),
-        user: { userId: this.currentEmployee.user.userId }
+        user: { userId: this.currentEmployee?.user?.userId }
       };
 
       // Save to database
-      this.employeeProfileService.updateEmployeeProfile(updatePayload).subscribe({
+      this.employeeProfileService.updateProfile(this.currentEmployee!.employeeProfileId || 0, updatePayload).subscribe({
         next: (updatedProfile: any) => {
           console.log('Profile saved successfully to database:', updatedProfile);
           
@@ -1521,7 +1883,7 @@ export class EmployeeDashboardComponent implements OnInit {
           this.userService.createUser(payload).subscribe({
             next: (created: any) => {
               // Update local reference with created id
-              this.currentEmployee!.user.userId = created.userId;
+              this.currentEmployee!.user!.userId = created.userId;
               resolve(created.userId);
             },
             error: (err) => reject(err)
@@ -1560,7 +1922,7 @@ export class EmployeeDashboardComponent implements OnInit {
           user: { userId: backendUserId }
         } as any;
 
-        this.employeeProfileService.createEmployeeProfile(backendUserId, profileData).subscribe({
+        this.employeeProfileService.createProfileForUser(backendUserId, profileData).subscribe({
           next: (createdProfile: any) => {
             console.log('New profile created successfully:', createdProfile);
             this.currentEmployee = createdProfile;

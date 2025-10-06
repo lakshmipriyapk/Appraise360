@@ -1,3 +1,5 @@
+// src/app/services/review-cycle.service.ts
+
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -8,27 +10,32 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class ReviewCycleService {
-  private apiUrl = `${environment.apiUrl}/reviewCycles`;
+  private baseUrl = `${environment.apiUrl}/reviewCycles`;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
+  // Get all review cycles
   getAllReviewCycles(): Observable<ReviewCycle[]> {
-    return this.http.get<ReviewCycle[]>(this.apiUrl);
+    return this.http.get<ReviewCycle[]>(`${this.baseUrl}`);
   }
 
+  // Get review cycle by ID
   getReviewCycleById(id: number): Observable<ReviewCycle> {
-    return this.http.get<ReviewCycle>(`${this.apiUrl}/${id}`);
+    return this.http.get<ReviewCycle>(`${this.baseUrl}/${id}`);
   }
 
-  createReviewCycle(reviewCycle: ReviewCycle): Observable<ReviewCycle> {
-    return this.http.post<ReviewCycle>(this.apiUrl, reviewCycle);
+  // Create review cycle
+  createReviewCycle(cycle: ReviewCycle): Observable<ReviewCycle> {
+    return this.http.post<ReviewCycle>(`${this.baseUrl}`, cycle);
   }
 
-  updateReviewCycle(reviewCycle: ReviewCycle): Observable<ReviewCycle> {
-    return this.http.put<ReviewCycle>(`${this.apiUrl}/${reviewCycle.cycleId}`, reviewCycle);
+  // Update review cycle
+  updateReviewCycle(id: number, cycle: ReviewCycle): Observable<ReviewCycle> {
+    return this.http.put<ReviewCycle>(`${this.baseUrl}/${id}`, cycle);
   }
 
+  // Delete review cycle
   deleteReviewCycle(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 }

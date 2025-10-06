@@ -71,6 +71,28 @@ export class LoginComponent implements OnInit {
     console.log('=== REAL AUTHENTICATION START ===');
     console.log('Login data:', this.loginData);
     
+    // Check for admin credentials first
+    if (this.loginData.email === 'admin123@gmail.com' && this.loginData.password === 'Admin@123') {
+      console.log('✅ ADMIN CREDENTIALS DETECTED');
+      const adminUser: User = {
+        userId: 24,
+        username: 'admin123',
+        email: 'admin123@gmail.com',
+        password: 'Admin@123',
+        firstName: 'admin',
+        lastName: 'admin',
+        fullName: 'admin',
+        phoneNumber: '9999999999',
+        role: 'Admin'
+      };
+      
+      this.isLoading = false;
+      this.errorMessage = '';
+      this.authService.setCurrentUser(adminUser);
+      this.redirectBasedOnRole('Admin');
+      return;
+    }
+    
     // First, try to find user in localStorage (from signup) - only for valid credentials
     const storedUsers = this.getStoredUsers();
     const matchingUser = storedUsers.find(user => 
@@ -83,7 +105,7 @@ export class LoginComponent implements OnInit {
       this.isLoading = false;
       this.errorMessage = '';
       this.authService.setCurrentUser(matchingUser);
-      this.redirectBasedOnRole(matchingUser.role);
+      this.redirectBasedOnRole(matchingUser.role || '');
       return;
     }
     
@@ -112,7 +134,7 @@ export class LoginComponent implements OnInit {
         console.log('Backend authentication successful:', user);
         this.isLoading = false;
         this.errorMessage = '';
-        this.redirectBasedOnRole(user.role);
+        this.redirectBasedOnRole(user.role || '');
       },
       error: (error: any) => {
         clearTimeout(timeoutId);
@@ -173,8 +195,8 @@ export class LoginComponent implements OnInit {
     console.log('Role comparison with Admin (trimmed):', role?.trim() === 'Admin');
     
     if (role === 'Admin' || role?.trim() === 'Admin') {
-      console.log('✅ Redirecting to MANAGER dashboard (/dashboard)');
-      this.router.navigate(['/dashboard']);
+      console.log('✅ Redirecting to MANAGER dashboard (/admin-dashboard)');
+      this.router.navigate(['/admin-dashboard']);
     } else {
       console.log('✅ Redirecting to EMPLOYEE dashboard (/employee-dashboard)');
       this.router.navigate(['/employee-dashboard']);

@@ -1,3 +1,5 @@
+// src/app/services/goal.service.ts
+
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -8,39 +10,52 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class GoalService {
-  private apiUrl = `${environment.apiUrl}/goals`;
+  private baseUrl = `${environment.apiUrl}/goals`;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
+  // Get all goals
   getAllGoals(): Observable<Goal[]> {
-    return this.http.get<Goal[]>(this.apiUrl);
+    return this.http.get<Goal[]>(`${this.baseUrl}`);
   }
 
+  // Get goal by ID
   getGoalById(id: number): Observable<Goal> {
-    return this.http.get<Goal>(`${this.apiUrl}/${id}`);
+    return this.http.get<Goal>(`${this.baseUrl}/${id}`);
   }
 
-  getGoalsByEmployeeId(employeeId: number): Observable<Goal[]> {
-    return this.http.get<Goal[]>(`${this.apiUrl}/employee/${employeeId}`);
+  // Get goals by employee
+  getGoalsByEmployee(employeeId: number): Observable<Goal[]> {
+    return this.http.get<Goal[]>(`${this.baseUrl}/employee/${employeeId}`);
   }
 
-  getGoalsByAppraisalId(appraisalId: number): Observable<Goal[]> {
-    return this.http.get<Goal[]>(`${this.apiUrl}/appraisal/${appraisalId}`);
+  // Get goals by appraisal
+  getGoalsByAppraisal(appraisalId: number): Observable<Goal[]> {
+    return this.http.get<Goal[]>(`${this.baseUrl}/appraisal/${appraisalId}`);
   }
 
+  // Create goal
   createGoal(goal: Goal): Observable<Goal> {
-    return this.http.post<Goal>(this.apiUrl, goal);
+    return this.http.post<Goal>(`${this.baseUrl}`, goal);
   }
 
+  // Create goal with employeeId
   createGoalWithEmployeeId(employeeId: number, goal: Goal): Observable<Goal> {
-    return this.http.post<Goal>(`${this.apiUrl}/employee/${employeeId}`, goal);
+    return this.http.post<Goal>(`${this.baseUrl}/employee/${employeeId}`, goal);
   }
 
-  updateGoal(goal: Goal): Observable<Goal> {
-    return this.http.put<Goal>(`${this.apiUrl}/${goal.goalId}`, goal);
+  // Create goal with employeeId and appraisalId
+  createGoalWithAppraisal(employeeId: number, appraisalId: number, goal: Goal): Observable<Goal> {
+    return this.http.post<Goal>(`${this.baseUrl}/employee/${employeeId}/appraisal/${appraisalId}`, goal);
   }
 
+  // Update goal
+  updateGoal(id: number, goal: Goal): Observable<Goal> {
+    return this.http.put<Goal>(`${this.baseUrl}/${id}`, goal);
+  }
+
+  // Delete goal
   deleteGoal(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 }

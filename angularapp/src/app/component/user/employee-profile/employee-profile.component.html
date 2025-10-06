@@ -1,0 +1,149 @@
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h2 class="logo">
+      <i class="fas fa-chart-line"></i>
+      Appraise360
+    </h2>
+    <ul>
+      <li *ngFor="let item of menuItems" (click)="navigateTo(item.route)" [class.active]="item.route === '/employee-dashboard/profile'">
+        <i [ngClass]="['fas', item.icon]"></i> {{ item.title }}
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1>My Profile</h1>
+        <p class="subtitle">View your employee profile information</p>
+      </div>
+      <div class="topbar-right">
+        <div class="user-info">
+          <i class="fas fa-user-circle"></i>
+          <span>{{ employeeProfile?.fullName || 'Employee' }}</span>
+        </div>
+        <button class="logout-btn" (click)="logout()">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </header>
+
+    <!-- Employee Profile Content -->
+    <div class="dashboard-content">
+      <div class="employee-profile-container">
+        
+        <!-- Loading State -->
+        <div class="loading-state" *ngIf="isLoading">
+          <div class="spinner"></div>
+          <p>Loading your profile...</p>
+        </div>
+
+        <!-- Error Message -->
+        <div class="error-state" *ngIf="errorMessage && !isLoading">
+          <i class="fas fa-exclamation-triangle"></i>
+          <h3>Error Loading Profile</h3>
+          <p>{{ errorMessage }}</p>
+          <button class="btn-primary" (click)="loadEmployeeProfile()">
+            <i class="fas fa-refresh"></i> Try Again
+          </button>
+        </div>
+
+        <!-- Profile Content -->
+        <div class="profile-content" *ngIf="employeeProfile && !isLoading">
+          <div class="profile-card">
+            <div class="profile-header">
+              <div class="profile-avatar">
+                <i class="fas fa-user"></i>
+              </div>
+              <div class="profile-info">
+                <h3>{{ employeeProfile.fullName }}</h3>
+                <p>{{ employeeProfile.designation }}</p>
+                <span class="employee-id">ID: {{ employeeProfile.employeeId }}</span>
+              </div>
+            </div>
+
+            <div class="profile-details">
+              <!-- Basic Information -->
+              <div class="detail-section">
+                <h4 class="section-title">Basic Information</h4>
+                <div class="detail-item">
+                  <span class="detail-label">Employee ID:</span>
+                  <span class="detail-value">{{ employeeProfile.employeeId }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Full Name:</span>
+                  <span class="detail-value">{{ employeeProfile.fullName }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Email:</span>
+                  <span class="detail-value">{{ employeeProfile.email }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Phone Number:</span>
+                  <span class="detail-value">{{ employeeProfile.phoneNumber || 'Not provided' }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Department:</span>
+                  <span class="detail-value department-badge">{{ employeeProfile.department }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Designation:</span>
+                  <span class="detail-value">{{ employeeProfile.designation }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Date of Joining:</span>
+                  <span class="detail-value">{{ formatDate(employeeProfile.dateOfJoining) }}</span>
+                </div>
+              </div>
+
+              <!-- Work Details -->
+              <div class="detail-section">
+                <h4 class="section-title">Work Details</h4>
+                <div class="detail-item">
+                  <span class="detail-label">Current Project:</span>
+                  <span class="detail-value">{{ employeeProfile.currentProject || 'Not assigned' }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Current Team:</span>
+                  <span class="detail-value">{{ employeeProfile.currentTeam || 'Not assigned' }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Reporting Manager:</span>
+                  <span class="detail-value">{{ employeeProfile.reportingManager || 'Not assigned' }}</span>
+                </div>
+                <div class="detail-item" *ngIf="employeeProfile.skills">
+                  <span class="detail-label">Skills:</span>
+                  <div class="skills-container">
+                    <span *ngFor="let skill of employeeProfile.skills.split(',')" class="skill-badge">{{ skill.trim() }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Performance Summary -->
+              <div class="detail-section">
+                <h4 class="section-title">Performance Summary</h4>
+                <div class="detail-item">
+                  <span class="detail-label">Last Appraisal Rating:</span>
+                  <span class="detail-value" [ngClass]="getRatingClass(employeeProfile.lastAppraisalRating)">
+                    {{ employeeProfile.lastAppraisalRating || 'No rating yet' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="!employeeProfile && !isLoading && !errorMessage">
+          <i class="fas fa-user"></i>
+          <h3>No Profile Found</h3>
+          <p>Your employee profile could not be found. Please contact HR for assistance.</p>
+        </div>
+
+      </div> <!-- End employee-profile-container -->
+    </div> <!-- End dashboard-content -->
+  </div> <!-- End main -->
+</div> <!-- End layout -->

@@ -53,6 +53,20 @@ public class GoalService {
     }
 
     public Goal updateGoal(Goal goal) {
+        if (goal.getGoalId() == null) {
+            throw new IllegalArgumentException("Goal ID is required for update");
+        }
+        
+        // Validate that the goal exists
+        if (!repo.existsById(goal.getGoalId())) {
+            throw new IllegalArgumentException("Goal with ID " + goal.getGoalId() + " does not exist");
+        }
+        
+        // Ensure employee relationship is maintained
+        if (goal.getEmployee() == null) {
+            throw new IllegalArgumentException("Goal must be linked to an EmployeeProfile");
+        }
+        
         return repo.save(goal);
     }
 

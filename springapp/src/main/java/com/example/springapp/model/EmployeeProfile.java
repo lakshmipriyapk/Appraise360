@@ -2,6 +2,8 @@ package com.example.springapp.model;
 
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 @Entity
@@ -24,20 +26,23 @@ public class EmployeeProfile {
     @Column(columnDefinition = "TEXT")
     private String currentGoals;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
-    @JsonIgnoreProperties({"employeeProfiles"})
+    @JsonIgnoreProperties({"employeeProfiles", "hibernateLazyInitializer", "handler"})
     private User user;
 
-    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     @JsonIgnoreProperties({"employee", "appraisal"})
     private List<Goal> goals;
 
-    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     @JsonIgnoreProperties({"employee"})
     private List<Appraisal> appraisals;
 
-    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     @JsonIgnoreProperties({"employee", "reviewer"})
     private List<Feedback> feedbacks;
 

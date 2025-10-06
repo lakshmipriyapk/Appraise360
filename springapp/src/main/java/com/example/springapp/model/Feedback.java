@@ -2,6 +2,7 @@ package com.example.springapp.model;
 
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 @Entity
@@ -25,14 +26,14 @@ public class Feedback {
     @Column(columnDefinition = "TEXT")
     private String improvements;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "employee_id")
     @JsonIgnoreProperties({"goals", "appraisals", "feedbacks", "hibernateLazyInitializer", "handler"})
     private EmployeeProfile employee;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "reviewer_id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({"employeeProfiles", "hibernateLazyInitializer", "handler"})
     private User reviewer;
 
     @Column(name = "created_date")

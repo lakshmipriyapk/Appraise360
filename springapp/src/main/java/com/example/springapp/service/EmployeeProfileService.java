@@ -43,4 +43,8 @@ public class EmployeeProfileService {
     public void deleteEmployeeProfile(Long id) {
         repo.deleteById(id);
     }
+    
+    public List<EmployeeProfile> getEmployeeProfilesByName(String fullName) {
+        return repo.findByUserFullNameContainingIgnoreCase(fullName);
+    }
 }

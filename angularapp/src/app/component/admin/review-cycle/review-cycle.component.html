@@ -112,6 +112,28 @@
                   <span class="detail-value">#{{ cycle.cycleId }}</span>
                 </div>
                 <div class="detail-row">
+                  <span class="detail-label">Status:</span>
+                  <span class="detail-value status-badge" [ngClass]="'status-' + cycle.status.toLowerCase().replace(' ', '-')">
+                    {{ cycle.status }}
+                  </span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Start Date:</span>
+                  <span class="detail-value">{{ cycle.startDate | date:'MMM dd, yyyy' }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">End Date:</span>
+                  <span class="detail-value">{{ cycle.endDate | date:'MMM dd, yyyy' }}</span>
+                </div>
+                <div class="detail-row" *ngIf="cycle.deadline">
+                  <span class="detail-label">Deadline:</span>
+                  <span class="detail-value deadline-value">{{ cycle.deadline | date:'MMM dd, yyyy' }}</span>
+                </div>
+                <div class="detail-row" *ngIf="cycle.description">
+                  <span class="detail-label">Description:</span>
+                  <span class="detail-value description-text">{{ cycle.description }}</span>
+                </div>
+                <div class="detail-row">
                   <span class="detail-label">Total Appraisals:</span>
                   <span class="detail-value">{{ getAppraisalCount(cycle) }}</span>
                 </div>
@@ -171,6 +193,94 @@
             [class.error]="reviewCycleForm.get('cycleName')?.invalid && reviewCycleForm.get('cycleName')?.touched">
           <div class="error-message" *ngIf="reviewCycleForm.get('cycleName')?.invalid && reviewCycleForm.get('cycleName')?.touched">
             Cycle name is required
+          </div>
+        </div>
+
+        <div class="form-group-alt">
+          <label for="description">
+            <i class="fas fa-align-left"></i>
+            Description
+          </label>
+          <textarea 
+            id="description" 
+            formControlName="description" 
+            placeholder="Enter cycle description..."
+            rows="3"
+            class="form-control-alt"
+            [class.error]="reviewCycleForm.get('description')?.invalid && reviewCycleForm.get('description')?.touched"></textarea>
+          <div class="error-message" *ngIf="reviewCycleForm.get('description')?.invalid && reviewCycleForm.get('description')?.touched">
+            Please enter a valid description
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group-alt">
+            <label for="startDate">
+              <i class="fas fa-calendar-plus"></i>
+              Start Date *
+            </label>
+            <input 
+              type="date" 
+              id="startDate" 
+              formControlName="startDate" 
+              class="form-control-alt"
+              [class.error]="reviewCycleForm.get('startDate')?.invalid && reviewCycleForm.get('startDate')?.touched">
+            <div class="error-message" *ngIf="reviewCycleForm.get('startDate')?.invalid && reviewCycleForm.get('startDate')?.touched">
+              Start date is required
+            </div>
+          </div>
+
+          <div class="form-group-alt">
+            <label for="endDate">
+              <i class="fas fa-calendar-check"></i>
+              End Date *
+            </label>
+            <input 
+              type="date" 
+              id="endDate" 
+              formControlName="endDate" 
+              class="form-control-alt"
+              [class.error]="reviewCycleForm.get('endDate')?.invalid && reviewCycleForm.get('endDate')?.touched">
+            <div class="error-message" *ngIf="reviewCycleForm.get('endDate')?.invalid && reviewCycleForm.get('endDate')?.touched">
+              End date is required
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group-alt">
+          <label for="deadline">
+            <i class="fas fa-clock"></i>
+            Deadline
+          </label>
+          <input 
+            type="date" 
+            id="deadline" 
+            formControlName="deadline" 
+            class="form-control-alt"
+            [class.error]="reviewCycleForm.get('deadline')?.invalid && reviewCycleForm.get('deadline')?.touched">
+          <div class="error-message" *ngIf="reviewCycleForm.get('deadline')?.invalid && reviewCycleForm.get('deadline')?.touched">
+            Please enter a valid deadline
+          </div>
+        </div>
+
+        <div class="form-group-alt">
+          <label for="status">
+            <i class="fas fa-info-circle"></i>
+            Status *
+          </label>
+          <select 
+            id="status" 
+            formControlName="status" 
+            class="form-control-alt"
+            [class.error]="reviewCycleForm.get('status')?.invalid && reviewCycleForm.get('status')?.touched">
+            <option value="">Select Status</option>
+            <option value="Scheduled">Scheduled</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+          <div class="error-message" *ngIf="reviewCycleForm.get('status')?.invalid && reviewCycleForm.get('status')?.touched">
+            Status is required
           </div>
         </div>
       </div>

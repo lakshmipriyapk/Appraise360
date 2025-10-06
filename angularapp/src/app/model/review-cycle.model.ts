@@ -1,8 +1,9 @@
 export interface ReviewCycle {
-  cycleId: number;
+  cycleId?: number;
   cycleName: string;
+  startDate: string;
+  endDate: string;
+  deadline?: string;
   status: string;
-  deadline: Date;
-  appraisals: any[]; // Using any[] to avoid circular dependency
+  description?: string;
 }
-  

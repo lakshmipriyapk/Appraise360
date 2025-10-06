@@ -30,8 +30,8 @@ export const routes: Routes = [
   
   // Lazy loaded dashboard components for better performance
   { 
-    path: 'dashboard', 
-    loadComponent: () => import('./component/admin/dashboard/dashboard.component').then(m => m.DashboardComponent)
+    path: 'admin-dashboard', 
+    loadComponent: () => import('./component/admin/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent)
   },
   { 
     path: 'appraisal', 

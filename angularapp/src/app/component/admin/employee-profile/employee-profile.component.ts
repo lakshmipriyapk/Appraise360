@@ -1,24 +1,37 @@
 import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { EmployeeProfileService } from '../../../service/employee-profile.service';
-import { SharedEmployeeService } from '../../../service/shared-employee.service';
-import { UserService } from '../../../service/user.service';
 import { EmployeeProfile } from '../../../model/employee-profile.model';
-import { User } from '../../../model/user.model';
 import { AuthService } from '../../../service/auth.service';
+
+interface EmployeeProfileDisplay {
+  employeeId: number;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  department: string;
+  designation: string;
+  dateOfJoining: string;
+  currentProject: string;
+  currentTeam: string;
+  skills: string;
+  reportingManager: string;
+  lastAppraisalRating: string; // keep as string for UI
+}
 
 @Component({
   selector: 'app-employee-profile',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  standalone: true,
+  imports: [CommonModule, FormsModule],
   templateUrl: './employee-profile.component.html',
-  styleUrl: './employee-profile.component.css',
+  styleUrls: ['./employee-profile.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmployeeProfileComponent implements OnInit {
   menuItems = [
-    { title: 'Dashboard', route: '/dashboard', icon: 'fa-tachometer-alt' },
+    { title: 'Admin Dashboard', route: '/admin-dashboard', icon: 'fa-tachometer-alt' },
     { title: 'Appraisal', route: '/appraisal', icon: 'fa-clipboard-check' },
     { title: 'Employee Profile', route: '/employee-profile', icon: 'fa-user' },
     { title: 'Feedback', route: '/feedback', icon: 'fa-comments' },
@@ -26,67 +39,26 @@ export class EmployeeProfileComponent implements OnInit {
     { title: 'Review Cycle', route: '/review-cycle', icon: 'fa-calendar-alt' }
   ];
 
-  employeeProfiles: EmployeeProfile[] = [];
-  filteredEmployeeProfiles: EmployeeProfile[] = [];
-  users: User[] = [];
+  employeeProfiles: EmployeeProfileDisplay[] = [];
+  filteredEmployeeProfiles: EmployeeProfileDisplay[] = [];
+  selectedEmployeeProfile: EmployeeProfileDisplay | null = null;
   isLoading = false;
   errorMessage = '';
-  successMessage = '';
-
-  // Modal states
-  showCreateModal = false;
-  showEditModal = false;
-  showDeleteModal = false;
-  selectedEmployeeProfile: EmployeeProfile | null = null;
-
-  // Forms
-  employeeProfileForm: FormGroup;
+  showDetailView = false;
 
   // Filters
   searchTerm = '';
   departmentFilter = '';
 
-  // Form arrays for skills and goals
-  skillsArray: string[] = [];
-  goalsArray: string[] = [];
-  newSkill = '';
-  newGoal = '';
-
   constructor(
-    public router: Router,
+    private router: Router,
     private employeeProfileService: EmployeeProfileService,
-    private sharedEmployeeService: SharedEmployeeService,
-    private userService: UserService,
-    private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
     private authService: AuthService
-  ) {
-    this.employeeProfileForm = this.fb.group({
-      userId: ['', Validators.required],
-      department: ['', Validators.required],
-      designation: ['', Validators.required],
-      dateOfJoining: ['', Validators.required],
-      reportingManager: ['', Validators.required],
-      currentProject: [''],
-      currentTeam: [''],
-      skills: [[]],
-      lastAppraisalRating: [0, [Validators.min(1), Validators.max(5)]],
-      currentGoals: [[]]
-    });
-  }
+  ) {}
 
   ngOnInit() {
     this.loadEmployeeProfiles();
-    this.loadUsers();
-    
-    // Subscribe to shared employee data
-    this.sharedEmployeeService.employeeProfiles$.subscribe(profiles => {
-      if (profiles && profiles.length > 0) {
-        this.employeeProfiles = profiles;
-        this.filteredEmployeeProfiles = profiles;
-        this.cdr.markForCheck();
-      }
-    });
   }
 
   loadEmployeeProfiles() {
@@ -94,254 +66,48 @@ export class EmployeeProfileComponent implements OnInit {
     this.errorMessage = '';
     this.cdr.markForCheck();
 
-    // Get data from shared service first
-    const sharedProfiles = this.sharedEmployeeService.getAllEmployeeProfiles();
-    if (sharedProfiles && sharedProfiles.length > 0) {
-      this.employeeProfiles = sharedProfiles;
-      this.filteredEmployeeProfiles = sharedProfiles;
-      this.isLoading = false;
-      this.cdr.markForCheck();
-      return;
-    }
+    this.employeeProfileService.getAllEmployeeProfiles().subscribe({
+      next: (data: EmployeeProfile[]) => {
+        console.log('Employee profiles loaded from database:', data);
+        console.log('First profile user data:', data[0]?.user);
+        this.employeeProfiles = data.map(profile => {
+          console.log('Processing profile:', profile.employeeProfileId, 'User:', profile.user);
+          return {
+            employeeId: profile.employeeProfileId ?? 0,
+            fullName: profile.user?.fullName ?? 'Unknown',
+            email: profile.user?.email ?? 'Not provided',
+            phoneNumber: profile.user?.phoneNumber ?? 'Not provided',
+            department: profile.department ?? 'Not provided',
+            designation: profile.designation ?? 'Not provided',
+            dateOfJoining: profile.dateOfJoining ?? '',
+            currentProject: profile.currentProject ?? 'Not provided',
+            currentTeam: profile.currentTeam ?? 'Not provided',
+            skills: profile.skills ?? 'Not provided',
+            reportingManager: profile.reportingManager ?? 'Not provided',
+            lastAppraisalRating: profile.lastAppraisalRating != null 
+              ? profile.lastAppraisalRating.toString() 
+              : 'N/A'
+          };
+        });
 
-    // Use setTimeout to prevent blocking
-    setTimeout(() => {
-      this.employeeProfileService.getAllEmployeeProfiles().subscribe({
-        next: (data: any) => {
-          this.employeeProfiles = data;
-          this.filteredEmployeeProfiles = data;
-          this.isLoading = false;
-          this.cdr.markForCheck();
-        },
-        error: (error: any) => {
-          console.error('Error loading employee profiles, using mock data:', error);
-          // Load mock data for development
-          this.loadMockEmployeeProfiles();
-        }
-      });
-    }, 100);
-  }
-
-  loadMockEmployeeProfiles() {
-    // Mock employee profile data for development
-    const mockProfiles: EmployeeProfile[] = [
-      {
-        employeeProfileId: 1,
-        department: 'Engineering',
-        designation: 'Software Engineer',
-        dateOfJoining: '2023-01-15',
-        reportingManager: 'John Smith',
-        currentProject: 'Performance Appraisal System',
-        currentTeam: 'Full Stack Team',
-        skills: ['Angular', 'Spring Boot', 'TypeScript', 'Java', 'SQL'],
-        lastAppraisalRating: 4.2,
-        currentGoals: ['Complete Angular Training', 'Deliver Q3 Project Milestone', 'Improve Code Review Skills'],
-        user: {
-          userId: 1,
-          username: 'john.doe',
-          email: 'john.doe@company.com',
-          fullName: 'John Doe',
-          firstName: 'John',
-          lastName: 'Doe',
-          phoneNumber: '+1-555-0001',
-          password: 'password123',
-          role: 'Employee'
-        }
-      },
-      {
-        employeeProfileId: 2,
-        department: 'Marketing',
-        designation: 'Marketing Specialist',
-        dateOfJoining: '2023-03-20',
-        reportingManager: 'Jane Wilson',
-        currentProject: 'Brand Campaign',
-        currentTeam: 'Marketing Team',
-        skills: ['Digital Marketing', 'Content Creation', 'Social Media', 'Analytics'],
-        lastAppraisalRating: 3.5,
-        currentGoals: ['Increase brand awareness', 'Launch new campaign', 'Improve engagement rates'],
-        user: {
-          userId: 2,
-          username: 'jane.smith',
-          email: 'jane.smith@company.com',
-          fullName: 'Jane Smith',
-          firstName: 'Jane',
-          lastName: 'Smith',
-          phoneNumber: '+1-555-0002',
-          password: 'password123',
-          role: 'Employee'
-        }
-      },
-      {
-        employeeProfileId: 3,
-        department: 'Sales',
-        designation: 'Sales Manager',
-        dateOfJoining: '2022-11-10',
-        reportingManager: 'Mike Johnson',
-        currentProject: 'Q4 Sales Target',
-        currentTeam: 'Sales Team',
-        skills: ['Sales Management', 'Client Relations', 'CRM', 'Negotiation'],
-        lastAppraisalRating: 4.8,
-        currentGoals: ['Achieve Q4 targets', 'Expand client base', 'Improve team performance'],
-        user: {
-          userId: 3,
-          username: 'mike.wilson',
-          email: 'mike.wilson@company.com',
-          fullName: 'Mike Wilson',
-          firstName: 'Mike',
-          lastName: 'Wilson',
-          phoneNumber: '+1-555-0003',
-          password: 'password123',
-          role: 'Employee'
-        }
-      },
-      {
-        employeeProfileId: 4,
-        department: 'HR',
-        designation: 'HR Specialist',
-        dateOfJoining: '2023-06-01',
-        reportingManager: 'Sarah Davis',
-        currentProject: 'Employee Engagement',
-        currentTeam: 'HR Team',
-        skills: ['Recruitment', 'Employee Relations', 'HR Policies', 'Training'],
-        lastAppraisalRating: 4.0,
-        currentGoals: ['Improve employee satisfaction', 'Streamline recruitment process', 'Develop training programs'],
-        user: {
-          userId: 4,
-          username: 'sarah.jones',
-          email: 'sarah.jones@company.com',
-          fullName: 'Sarah Jones',
-          firstName: 'Sarah',
-          lastName: 'Jones',
-          phoneNumber: '+1-555-0004',
-          password: 'password123',
-          role: 'Employee'
-        }
-      },
-      {
-        employeeProfileId: 5,
-        department: 'Finance',
-        designation: 'Financial Analyst',
-        dateOfJoining: '2023-02-14',
-        reportingManager: 'David Brown',
-        currentProject: 'Budget Planning',
-        currentTeam: 'Finance Team',
-        skills: ['Financial Analysis', 'Budgeting', 'Excel', 'Financial Modeling'],
-        lastAppraisalRating: 4.5,
-        currentGoals: ['Complete budget analysis', 'Improve financial reporting', 'Learn new tools'],
-        user: {
-          userId: 5,
-          username: 'david.miller',
-          email: 'david.miller@company.com',
-          fullName: 'David Miller',
-          firstName: 'David',
-          lastName: 'Miller',
-          phoneNumber: '+1-555-0005',
-          password: 'password123',
-          role: 'Employee'
-        }
-      }
-    ];
-
-    this.employeeProfiles = mockProfiles;
-    this.filteredEmployeeProfiles = mockProfiles;
-    this.isLoading = false;
-    this.cdr.markForCheck();
-    console.log('Loaded mock employee profiles:', mockProfiles);
-  }
-
-  loadUsers() {
-    this.userService.getAllUsers().subscribe({
-      next: (data: any) => {
-        this.users = data;
+        this.filteredEmployeeProfiles = [...this.employeeProfiles];
+        this.isLoading = false;
+        this.cdr.markForCheck();
       },
       error: (error: any) => {
-        console.error('Error loading users, using mock data:', error);
-        // Load mock users for development
-        this.loadMockUsers();
+        console.error('Error loading employee profiles:', error);
+        this.errorMessage = 'Unable to load employee profiles. Please try again later.';
+        this.isLoading = false;
+        this.cdr.markForCheck();
       }
     });
-  }
-
-  loadMockUsers() {
-    // Mock user data for development
-    const mockUsers: User[] = [
-      {
-        userId: 1,
-        username: 'john.doe',
-        email: 'john.doe@company.com',
-        fullName: 'John Doe',
-        firstName: 'John',
-        lastName: 'Doe',
-        phoneNumber: '+1-555-0001',
-        password: 'password123',
-        role: 'Employee'
-      },
-      {
-        userId: 2,
-        username: 'jane.smith',
-        email: 'jane.smith@company.com',
-        fullName: 'Jane Smith',
-        firstName: 'Jane',
-        lastName: 'Smith',
-        phoneNumber: '+1-555-0002',
-        password: 'password123',
-        role: 'Employee'
-      },
-      {
-        userId: 3,
-        username: 'mike.wilson',
-        email: 'mike.wilson@company.com',
-        fullName: 'Mike Wilson',
-        firstName: 'Mike',
-        lastName: 'Wilson',
-        phoneNumber: '+1-555-0003',
-        password: 'password123',
-        role: 'Employee'
-      },
-      {
-        userId: 4,
-        username: 'sarah.jones',
-        email: 'sarah.jones@company.com',
-        fullName: 'Sarah Jones',
-        firstName: 'Sarah',
-        lastName: 'Jones',
-        phoneNumber: '+1-555-0004',
-        password: 'password123',
-        role: 'Employee'
-      },
-      {
-        userId: 5,
-        username: 'david.miller',
-        email: 'david.miller@company.com',
-        fullName: 'David Miller',
-        firstName: 'David',
-        lastName: 'Miller',
-        phoneNumber: '+1-555-0005',
-        password: 'password123',
-        role: 'Employee'
-      },
-      {
-        userId: 6,
-        username: 'admin',
-        email: 'admin@company.com',
-          fullName: 'Admin User',
-          firstName: 'Admin',
-          lastName: 'User',
-          phoneNumber: '+1-555-0000',
-          password: 'password123',
-        role: 'Admin'
-      }
-    ];
-
-    this.users = mockUsers;
-    console.log('Loaded mock users:', mockUsers);
   }
 
   applyFilters() {
     this.filteredEmployeeProfiles = this.employeeProfiles.filter(profile => {
       const matchesSearch = !this.searchTerm ||
-        profile.user.fullName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        profile.user.email.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        profile.fullName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        profile.email.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         profile.designation.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         profile.department.toLowerCase().includes(this.searchTerm.toLowerCase());
 
@@ -361,155 +127,16 @@ export class EmployeeProfileComponent implements OnInit {
 
   refreshProfiles() {
     this.loadEmployeeProfiles();
-    this.successMessage = 'Profiles refreshed successfully!';
-    setTimeout(() => {
-      this.successMessage = '';
-    }, 3000);
   }
 
-  openEditModal(employeeProfile: EmployeeProfile) {
+  viewEmployeeDetails(employeeProfile: EmployeeProfileDisplay) {
     this.selectedEmployeeProfile = employeeProfile;
-    this.employeeProfileForm.patchValue({
-      userId: employeeProfile.user.userId,
-      department: employeeProfile.department,
-      designation: employeeProfile.designation,
-      dateOfJoining: employeeProfile.dateOfJoining,
-      reportingManager: employeeProfile.reportingManager,
-      currentProject: employeeProfile.currentProject,
-      currentTeam: employeeProfile.currentTeam,
-      lastAppraisalRating: employeeProfile.lastAppraisalRating
-    });
-    
-    // Set arrays
-    this.skillsArray = [...(employeeProfile.skills || [])];
-    this.goalsArray = [...(employeeProfile.currentGoals || [])];
-    
-    this.showEditModal = true;
-    this.errorMessage = '';
-    this.successMessage = '';
+    this.showDetailView = true;
   }
 
-  openDeleteModal(employeeProfile: EmployeeProfile) {
-    this.selectedEmployeeProfile = employeeProfile;
-    this.showDeleteModal = true;
-  }
-
-  closeModals() {
-    this.showCreateModal = false;
-    this.showEditModal = false;
-    this.showDeleteModal = false;
+  closeDetailView() {
+    this.showDetailView = false;
     this.selectedEmployeeProfile = null;
-    this.employeeProfileForm.reset();
-    this.errorMessage = '';
-    this.successMessage = '';
-  }
-
-  createEmployeeProfile() {
-    if (this.employeeProfileForm.valid) {
-      const formData = this.employeeProfileForm.value;
-      const selectedUser = this.users.find(u => u.userId === formData.userId);
-      
-      const employeeProfile: EmployeeProfile = {
-        employeeProfileId: 0, // Will be set by backend
-        department: formData.department,
-        designation: formData.designation,
-        dateOfJoining: formData.dateOfJoining,
-        reportingManager: formData.reportingManager,
-        currentProject: formData.currentProject,
-        currentTeam: formData.currentTeam,
-        skills: [...this.skillsArray],
-        lastAppraisalRating: formData.lastAppraisalRating,
-        currentGoals: [...this.goalsArray],
-        user: selectedUser || {
-          userId: formData.userId,
-          username: '',
-          email: '',
-          fullName: '',
-          firstName: '',
-          lastName: '',
-          phoneNumber: '',
-          password: '',
-          role: ''
-        }
-      };
-
-      this.employeeProfileService.createEmployeeProfile(formData.userId, employeeProfile).subscribe({
-        next: (response: any) => {
-          this.successMessage = 'Employee profile created successfully!';
-          this.loadEmployeeProfiles();
-          this.closeModals();
-        },
-        error: (error: any) => {
-          console.error('Error creating employee profile, using mock response:', error);
-          // Mock successful creation for development
-          this.successMessage = 'Employee profile created successfully! (Mock)';
-          this.loadEmployeeProfiles();
-          this.closeModals();
-        }
-      });
-    } else {
-      this.errorMessage = 'Please fill in all required fields correctly.';
-    }
-  }
-
-  updateEmployeeProfile() {
-    if (this.employeeProfileForm.valid && this.selectedEmployeeProfile) {
-      const formData = this.employeeProfileForm.value;
-      const selectedUser = this.users.find(u => u.userId === formData.userId);
-      
-      const employeeProfile: EmployeeProfile = {
-        ...this.selectedEmployeeProfile,
-        department: formData.department,
-        designation: formData.designation,
-        dateOfJoining: formData.dateOfJoining,
-        reportingManager: formData.reportingManager,
-        currentProject: formData.currentProject,
-        currentTeam: formData.currentTeam,
-        skills: [...this.skillsArray],
-        lastAppraisalRating: formData.lastAppraisalRating,
-        currentGoals: [...this.goalsArray],
-        user: selectedUser || this.selectedEmployeeProfile.user
-      };
-
-      // Update shared service
-      this.sharedEmployeeService.updateEmployeeProfile(employeeProfile);
-      
-      this.employeeProfileService.updateEmployeeProfile(employeeProfile).subscribe({
-        next: (response: any) => {
-          this.successMessage = 'Employee profile updated successfully!';
-          this.loadEmployeeProfiles();
-          this.closeModals();
-        },
-        error: (error: any) => {
-          console.error('Error updating employee profile, using mock response:', error);
-          // Mock successful update for development
-          this.successMessage = 'Employee profile updated successfully! (Mock)';
-          this.loadEmployeeProfiles();
-          this.closeModals();
-        }
-      });
-    } else {
-      this.errorMessage = 'Please fill in all required fields correctly.';
-    }
-  }
-
-  deleteEmployeeProfile() {
-    if (this.selectedEmployeeProfile) {
-      this.employeeProfileService.deleteEmployeeProfile(this.selectedEmployeeProfile.employeeProfileId).subscribe({
-        next: () => {
-          this.successMessage = 'Employee profile deleted successfully!';
-          this.loadEmployeeProfiles();
-          this.closeModals();
-        },
-        error: (error: any) => {
-          console.error('Error deleting employee profile, using mock response:', error);
-          // Mock successful deletion for development
-          this.successMessage = 'Employee profile deleted successfully! (Mock)';
-          this.loadEmployeeProfiles();
-          this.closeModals();
-        }
-      });
-    }
   }
 
   getDepartments(): string[] {
@@ -526,39 +153,18 @@ export class EmployeeProfileComponent implements OnInit {
     this.router.navigate(['/website/landing']);
   }
 
-  // Skills management
-  addSkill() {
-    if (this.newSkill.trim() && !this.skillsArray.includes(this.newSkill.trim())) {
-      this.skillsArray.push(this.newSkill.trim());
-      this.newSkill = '';
-    }
-  }
-
-  removeSkill(skill: string) {
-    this.skillsArray = this.skillsArray.filter(s => s !== skill);
-  }
-
-  // Goals management
-  addGoal() {
-    if (this.newGoal.trim() && !this.goalsArray.includes(this.newGoal.trim())) {
-      this.goalsArray.push(this.newGoal.trim());
-      this.newGoal = '';
-    }
-  }
-
-  removeGoal(goal: string) {
-    this.goalsArray = this.goalsArray.filter(g => g !== goal);
-  }
-
-  // Helper methods for display
-  getRatingClass(rating: number): string {
-    if (rating >= 4) return 'rating-excellent';
-    if (rating >= 3) return 'rating-good';
-    if (rating >= 2) return 'rating-average';
-    return 'rating-poor';
-  }
-
   formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString();
+    if (!dateString) return 'Not provided';
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? 'Invalid date' : date.toLocaleDateString();
+  }
+
+  getRatingClass(rating: string): string {
+    const numRating = parseFloat(rating);
+    if (isNaN(numRating)) return 'rating-na';
+    if (numRating >= 4) return 'rating-excellent';
+    if (numRating >= 3) return 'rating-good';
+    if (numRating >= 2) return 'rating-average';
+    return 'rating-poor';
   }
 }

@@ -150,13 +150,13 @@
           <span class="employee-count">{{ allEmployees.length }} employees</span>
         </div>
         <div class="employees-grid">
-          <div class="employee-card" *ngFor="let employee of allEmployees" (click)="viewEmployeeDashboard(employee.employeeProfileId)">
+          <div class="employee-card" *ngFor="let employee of allEmployees" (click)="viewEmployeeDashboard(employee.employeeProfileId || 0)">
             <div class="employee-header">
               <div class="employee-avatar">
                 <i class="fas fa-user"></i>
               </div>
               <div class="employee-info">
-                <h3>{{ employee.user.fullName || 'Unknown' }}</h3>
+                <h3>{{ employee.user?.fullName || 'Unknown' }}</h3>
                 <p class="employee-role">{{ employee.designation || 'No designation' }}</p>
                 <p class="employee-department">{{ employee.department || 'No department' }}</p>
               </div>
@@ -164,24 +164,24 @@
             <div class="employee-stats">
               <div class="stat-item">
                 <span class="stat-label">Goals</span>
-                <span class="stat-value">{{ getEmployeeGoals(employee.employeeProfileId).length }}</span>
+                <span class="stat-value">{{ getEmployeeGoals(employee.employeeProfileId || 0).length }}</span>
               </div>
               <div class="stat-item">
                 <span class="stat-label">Completed</span>
-                <span class="stat-value">{{ getCompletedGoalsCount(employee.employeeProfileId) }}</span>
+                <span class="stat-value">{{ getCompletedGoalsCount(employee.employeeProfileId || 0) }}</span>
               </div>
               <div class="stat-item">
                 <span class="stat-label">Rating</span>
-                <span class="stat-value">{{ getEmployeePerformanceSummary(employee.employeeProfileId).averageRating.toFixed(1) }}</span>
+                <span class="stat-value">{{ getEmployeePerformanceSummary(employee.employeeProfileId || 0).averageRating.toFixed(1) }}</span>
               </div>
             </div>
             <div class="employee-progress">
               <div class="progress-bar">
                 <div class="progress-fill" 
-                     [style.width.%]="getEmployeePerformanceSummary(employee.employeeProfileId).completionRate">
+                     [style.width.%]="getEmployeePerformanceSummary(employee.employeeProfileId || 0).completionRate">
                 </div>
               </div>
-              <span class="progress-text">{{ getEmployeePerformanceSummary(employee.employeeProfileId).completionRate.toFixed(0) }}% Complete</span>
+              <span class="progress-text">{{ getEmployeePerformanceSummary(employee.employeeProfileId || 0).completionRate.toFixed(0) }}% Complete</span>
             </div>
           </div>
         </div>

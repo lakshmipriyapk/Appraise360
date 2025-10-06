@@ -3,28 +3,48 @@ package com.example.springapp.model;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.*;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
 @Table(name = "users")
+@Schema(description = "User entity representing a system user")
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Schema(description = "Unique identifier for the user")
     private Long userId;
 
+    @Schema(description = "User's email address")
     private String email;
+    
+    @Schema(description = "User's first name")
     private String firstName;
+    
+    @Schema(description = "User's full name")
     private String fullName;
+    
+    @Schema(description = "User's last name")
     private String lastName;
+    
+    @Schema(description = "User's password", accessMode = Schema.AccessMode.WRITE_ONLY)
     private String password;
+    
+    @Schema(description = "User's phone number")
     private String phoneNumber;
+    
+    @Schema(description = "User's role in the system")
     private String role;
+    
+    @Schema(description = "User's username")
     private String username;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    @JsonIgnoreProperties({"user", "goals", "appraisals", "feedbacks"})
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnoreProperties({"user", "goals", "appraisals", "feedbacks", "hibernateLazyInitializer", "handler"})
+    @Schema(description = "List of employee profiles associated with this user", accessMode = Schema.AccessMode.READ_ONLY)
     private List<EmployeeProfile> employeeProfiles;
 
     // getters and setters

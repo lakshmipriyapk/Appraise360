@@ -49,6 +49,12 @@ public class EmployeeProfileController {
         return profiles.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(profiles);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<EmployeeProfile>> getProfilesByName(@org.springframework.web.bind.annotation.RequestParam String name) {
+        List<EmployeeProfile> profiles = profileService.getEmployeeProfilesByName(name);
+        return ResponseEntity.ok(profiles);
+    }
+
     @PostMapping
     public ResponseEntity<EmployeeProfile> createProfile(@RequestBody EmployeeProfile profile) {
         // Validate required fields

@@ -86,7 +86,7 @@
               class="filter-select">
               <option value="">All Employees</option>
               <option *ngFor="let emp of employeeProfiles" [value]="emp.employeeProfileId">
-                {{ emp.user.fullName }}
+                {{ emp.user?.fullName }}
               </option>
             </select>
 
@@ -109,8 +109,8 @@
                     <i class="fas fa-user"></i>
                   </div>
                   <div class="info">
-                    <h4>{{ goal.employee.user.fullName }}</h4>
-                    <p>{{ goal.employee.designation }} • {{ goal.employee.department }}</p>
+                    <h4>{{ goal.employee?.user?.fullName }}</h4>
+                    <p>{{ goal.employee?.designation }} • {{ goal.employee?.department }}</p>
                   </div>
                 </div>
                 <div class="goal-actions">
@@ -128,7 +128,7 @@
               <div class="goal-title">
                 <h5>{{ goal.title }}</h5>
                 <div class="goal-badges">
-                  <span class="status-badge" [ngClass]="getStatusClass(goal.status)">
+                  <span class="status-badge" [ngClass]="getStatusClass(goal.status || '')">
                     {{ goal.status | titlecase }}
                   </span>
                   <span class="source-badge" [ngClass]="getSourceClass(goal.createdBy)">
@@ -144,7 +144,7 @@
               <div class="goal-details" *ngIf="goal.appraisal">
                 <div class="appraisal-info">
                   <span class="label">Linked to Appraisal:</span>
-                  <span class="appraisal-name">{{ goal.appraisal.employee.user.fullName }} - {{ goal.appraisal.reviewCycle.cycleName }}</span>
+                  <span class="appraisal-name">{{ (goal.appraisal.employee?.user?.fullName) }} - {{ (goal.appraisal.reviewCycle?.cycleName) }}</span>
                 </div>
               </div>
             </div>
@@ -187,7 +187,7 @@
             [class.error]="goalForm.get('employeeId')?.invalid && goalForm.get('employeeId')?.touched">
             <option value="">Select an employee</option>
             <option *ngFor="let emp of employeeProfiles" [value]="emp.employeeProfileId">
-              {{ emp.user.firstName }} {{ emp.user.lastName }} ({{ emp.user.email }})
+              {{ emp.user?.firstName }} {{ emp.user?.lastName }} ({{ emp.user?.email }})
             </option>
           </select>
           <div class="error-message" *ngIf="goalForm.get('employeeId')?.invalid && goalForm.get('employeeId')?.touched">

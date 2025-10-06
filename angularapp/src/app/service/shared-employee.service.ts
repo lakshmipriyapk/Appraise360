@@ -26,9 +26,9 @@ export class SharedEmployeeService {
       reportingManager: 'John Smith',
       currentProject: 'Performance Appraisal System',
       currentTeam: 'Full Stack Team',
-      skills: ['Angular', 'Spring Boot', 'TypeScript', 'Java', 'SQL'],
+      skills: 'Angular, Spring Boot, TypeScript, Java, SQL',
       lastAppraisalRating: 4.2,
-      currentGoals: ['Complete Angular Training', 'Deliver Q3 Project Milestone', 'Improve Code Review Skills'],
+      currentGoals: 'Complete Angular Training, Deliver Q3 Project Milestone, Improve Code Review Skills',
       user: {
         userId: 1,
         username: 'demo.user',
@@ -63,9 +63,9 @@ export class SharedEmployeeService {
         reportingManager: 'Mike Johnson',
         currentProject: 'Project Beta',
         currentTeam: 'Development Team B',
-        skills: ['Python', 'Django', 'PostgreSQL'],
+        skills: 'Python, Django, PostgreSQL',
         lastAppraisalRating: 4.5,
-        currentGoals: ['Improve Code Quality', 'Mentor Junior Developers']
+        currentGoals: 'Improve Code Quality, Mentor Junior Developers'
       },
       {
         employeeProfileId: 3,
@@ -86,9 +86,9 @@ export class SharedEmployeeService {
         reportingManager: 'Sarah Wilson',
         currentProject: 'Team Management',
         currentTeam: 'Engineering Leadership',
-        skills: ['Leadership', 'Project Management', 'Technical Architecture'],
+        skills: 'Leadership, Project Management, Technical Architecture',
         lastAppraisalRating: 4.8,
-        currentGoals: ['Team Development', 'Process Improvement', 'Strategic Planning']
+        currentGoals: 'Team Development, Process Improvement, Strategic Planning'
       }
     ];
 

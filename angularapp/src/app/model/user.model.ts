@@ -1,12 +1,16 @@
+// src/app/models/user.model.ts
+
+import { EmployeeProfile } from './employee-profile.model';
+
 export interface User {
-  userId: number;
-  username: string;
-  email: string;
-  fullName: string;
-  firstName: string; // For frontend compatibility
-  lastName: string; // For frontend compatibility
-  phoneNumber: string;
-  password: string;
-  role: string;
-  employeeProfiles?: any[]; // Optional field for backend response
+  userId?: number;
+  email?: string;
+  firstName?: string;
+  fullName?: string;
+  lastName?: string;
+  password?: string;
+  phoneNumber?: string;
+  role?: string;
+  username?: string;
+  employeeProfiles?: EmployeeProfile[]; // link to employee profiles
 }

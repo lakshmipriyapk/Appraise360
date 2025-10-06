@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -12,14 +12,15 @@ import { AuthService } from '../../../service/auth.service';
 
 @Component({
   selector: 'app-feedback',
+  standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './feedback.component.html',
-  styleUrl: './feedback.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrls: ['./feedback.component.css'],
+  changeDetection: ChangeDetectionStrategy.Default
 })
 export class FeedbackComponent implements OnInit {
   menuItems = [
-    { title: 'Dashboard', route: '/dashboard', icon: 'fa-tachometer-alt' },
+    { title: 'Admin Dashboard', route: '/admin-dashboard', icon: 'fa-tachometer-alt' },
     { title: 'Appraisal', route: '/appraisal', icon: 'fa-clipboard-check' },
     { title: 'Employee Profile', route: '/employee-profile', icon: 'fa-user' },
     { title: 'Feedback', route: '/feedback', icon: 'fa-comments' },
@@ -35,22 +36,22 @@ export class FeedbackComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
 
-  // Modal states
   showCreateModal = false;
   showEditModal = false;
   showDeleteModal = false;
   selectedFeedback: Feedback | null = null;
 
-  // Forms
   feedbackForm: FormGroup;
-
-  // Filters
   searchTerm = '';
   employeeFilter = '';
   reviewerFilter = '';
   feedbackTypeFilter = '';
+  
+  // Employee name lookup
+  employeeSuggestions: EmployeeProfile[] = [];
+  employeeNameError = '';
+  selectedEmployee: EmployeeProfile | null = null;
 
-  // Feedback types
   feedbackTypes = [
     { value: 'Peer Feedback', label: 'Peer Feedback' },
     { value: 'Manager Feedback', label: 'Manager Feedback' },
@@ -58,20 +59,21 @@ export class FeedbackComponent implements OnInit {
   ];
 
   constructor(
-    public router: Router,
+    private router: Router,
     private feedbackService: FeedbackService,
     private employeeProfileService: EmployeeProfileService,
     private userService: UserService,
     private fb: FormBuilder,
-    private cdr: ChangeDetectorRef,
     private authService: AuthService
   ) {
     this.feedbackForm = this.fb.group({
       employeeName: ['', Validators.required],
-      employeeId: ['', Validators.required],
       feedbackType: ['', Validators.required],
       comments: ['', Validators.required],
-      rating: [null, [Validators.min(1), Validators.max(5)]]
+      rating: [null, [Validators.min(1), Validators.max(5)]],
+      achievements: [''],
+      challenges: [''],
+      improvements: ['']
     });
   }
 
@@ -79,316 +81,350 @@ export class FeedbackComponent implements OnInit {
     this.loadFeedbacks();
     this.loadEmployeeProfiles();
     this.loadUsers();
-    
-    // Ensure mock data is loaded for development
-    setTimeout(() => {
-      if (this.employeeProfiles.length === 0) {
-        console.log('Loading mock employee profiles as fallback');
-        this.loadMockEmployeeProfiles();
-      }
-      if (this.users.length === 0) {
-        console.log('Loading mock users as fallback');
-        this.loadMockUsers();
-      }
-    }, 1000);
   }
 
   loadFeedbacks() {
     this.isLoading = true;
     this.errorMessage = '';
-    this.cdr.markForCheck();
-
-    // Use setTimeout to prevent blocking
-    setTimeout(() => {
-      this.feedbackService.getAllFeedbacks().subscribe({
-        next: (data: any) => {
-          this.feedbacks = data;
-          this.filteredFeedbacks = data;
-          this.isLoading = false;
-          this.cdr.markForCheck();
-        },
-        error: (error: any) => {
-          console.error('Error loading feedbacks, using mock data:', error);
-          // Load mock data for development
-          this.loadMockFeedbacks();
+    this.feedbackService.getAllFeedbacks().subscribe({
+      next: (data: Feedback[]) => { 
+        console.log('Feedbacks loaded from database:', data);
+        console.log('Sample feedback comments:', data.map(f => ({ id: f.feedbackId, employee: f.employee?.user?.fullName, comments: f.comments })));
+        this.feedbacks = data; 
+        this.filteredFeedbacks = [...data]; 
+        this.isLoading = false; 
+      },
+      error: (error) => { 
+        console.error('Error loading feedbacks:', error);
+        if (error.status === 0 || error.status === undefined) {
+          this.errorMessage = 'Backend server is not running. Please start the Spring Boot application.';
+        } else if (error.status === 500) {
+          this.errorMessage = 'Server error. Please check the backend logs.';
+        } else {
+          this.errorMessage = 'Unable to load feedbacks from database. Please check your connection.';
         }
-      });
-    }, 100);
+        this.isLoading = false;
+      }
+    });
   }
 
   loadMockFeedbacks() {
-    // Mock feedback data for development
-    const mockFeedbacks: Feedback[] = [
-      {
-        feedbackId: 1,
-        comments: 'Excellent work on the Angular project! Your code quality has improved significantly.',
-        feedbackType: 'Peer Feedback',
-        rating: 5,
-        employee: {
-          employeeProfileId: 1,
-          department: 'Engineering',
-          designation: 'Software Engineer',
-          dateOfJoining: '2023-01-15',
-          reportingManager: 'John Smith',
-          currentProject: 'Performance Appraisal System',
-          currentTeam: 'Full Stack Team',
-          skills: ['Angular', 'Spring Boot', 'TypeScript'],
-          lastAppraisalRating: 4.2,
-          currentGoals: ['Complete Angular Training'],
-          user: {
-            userId: 1,
-            username: 'john.doe',
-            email: 'john.doe@company.com',
-            fullName: 'John Doe',
-            firstName: 'John',
-            lastName: 'Doe',
-            phoneNumber: '+1-555-0001',
-            password: 'password123',
-            role: 'Employee'
-          }
-        },
-        reviewer: {
-          userId: 2,
-          username: 'jane.smith',
-          email: 'jane.smith@company.com',
-          fullName: 'Jane Smith',
-          firstName: 'Jane',
-          lastName: 'Smith',
-          phoneNumber: '+1-555-0002',
-          password: 'password123',
-          role: 'Employee'
-        }
-      },
-      {
-        feedbackId: 2,
-        comments: 'Good progress on the marketing campaign. Consider improving the social media engagement metrics.',
-        feedbackType: 'Manager Feedback',
-        rating: 4,
-        employee: {
-          employeeProfileId: 3,
-          department: 'Marketing',
-          designation: 'Marketing Specialist',
-          dateOfJoining: '2023-03-20',
-          reportingManager: 'Sarah Davis',
-          currentProject: 'Brand Campaign',
-          currentTeam: 'Marketing Team',
-          skills: ['Digital Marketing', 'Content Creation'],
-          lastAppraisalRating: 3.5,
-          currentGoals: ['Increase brand awareness'],
-          user: {
-            userId: 3,
-            username: 'mike.wilson',
-            email: 'mike.wilson@company.com',
-            fullName: 'Mike Wilson',
-            firstName: 'Mike',
-            lastName: 'Wilson',
-            phoneNumber: '+1-555-0003',
-            password: 'password123',
-            role: 'Employee'
-          }
-        },
-        reviewer: {
-          userId: 4,
-          username: 'sarah.jones',
-          email: 'sarah.jones@company.com',
-          fullName: 'Sarah Jones',
-          firstName: 'Sarah',
-          lastName: 'Jones',
-          phoneNumber: '+1-555-0004',
-          password: 'password123',
-          role: 'Employee'
-        }
-      },
-      {
-        feedbackId: 3,
-        comments: 'Outstanding performance in Q3! Exceeded all sales targets and maintained excellent client relationships.',
-        feedbackType: 'Self-Feedback',
-        rating: 5,
-        employee: {
-          employeeProfileId: 5,
-          department: 'Sales',
-          designation: 'Sales Manager',
-          dateOfJoining: '2022-11-10',
-          reportingManager: 'Lisa Anderson',
-          currentProject: 'Q4 Sales Target',
-          currentTeam: 'Sales Team',
-          skills: ['Sales Management', 'Client Relations'],
-          lastAppraisalRating: 4.8,
-          currentGoals: ['Achieve Q4 targets'],
-          user: {
-            userId: 5,
-            username: 'david.miller',
-            email: 'david.miller@company.com',
-            fullName: 'David Miller',
-            firstName: 'David',
-            lastName: 'Miller',
-            phoneNumber: '+1-555-0005',
-            password: 'password123',
-            role: 'Employee'
-          }
-        },
-        reviewer: {
-          userId: 6,
-          username: 'lisa.anderson',
-          email: 'lisa.anderson@company.com',
-          fullName: 'Lisa Anderson',
-          firstName: 'Lisa',
-          lastName: 'Anderson',
-          phoneNumber: '+1-555-0006',
-          password: 'password123',
-          role: 'Employee'
-        }
-      }
-    ];
-
-    this.feedbacks = mockFeedbacks;
-    this.filteredFeedbacks = mockFeedbacks;
+    this.feedbacks = [{
+      feedbackId: 1,
+      comments: 'Excellent work on the Angular project!',
+      feedbackType: 'Peer Feedback',
+      rating: 5,
+      employee: this.employeeProfiles[0],
+      reviewer: this.users[0]
+    }];
+    this.filteredFeedbacks = [...this.feedbacks];
     this.isLoading = false;
-    this.cdr.markForCheck();
-    console.log('Loaded mock feedbacks:', mockFeedbacks);
   }
 
   loadEmployeeProfiles() {
     this.employeeProfileService.getAllEmployeeProfiles().subscribe({
-      next: (data: any) => {
-        this.employeeProfiles = data;
+      next: (data: EmployeeProfile[]) => { 
+        console.log('Employee profiles loaded from database:', data);
+        this.employeeProfiles = data; 
       },
-      error: (error: any) => {
-        console.error('Error loading employee profiles, using mock data:', error);
-        // Load mock employee profiles for development
-        this.loadMockEmployeeProfiles();
+      error: (error) => { 
+        console.error('Error loading employee profiles:', error);
+        if (error.status === 0 || error.status === undefined) {
+          console.log('Backend not available, using mock data for employee profiles');
+          this.loadMockEmployeeProfiles();
+        } else {
+          console.log('Server error, using mock data for employee profiles');
+          this.loadMockEmployeeProfiles();
+        }
       }
     });
   }
 
   loadMockEmployeeProfiles() {
-    // Mock employee profile data for development
-    const mockProfiles: EmployeeProfile[] = [
+    this.employeeProfiles = [
       {
         employeeProfileId: 1,
-        department: 'Engineering',
         designation: 'Software Engineer',
+        department: 'IT',
         dateOfJoining: '2023-01-15',
-        reportingManager: 'John Smith',
+        reportingManager: 'John Doe',
         currentProject: 'Performance Appraisal System',
-        currentTeam: 'Full Stack Team',
-        skills: ['Angular', 'Spring Boot', 'TypeScript'],
-        lastAppraisalRating: 4.2,
-        currentGoals: ['Complete Angular Training'],
-        user: {
-          userId: 1,
-          username: 'john.doe',
-          email: 'john.doe@company.com',
-          fullName: 'John Doe',
-          firstName: 'John',
-          lastName: 'Doe',
-          phoneNumber: '+1-555-0001',
-          password: 'password123',
-          role: 'Employee'
-        }
+        currentTeam: 'Development Team',
+        skills: 'Angular, Spring Boot, MySQL, JavaScript',
+        currentGoals: 'Complete project modules, Improve code quality',
+        user: { userId: 1, fullName: 'Lakshmipriya P K', firstName: 'Lakshmipriya', lastName: 'P K', username: 'lakshmi', email: 'lakshmi@example.com', role: 'Employee' }
       },
       {
         employeeProfileId: 2,
-        department: 'Marketing',
-        designation: 'Marketing Specialist',
-        dateOfJoining: '2023-03-20',
-        reportingManager: 'Jane Wilson',
-        currentProject: 'Brand Campaign',
-        currentTeam: 'Marketing Team',
-        skills: ['Digital Marketing', 'Content Creation'],
-        lastAppraisalRating: 3.5,
-        currentGoals: ['Increase brand awareness'],
-        user: {
-          userId: 2,
-          username: 'jane.smith',
-          email: 'jane.smith@company.com',
-          fullName: 'Jane Smith',
-          firstName: 'Jane',
-          lastName: 'Smith',
-          phoneNumber: '+1-555-0002',
-          password: 'password123',
-          role: 'Employee'
-        }
+        designation: 'Software Engineer',
+        department: 'IT',
+        dateOfJoining: '2023-02-20',
+        reportingManager: 'John Doe',
+        currentProject: 'Performance Appraisal System',
+        currentTeam: 'Development Team',
+        skills: 'Angular, Spring Boot, MySQL, TypeScript',
+        currentGoals: 'Learn new technologies, Complete assigned tasks',
+        user: { userId: 2, fullName: 'Nandhini S Y', firstName: 'Nandhini', lastName: 'S Y', username: 'nandhini', email: 'nandhini@example.com', role: 'Employee' }
+      },
+      {
+        employeeProfileId: 3,
+        designation: 'Senior Developer',
+        department: 'IT',
+        dateOfJoining: '2022-11-10',
+        reportingManager: 'John Doe',
+        currentProject: 'Performance Appraisal System',
+        currentTeam: 'Development Team',
+        skills: 'Angular, Spring Boot, MySQL, Java, Leadership',
+        currentGoals: 'Mentor junior developers, Lead technical initiatives',
+        user: { userId: 3, fullName: 'Priya M', firstName: 'Priya', lastName: 'M', username: 'priya', email: 'priya@example.com', role: 'Employee' }
       }
     ];
-
-    this.employeeProfiles = mockProfiles;
-    console.log('Loaded mock employee profiles:', mockProfiles);
   }
 
   loadUsers() {
     this.userService.getAllUsers().subscribe({
-      next: (data: any) => {
-        this.users = data;
-      },
-      error: (error: any) => {
-        console.error('Error loading users, using mock data:', error);
-        // Load mock users for development
-        this.loadMockUsers();
-      }
+      next: (data: User[]) => { this.users = data; }
     });
-  }
-
-  loadMockUsers() {
-    // Mock user data for development
-    const mockUsers: User[] = [
-      {
-        userId: 1,
-        username: 'john.doe',
-        email: 'john.doe@company.com',
-        fullName: 'John Doe',
-        firstName: 'John',
-        lastName: 'Doe',
-        phoneNumber: '+1-555-0001',
-        password: 'password123',
-        role: 'Employee'
-      },
-      {
-        userId: 2,
-        username: 'jane.smith',
-        email: 'jane.smith@company.com',
-        fullName: 'Jane Smith',
-        firstName: 'Jane',
-        lastName: 'Smith',
-        phoneNumber: '+1-555-0002',
-        password: 'password123',
-        role: 'Employee'
-      },
-      {
-        userId: 3,
-        username: 'admin',
-        email: 'admin@company.com',
-        fullName: 'Admin User',
-        firstName: 'Admin',
-        lastName: 'User',
-        phoneNumber: '+1-555-0000',
-        password: 'password123',
-        role: 'Admin'
-      }
-    ];
-
-    this.users = mockUsers;
-    console.log('Loaded mock users:', mockUsers);
   }
 
   applyFilters() {
     this.filteredFeedbacks = this.feedbacks.filter(feedback => {
+      const search = this.searchTerm.toLowerCase();
       const matchesSearch = !this.searchTerm ||
-        feedback.employee.user.firstName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        feedback.employee.user.lastName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        feedback.employee.user.email.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        (feedback.reviewer && feedback.reviewer.firstName.toLowerCase().includes(this.searchTerm.toLowerCase())) ||
-        (feedback.reviewer && feedback.reviewer.lastName.toLowerCase().includes(this.searchTerm.toLowerCase())) ||
-        feedback.comments.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        feedback.feedbackType.toLowerCase().includes(this.searchTerm.toLowerCase());
-
-      const matchesEmployee = !this.employeeFilter || feedback.employee.employeeProfileId.toString() === this.employeeFilter;
-      const matchesReviewer = !this.reviewerFilter || (feedback.reviewer && feedback.reviewer.userId.toString() === this.reviewerFilter);
-      const matchesFeedbackType = !this.feedbackTypeFilter || feedback.feedbackType === this.feedbackTypeFilter;
-
-      return matchesSearch && matchesEmployee && matchesReviewer && matchesFeedbackType;
+        feedback.employee?.user?.fullName?.toLowerCase().includes(search) ||
+        feedback.reviewer?.fullName?.toLowerCase().includes(search) ||
+        feedback.comments?.toLowerCase().includes(search) ||
+        feedback.feedbackType?.toLowerCase().includes(search);
+      const matchesEmployee = !this.employeeFilter || feedback.employee?.employeeProfileId?.toString() === this.employeeFilter;
+      const matchesReviewer = !this.reviewerFilter || feedback.reviewer?.userId?.toString() === this.reviewerFilter;
+      const matchesType = !this.feedbackTypeFilter || feedback.feedbackType === this.feedbackTypeFilter;
+      return matchesSearch && matchesEmployee && matchesReviewer && matchesType;
     });
   }
+
+  openCreateModal() { 
+    this.feedbackForm.reset(); 
+    this.selectedEmployee = null;
+    this.employeeSuggestions = [];
+    this.employeeNameError = '';
+    this.showCreateModal = true; 
+    // Set default feedback type to Manager Feedback for manager
+    setTimeout(() => {
+      this.feedbackForm.patchValue({ feedbackType: 'Manager Feedback' });
+    }, 100);
+  }
+  
+  openEditModal(feedback: Feedback) { 
+    console.log('Opening edit modal for feedback:', feedback);
+    console.log('Employee data:', feedback.employee);
+    console.log('Employee user data:', feedback.employee?.user);
+    console.log('Employee name:', feedback.employee?.user?.fullName);
+    
+    this.selectedFeedback = feedback; 
+    this.selectedEmployee = feedback.employee || null;
+    this.employeeSuggestions = [];
+    this.employeeNameError = '';
+    this.showEditModal = true; 
+    
+    // Reset form first, then set values
+    this.feedbackForm.reset();
+    
+    // Set form values immediately after reset
+    setTimeout(() => {
+      // Use the employee name (the person being reviewed) - this should be in the employee name field
+      let employeeName = '';
+      if (feedback.employee?.user?.fullName) {
+        employeeName = feedback.employee.user.fullName;
+      } else if (feedback.employee?.user?.firstName && feedback.employee?.user?.lastName) {
+        employeeName = `${feedback.employee.user.firstName} ${feedback.employee.user.lastName}`;
+      } else if (feedback.employee?.user?.username) {
+        employeeName = feedback.employee.user.username;
+      } else {
+        employeeName = 'Employee Name Not Available';
+      }
+      
+      this.feedbackForm.patchValue({ 
+        employeeName: employeeName, // This should be the employee name (the person being reviewed)
+        feedbackType: 'Manager Feedback', // Always Manager Feedback for manager reviews
+        comments: feedback.comments, 
+        rating: feedback.rating,
+        achievements: feedback.achievements || '',
+        challenges: feedback.challenges || '',
+        improvements: feedback.improvements || ''
+      }); 
+      
+      // Clear any validation errors after setting values
+      this.feedbackForm.markAsUntouched();
+      this.feedbackForm.updateValueAndValidity();
+      
+      console.log('Form values set:', this.feedbackForm.value);
+      console.log('Form valid:', this.feedbackForm.valid);
+      console.log('Form errors:', this.feedbackForm.errors);
+    }, 50);
+  }
+  
+  openDeleteModal(feedback: Feedback) { this.selectedFeedback = feedback; this.showDeleteModal = true; }
+  
+  closeModals() { 
+    this.showCreateModal = this.showEditModal = this.showDeleteModal = false; 
+    this.selectedFeedback = null; 
+    this.selectedEmployee = null;
+    this.employeeSuggestions = [];
+    this.employeeNameError = '';
+    this.feedbackForm.reset(); 
+  }
+
+  onEmployeeSelectionChange(event: any) {
+    const selectedEmployeeName = event.target.value;
+    if (selectedEmployeeName) {
+      // Find the selected employee from the list
+      this.selectedEmployee = this.employeeProfiles.find(emp => 
+        emp.user?.fullName === selectedEmployeeName
+      ) || null;
+      
+      if (this.selectedEmployee) {
+        this.employeeNameError = '';
+        console.log('Selected employee:', this.selectedEmployee);
+      } else {
+        this.employeeNameError = 'Selected employee not found';
+      }
+    } else {
+      this.selectedEmployee = null;
+      this.employeeNameError = '';
+    }
+  }
+
+  selectEmployee(employee: EmployeeProfile) {
+    this.selectedEmployee = employee;
+    this.feedbackForm.patchValue({ employeeName: employee.user?.fullName });
+    this.employeeSuggestions = [];
+    this.employeeNameError = '';
+  }
+
+  createFeedback() {
+    if (!this.feedbackForm.valid) {
+      return;
+    }
+    
+    const formData = this.feedbackForm.value;
+    
+    // Use the selected employee from dropdown
+    let selectedEmployee = this.selectedEmployee;
+    
+    // If no employee selected, try to find by the form value
+    if (!selectedEmployee && formData.employeeName) {
+      selectedEmployee = this.employeeProfiles.find(emp => 
+        emp.user?.fullName === formData.employeeName
+      ) || null;
+    }
+    
+    if (!selectedEmployee) {
+      this.employeeNameError = 'Please select an employee from the dropdown';
+      return;
+    }
+    
+    // Get current user or use a default admin user
+    const currentUser = this.authService.getCurrentUser();
+    const reviewer = currentUser || { userId: 1, fullName: 'Admin User', role: 'Admin' };
+    
+    // Create a flat feedback object for the backend
+    const feedbackData = {
+      feedback_type: formData.feedbackType,
+      comments: formData.comments,
+      rating: formData.rating,
+      achievements: formData.achievements || '',
+      challenges: formData.challenges || '',
+      improvements: formData.improvements || '',
+      employee_id: selectedEmployee.employeeProfileId,
+      reviewer_id: reviewer.userId
+    };
+    
+    console.log('Creating feedback with data:', feedbackData);
+    
+    this.feedbackService.createFeedback(feedbackData).subscribe({
+      next: () => { 
+        this.successMessage = 'Feedback created successfully'; 
+        this.loadFeedbacks(); 
+        this.closeModals(); 
+      },
+      error: (error) => { 
+        console.error('Error creating feedback:', error);
+        console.error('Error details:', error.error);
+        console.error('Error status:', error.status);
+        this.errorMessage = `Failed to create feedback: ${error.error?.message || error.message || 'Unknown error'}`;
+      }
+    });
+  }
+
+  updateFeedback() {
+    console.log('Update feedback called');
+    console.log('Form valid:', this.feedbackForm.valid);
+    console.log('Form errors:', this.feedbackForm.errors);
+    console.log('Selected feedback:', this.selectedFeedback);
+    
+    if (!this.selectedFeedback) {
+      console.log('No selected feedback');
+      this.errorMessage = 'No feedback selected for update';
+      return;
+    }
+    
+    // Check individual field validity instead of overall form validity
+    const formData = this.feedbackForm.value;
+    console.log('Form data:', formData);
+    
+    if (!formData.feedbackType || !formData.comments) {
+      console.log('Required fields missing');
+      this.feedbackForm.markAllAsTouched();
+      this.errorMessage = 'Please fill in all required fields';
+      return;
+    }
+    
+    // Create a minimal feedback object for update - only send what we need to update
+    // DO NOT include employeeName as it's not part of the Feedback model
+    const feedback: any = { 
+      feedbackType: formData.feedbackType, 
+      comments: formData.comments, 
+      rating: formData.rating || null,
+      achievements: formData.achievements || '',
+      challenges: formData.challenges || '',
+      improvements: formData.improvements || ''
+    };
+    
+    console.log('Updating feedback:', feedback);
+    console.log('Original employee ID:', this.selectedFeedback.employee?.employeeProfileId);
+    console.log('Original reviewer ID:', this.selectedFeedback.reviewer?.userId);
+    
+    this.feedbackService.updateFeedback(this.selectedFeedback.feedbackId || 0, feedback).subscribe({
+      next: (response) => { 
+        console.log('Update successful:', response);
+        console.log('Updated comments in response:', response.comments);
+        this.successMessage = 'Feedback updated successfully'; 
+        this.loadFeedbacks(); 
+        this.closeModals(); 
+      },
+      error: (error) => { 
+        console.error('Error updating feedback:', error);
+        console.error('Error details:', error.error);
+        console.error('Error status:', error.status);
+        this.errorMessage = `Failed to update feedback: ${error.error?.message || error.message || 'Unknown error'}`;
+      }
+    });
+  }
+
+  deleteFeedback() {
+    if (!this.selectedFeedback) return;   // ✅ null guard
+    this.feedbackService.deleteFeedback(this.selectedFeedback.feedbackId || 0).subscribe({
+      next: () => { this.successMessage = 'Feedback deleted'; this.loadFeedbacks(); this.closeModals(); },
+      error: (error) => { 
+        console.error('Error deleting feedback:', error);
+        this.errorMessage = 'Failed to delete feedback. Please try again.';
+      }
+    });
+  }
+
+  getManagers(): User[] { return this.users.filter(u => u.role?.toUpperCase() === 'MANAGER' || u.role?.toUpperCase() === 'ADMIN'); }
+  getFeedbackTypeClass(feedbackType: string): string { switch (feedbackType?.toLowerCase()) { case 'peer feedback': return 'type-peer'; case 'manager feedback': return 'type-manager'; case 'self-feedback': return 'type-self'; default: return 'type-default'; } }
+  getRatingClass(rating: number): string { if (rating >= 4) return 'rating-excellent'; if (rating >= 3) return 'rating-good'; if (rating >= 2) return 'rating-average'; return 'rating-poor'; }
 
   onSearchChange() {
     this.applyFilters();
@@ -406,186 +442,12 @@ export class FeedbackComponent implements OnInit {
     this.applyFilters();
   }
 
-  openCreateModal() {
-    this.feedbackForm.reset();
-    this.showCreateModal = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-    
-    // Debug: Check if data is loaded
-    console.log('Employee profiles available:', this.employeeProfiles.length);
-    console.log('Users available:', this.users.length);
-    
-    // Ensure data is loaded
-    if (this.employeeProfiles.length === 0) {
-      this.loadMockEmployeeProfiles();
-    }
-    if (this.users.length === 0) {
-      this.loadMockUsers();
-    }
+  navigateTo(route: string) { 
+    this.router.navigate([route]); 
   }
-
-  openEditModal(feedback: Feedback) {
-    this.selectedFeedback = feedback;
-    this.feedbackForm.patchValue({
-      employeeName: feedback.employee.user.fullName,
-      employeeId: feedback.employee.employeeProfileId,
-      feedbackType: feedback.feedbackType,
-      comments: feedback.comments,
-      rating: feedback.rating
-    });
-    this.showEditModal = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-  }
-
-  openDeleteModal(feedback: Feedback) {
-    this.selectedFeedback = feedback;
-    this.showDeleteModal = true;
-  }
-
-  closeModals() {
-    this.showCreateModal = false;
-    this.showEditModal = false;
-    this.showDeleteModal = false;
-    this.selectedFeedback = null;
-    this.feedbackForm.reset();
-    this.errorMessage = '';
-    this.successMessage = '';
-  }
-
-  createFeedback() {
-    if (this.feedbackForm.valid) {
-      const formData = this.feedbackForm.value;
-      const selectedEmployee = this.employeeProfiles.find(emp => emp.employeeProfileId === formData.employeeId);
-      
-      const feedback: Feedback = {
-        feedbackId: 0, // Will be set by backend
-        feedbackType: formData.feedbackType,
-        comments: formData.comments,
-        rating: formData.rating,
-        employee: selectedEmployee || {
-          employeeProfileId: formData.employeeId,
-          department: '',
-          designation: '',
-          dateOfJoining: '',
-          reportingManager: '',
-          currentProject: '',
-          currentTeam: '',
-          skills: [],
-          lastAppraisalRating: 0,
-          currentGoals: [],
-          user: {
-            userId: 0,
-            username: '',
-            email: '',
-            fullName: '',
-            firstName: '',
-            lastName: '',
-            phoneNumber: '',
-            password: '',
-            role: ''
-          }
-        }
-      };
-
-      // Use simple POST without reviewer
-      this.feedbackService.createSelfFeedback(feedback).subscribe({
-        next: (response: any) => {
-          this.successMessage = 'Feedback created successfully!';
-          this.loadFeedbacks();
-          this.closeModals();
-        },
-        error: (error: any) => {
-          console.error('Error creating feedback, using mock response:', error);
-          // Mock successful creation for development
-          this.successMessage = 'Feedback created successfully! (Mock)';
-          this.loadFeedbacks();
-          this.closeModals();
-        }
-      });
-    } else {
-      this.errorMessage = 'Please fill in all required fields correctly.';
-    }
-  }
-
-  updateFeedback() {
-    if (this.feedbackForm.valid && this.selectedFeedback) {
-      const formData = this.feedbackForm.value;
-      const selectedEmployee = this.employeeProfiles.find(emp => emp.employeeProfileId === formData.employeeId);
-      
-      const feedback: Feedback = {
-        ...this.selectedFeedback,
-        feedbackType: formData.feedbackType,
-        comments: formData.comments,
-        rating: formData.rating,
-        employee: selectedEmployee || this.selectedFeedback.employee
-      };
-
-      this.feedbackService.updateFeedback(feedback).subscribe({
-        next: (response: any) => {
-          this.successMessage = 'Feedback updated successfully!';
-          this.loadFeedbacks();
-          this.closeModals();
-        },
-        error: (error: any) => {
-          console.error('Error updating feedback, using mock response:', error);
-          // Mock successful update for development
-          this.successMessage = 'Feedback updated successfully! (Mock)';
-          this.loadFeedbacks();
-          this.closeModals();
-        }
-      });
-    } else {
-      this.errorMessage = 'Please fill in all required fields correctly.';
-    }
-  }
-
-  deleteFeedback() {
-    if (this.selectedFeedback) {
-      this.feedbackService.deleteFeedback(this.selectedFeedback.feedbackId).subscribe({
-        next: () => {
-          this.successMessage = 'Feedback deleted successfully!';
-          this.loadFeedbacks();
-          this.closeModals();
-        },
-        error: (error: any) => {
-          console.error('Error deleting feedback, using mock response:', error);
-          // Mock successful deletion for development
-          this.successMessage = 'Feedback deleted successfully! (Mock)';
-          this.loadFeedbacks();
-          this.closeModals();
-        }
-      });
-    }
-  }
-
-  getManagers(): User[] {
-    return this.users.filter(user => user.role === 'MANAGER' || user.role === 'ADMIN');
-  }
-
-  getFeedbackTypeClass(feedbackType: string): string {
-    switch (feedbackType.toLowerCase()) {
-      case 'peer feedback': return 'type-peer';
-      case 'manager feedback': return 'type-manager';
-      case 'self-feedback': return 'type-self';
-      default: return 'type-default';
-    }
-  }
-
-  getRatingClass(rating: number): string {
-    if (rating >= 4) return 'rating-excellent';
-    if (rating >= 3) return 'rating-good';
-    if (rating >= 2) return 'rating-average';
-    return 'rating-poor';
-  }
-
-  navigateTo(route: string) {
-    this.router.navigate([route]);
-  }
-
-  logout() {
-    this.authService.logout();
-    this.router.navigate(['/website/landing']);
+  
+  logout() { 
+    this.authService.logout(); 
+    this.router.navigate(['/website/landing']); 
   }
 }

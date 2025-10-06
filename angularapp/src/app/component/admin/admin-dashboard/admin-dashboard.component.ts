@@ -38,17 +38,17 @@ interface EmployeeStats {
 }
 
 @Component({
-  selector: 'app-dashboard',
+  selector: 'app-admin-dashboard',
   standalone: true,
   imports: [NgFor, NgClass, NgIf],
-  templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.css']
+  templateUrl: './admin-dashboard.component.html',
+  styleUrls: ['./admin-dashboard.component.css']
 })
-export class DashboardComponent implements OnInit {
+export class AdminDashboardComponent implements OnInit {
 
   // Sidebar menu
   menuItems = [
-    { title: 'Dashboard', icon: 'fa-tachometer-alt', route: '/dashboard' },
+    { title: 'Admin Dashboard', icon: 'fa-tachometer-alt', route: '/admin-dashboard' },
     { title: 'Appraisal', icon: 'fa-clipboard-check', route: '/appraisal' },
     { title: 'Employee Profile', icon: 'fa-user', route: '/employee-profile' },
     { title: 'Feedback', icon: 'fa-comments', route: '/feedback' },
@@ -74,6 +74,7 @@ export class DashboardComponent implements OnInit {
   allAppraisals: Appraisal[] = [];
   currentManager: any = null;
   isLoading = true;
+  errorMessage = '';
 
   constructor(
     private router: Router,
@@ -105,6 +106,7 @@ export class DashboardComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading employees:', error);
+        this.errorMessage = 'Failed to load employee data. Please check your connection.';
         this.loadMockData(); // Fallback to mock data
       }
     });
@@ -120,6 +122,7 @@ export class DashboardComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading goals:', error);
+        this.errorMessage = 'Failed to load goals data.';
       }
     });
 
@@ -131,6 +134,7 @@ export class DashboardComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading feedback:', error);
+        this.errorMessage = 'Failed to load feedback data.';
       }
     });
 
@@ -143,6 +147,7 @@ export class DashboardComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading appraisals:', error);
+        this.errorMessage = 'Failed to load appraisals data.';
         this.isLoading = false;
       }
     });
@@ -171,11 +176,11 @@ export class DashboardComponent implements OnInit {
     
     recentGoals.forEach(goal => {
       this.recentActivities.push({
-        id: goal.goalId,
+        id: goal.goalId || 0,
         type: 'goal',
         description: `${goal.employee?.user?.fullName || 'Employee'} ${goal.status === 'Completed' ? 'completed' : 'updated'} goal: ${goal.title}`,
         timestamp: new Date(goal.createdDate || new Date()),
-        status: goal.status.toLowerCase(),
+        status: goal.status?.toLowerCase() || 'pending',
         employeeName: goal.employee?.user?.fullName || 'Unknown',
         employeeId: goal.employee?.employeeProfileId || 0
       });
@@ -188,7 +193,7 @@ export class DashboardComponent implements OnInit {
     
     recentFeedback.forEach(feedback => {
       this.recentActivities.push({
-        id: feedback.feedbackId,
+        id: feedback.feedbackId || 0,
         type: 'review',
         description: `${feedback.reviewer?.fullName || 'Manager'} provided feedback to ${feedback.employee?.user?.fullName || 'Employee'}`,
         timestamp: new Date(feedback.createdDate || new Date()),

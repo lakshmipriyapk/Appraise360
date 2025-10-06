@@ -22,7 +22,13 @@ export class AuthService {
     console.log('AuthService: Attempting email login with:', { email, password });
     console.log('AuthService: Making request to:', `${this.apiUrl}/login`);
     
-    return this.http.post<any>(`${this.apiUrl}/login`, { email, password })
+    const loginRequest = {
+      email: email,
+      phoneNumber: null,
+      password: password
+    };
+    
+    return this.http.post<any>(`${this.apiUrl}/login`, loginRequest)
       .pipe(
         timeout(1500), // 1.5 second timeout for faster response
         catchError(error => {
@@ -57,10 +63,14 @@ export class AuthService {
     console.log('AuthService: Attempting phone login with:', { phoneNumber, password });
     console.log('AuthService: Making request to:', `${this.apiUrl}/login`);
     
-    const requestBody = { phoneNumber, password };
-    console.log('AuthService: Request body:', requestBody);
+    const loginRequest = {
+      email: null,
+      phoneNumber: phoneNumber,
+      password: password
+    };
+    console.log('AuthService: Request body:', loginRequest);
     
-    return this.http.post<any>(`${this.apiUrl}/login`, requestBody)
+    return this.http.post<any>(`${this.apiUrl}/login`, loginRequest)
       .pipe(
         timeout(1500), // 1.5 second timeout for faster response
         catchError(error => {

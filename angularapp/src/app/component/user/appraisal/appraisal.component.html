@@ -1,0 +1,193 @@
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h2 class="logo">
+      <i class="fas fa-chart-line"></i>
+      Appraise360
+    </h2>
+    <ul>
+      <li *ngFor="let item of menuItems" (click)="navigateTo(item.route)" [class.active]="item.route === '/employee-dashboard/appraisals'">
+        <i [ngClass]="['fas', item.icon]"></i> {{ item.title }}
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1>My Appraisals</h1>
+        <p class="subtitle">Submit and view your performance appraisals</p>
+      </div>
+      <div class="topbar-right">
+        <div class="user-info">
+          <i class="fas fa-user-circle"></i>
+          <span>{{ employeeInfo?.fullName || 'Employee' }}</span>
+        </div>
+        <button class="logout-btn" (click)="logout()">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </header>
+
+    <!-- Employee Appraisal Content -->
+    <div class="dashboard-content">
+      <div class="appraisal-container">
+        
+        <!-- Employee Info Card -->
+        <div class="employee-info-card" *ngIf="employeeInfo">
+          <h3>Employee Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Employee ID:</span>
+              <span class="value">{{ employeeInfo.employeeId }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Full Name:</span>
+              <span class="value">{{ employeeInfo.fullName }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Department:</span>
+              <span class="value">{{ employeeInfo.department }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Designation:</span>
+              <span class="value">{{ employeeInfo.designation }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" *ngIf="isLoading">
+          <div class="spinner"></div>
+          <p>Loading appraisals...</p>
+        </div>
+
+        <!-- Error Message -->
+        <div class="error-state" *ngIf="errorMessage">
+          <i class="fas fa-exclamation-triangle"></i>
+          <h3>Error</h3>
+          <p>{{ errorMessage }}</p>
+          <button class="btn-primary" (click)="loadEmployeeAppraisals()">
+            <i class="fas fa-refresh"></i> Try Again
+          </button>
+        </div>
+
+        <!-- Success Message -->
+        <div class="success-message" *ngIf="successMessage">
+          <i class="fas fa-check-circle"></i>
+          {{ successMessage }}
+        </div>
+
+        <!-- Appraisals List -->
+        <div class="appraisals-section" *ngIf="!isLoading && !errorMessage">
+          <h3>My Appraisals</h3>
+          
+          <div class="appraisals-list" *ngIf="appraisals.length > 0">
+            <div *ngFor="let appraisal of appraisals" class="appraisal-card" 
+                 [class.selected]="selectedAppraisal?.appraisalId === appraisal.appraisalId"
+                 (click)="selectAppraisal(appraisal)">
+              
+              <div class="appraisal-header">
+                <h4>Appraisal #{{ appraisal.appraisalId }}</h4>
+                <span class="status-badge" [ngClass]="getStatusClass(appraisal.status || '')">
+                  {{ appraisal.status }}
+                </span>
+              </div>
+              
+              <div class="appraisal-details">
+                <div class="rating-section">
+                  <div class="rating-item" *ngIf="appraisal.selfRating">
+                    <span class="rating-label">Your Rating:</span>
+                    <span class="rating-value" [ngClass]="getRatingClass(appraisal.selfRating)">
+                      {{ appraisal.selfRating }}/5
+                    </span>
+                  </div>
+                  <div class="rating-item" *ngIf="appraisal.managerRating">
+                    <span class="rating-label">Manager Rating:</span>
+                    <span class="rating-value" [ngClass]="getRatingClass(appraisal.managerRating)">
+                      {{ appraisal.managerRating }}/5
+                    </span>
+                  </div>
+                </div>
+                
+                <div class="comments-section" *ngIf="appraisal.selfComments">
+                  <span class="comments-label">Your Comments:</span>
+                  <p class="comments-text">{{ appraisal.selfComments }}</p>
+                </div>
+                
+                <div class="comments-section" *ngIf="appraisal.managerComments">
+                  <span class="comments-label">Manager Comments:</span>
+                  <p class="comments-text">{{ appraisal.managerComments }}</p>
+                </div>
+              </div>
+              
+              <div class="appraisal-actions">
+                <button class="btn btn-primary" 
+                        *ngIf="canEditAppraisal(appraisal)"
+                        (click)="selectAppraisal(appraisal)">
+                  <i class="fas fa-edit"></i> Submit Self-Appraisal
+                </button>
+                <span class="readonly-indicator" *ngIf="!canEditAppraisal(appraisal)">
+                  <i class="fas fa-lock"></i> Read Only
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="empty-state" *ngIf="appraisals.length === 0">
+            <i class="fas fa-clipboard-check"></i>
+            <h3>No Appraisals Found</h3>
+            <p>You don't have any appraisals yet. Contact your manager to get started.</p>
+          </div>
+        </div>
+
+        <!-- Self-Appraisal Form -->
+        <div class="appraisal-form-section" *ngIf="selectedAppraisal && canEditAppraisal(selectedAppraisal)">
+          <h3>Submit Self-Appraisal</h3>
+          <form [formGroup]="appraisalForm" (ngSubmit)="submitSelfAppraisal()" class="appraisal-form">
+            
+            <div class="form-group">
+              <label for="selfRating">Self Rating (1-5) *</label>
+              <select id="selfRating" formControlName="selfRating" class="form-control">
+                <option value="">Select Rating</option>
+                <option value="1">1 - Needs Improvement</option>
+                <option value="2">2 - Below Average</option>
+                <option value="3">3 - Average</option>
+                <option value="4">4 - Good</option>
+                <option value="5">5 - Excellent</option>
+              </select>
+              <div class="error-message" *ngIf="appraisalForm.get('selfRating')?.invalid && appraisalForm.get('selfRating')?.touched">
+                Please select a rating between 1 and 5
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="selfComments">Self Comments *</label>
+              <textarea id="selfComments" 
+                        formControlName="selfComments" 
+                        class="form-control" 
+                        rows="4" 
+                        placeholder="Describe your performance, achievements, and areas for improvement..."></textarea>
+              <div class="error-message" *ngIf="appraisalForm.get('selfComments')?.invalid && appraisalForm.get('selfComments')?.touched">
+                Please provide comments (minimum 10 characters)
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" (click)="selectedAppraisal = null">
+                <i class="fas fa-times"></i> Cancel
+              </button>
+              <button type="submit" class="btn btn-primary" [disabled]="appraisalForm.invalid || isLoading">
+                <i class="fas fa-paper-plane"></i> Submit Self-Appraisal
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div> <!-- End appraisal-container -->
+    </div> <!-- End dashboard-content -->
+  </div> <!-- End main -->
+</div> <!-- End layout -->
+

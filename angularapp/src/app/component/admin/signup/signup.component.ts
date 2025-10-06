@@ -1,9 +1,8 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-signup',
@@ -89,15 +88,20 @@ export class SignupComponent implements OnInit {
     this.isLoading = true;
 
     // Prepare user data for backend
+    const nameParts = this.signupData.fullName.trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+    const username = this.signupData.email.split('@')[0];
+    
     const userData = {
-      fullName: this.signupData.fullName,
-      email: this.signupData.email,
-      phoneNumber: this.signupData.phone,
+      fullName: this.signupData.fullName.trim(),
+      email: this.signupData.email.trim(),
+      phoneNumber: this.signupData.phone.trim(),
       password: this.signupData.password,
-      role: this.signupData.role, // Use selected role
-      username: this.signupData.email.split('@')[0], // Generate username from email
-      firstName: this.signupData.fullName.split(' ')[0] || '',
-      lastName: this.signupData.fullName.split(' ').slice(1).join(' ') || ''
+      role: this.signupData.role || 'Employee',
+      username: username,
+      firstName: firstName,
+      lastName: lastName
     };
 
     // Call backend API with timeout
@@ -125,13 +129,16 @@ export class SignupComponent implements OnInit {
         
         if (error.status === 0) {
           this.messageTitle = 'Connection Error';
-          this.messageText = 'Cannot connect to the server. Please make sure the backend is running on port 8080.';
+          this.messageText = 'Cannot connect to the server. Please make sure the backend is running.';
         } else if (error.status === 409) {
           this.messageTitle = 'Account Already Exists';
           this.messageText = 'An account with this email already exists. Please use a different email or try logging in.';
+        } else if (error.status === 400) {
+          this.messageTitle = 'Invalid Data';
+          this.messageText = error.error || 'Please check your information and try again.';
         } else {
           this.messageTitle = 'Account Creation Failed';
-          this.messageText = `Error creating account: ${error.error?.message || error.message || 'Please try again.'}`;
+          this.messageText = error.error || error.message || 'Please try again with different information.';
         }
         this.showMessage = true;
       }

@@ -1,3 +1,5 @@
+// src/app/services/feedback.service.ts
+
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -8,45 +10,47 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class FeedbackService {
-  private apiUrl = `${environment.apiUrl}/feedbacks`;
+  private baseUrl = `${environment.apiUrl}/feedbacks`;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
+  // Get all feedbacks
   getAllFeedbacks(): Observable<Feedback[]> {
-    return this.http.get<Feedback[]>(this.apiUrl);
+    return this.http.get<Feedback[]>(`${this.baseUrl}`);
   }
 
+  // Get feedback by ID
   getFeedbackById(id: number): Observable<Feedback> {
-    return this.http.get<Feedback>(`${this.apiUrl}/${id}`);
+    return this.http.get<Feedback>(`${this.baseUrl}/${id}`);
   }
 
-  getFeedbacksByEmployeeId(employeeId: number): Observable<Feedback[]> {
-    return this.http.get<Feedback[]>(`${this.apiUrl}/employee/${employeeId}`);
+  // Get feedbacks received by employee
+  getFeedbacksByEmployee(employeeId: number): Observable<Feedback[]> {
+    return this.http.get<Feedback[]>(`${this.baseUrl}/employee/${employeeId}`);
   }
 
-  getFeedbacksByManagerId(managerId: number): Observable<Feedback[]> {
-    return this.http.get<Feedback[]>(`${this.apiUrl}/manager/${managerId}`);
+  // Get feedbacks given by reviewer
+  getFeedbacksByReviewer(reviewerId: number): Observable<Feedback[]> {
+    return this.http.get<Feedback[]>(`${this.baseUrl}/reviewer/${reviewerId}`);
   }
 
-  createFeedback(employeeId: number, reviewerId: number, feedback: Feedback): Observable<Feedback> {
-    return this.http.post<Feedback>(`${this.apiUrl}/employee/${employeeId}/reviewer/${reviewerId}`, feedback);
+  // Create feedback (with employee & optional reviewer embedded in body)
+  createFeedback(feedbackData: any): Observable<Feedback> {
+    return this.http.post<Feedback>(`${this.baseUrl}`, feedbackData);
   }
 
-  // Simplified method for self feedback
-  createSelfFeedback(feedback: Feedback): Observable<Feedback> {
-    return this.http.post<Feedback>(this.apiUrl, feedback);
-  }
-
-  // Method for creating feedback with employee and reviewer IDs
+  // Create feedback with employeeId & reviewerId in path
   createFeedbackWithIds(employeeId: number, reviewerId: number, feedback: Feedback): Observable<Feedback> {
-    return this.http.post<Feedback>(`${this.apiUrl}/employee/${employeeId}/reviewer/${reviewerId}`, feedback);
+    return this.http.post<Feedback>(`${this.baseUrl}/employee/${employeeId}/reviewer/${reviewerId}`, feedback);
   }
 
-  updateFeedback(feedback: Feedback): Observable<Feedback> {
-    return this.http.put<Feedback>(`${this.apiUrl}/${feedback.feedbackId}`, feedback);
+  // Update feedback
+  updateFeedback(id: number, feedback: Feedback): Observable<Feedback> {
+    return this.http.put<Feedback>(`${this.baseUrl}/${id}`, feedback);
   }
 
+  // Delete feedback
   deleteFeedback(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 }

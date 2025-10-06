@@ -347,12 +347,301 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Employee Profiles Grid */
-.employee-profiles-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 1.5rem;
+/* Employee Profiles List */
+.employee-profiles-list {
   margin-bottom: 2rem;
+}
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.list-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.count {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.table-container {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.employee-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+}
+
+.employee-table thead {
+  background: linear-gradient(135deg, #8b5cf6, #667eea);
+  color: white;
+}
+
+.employee-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.employee-table th:last-child {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+  text-align: center;
+}
+
+.employee-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #2c3e50;
+  font-size: 0.9rem;
+}
+
+.employee-table td:last-child {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+/* Action buttons styling */
+.action-buttons {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.action-buttons .btn {
+  padding: 0.4rem;
+  min-width: 32px;
+  max-width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.action-buttons .btn i {
+  font-size: 0.8rem;
+}
+
+.employee-row:hover {
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.employee-row:last-child td {
+  border-bottom: none;
+}
+
+/* Employee Detail View */
+.employee-detail-view {
+  margin-bottom: 2rem;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.detail-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.profile-detail-card {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #8b5cf6, #667eea);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 2rem;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
+
+.profile-info {
+  flex: 1;
+}
+
+.profile-info h3 {
+  margin: 0 0 0.5rem 0;
+  color: #1e293b;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.profile-info p {
+  margin: 0 0 0.5rem 0;
+  color: #64748b;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.employee-id {
+  color: #8b5cf6;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: rgba(139, 92, 246, 0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+}
+
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.detail-section {
+  background: rgba(248, 250, 252, 0.8);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.section-title {
+  margin: 0 0 1.5rem 0;
+  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-title::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(135deg, #8b5cf6, #667eea);
+  border-radius: 2px;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.95rem;
+  min-width: 140px;
+}
+
+.detail-value {
+  color: #1e293b;
+  font-weight: 500;
+  text-align: right;
+  flex: 1;
+}
+
+.department-badge {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.skills-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.skill-badge {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Rating Classes */
+.rating-excellent {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.rating-good {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.rating-average {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.rating-poor {
+  color: #ef4444;
+  font-weight: 600;
 }
 
 .employee-profile-card {
@@ -686,6 +975,16 @@
   font-size: 0.9rem;
 }
 
+/* Table responsive improvements */
+.table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.employee-table {
+  min-width: 800px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .sidebar {
@@ -735,5 +1034,26 @@
   .modal {
     margin: 1rem;
     max-width: none;
+  }
+
+  /* Mobile table adjustments */
+  .employee-table th,
+  .employee-table td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .employee-table th:last-child,
+  .employee-table td:last-child {
+    width: 70px;
+    min-width: 70px;
+    max-width: 70px;
+  }
+
+  .action-buttons .btn {
+    min-width: 28px;
+    max-width: 28px;
+    height: 28px;
+    padding: 0.3rem;
   }
 }
