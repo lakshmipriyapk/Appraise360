@@ -90,21 +90,70 @@
           <button class="close-btn" (click)="closeForgotPassword()">&times;</button>
         </div>
         <div class="modal-body">
-          <p>Enter your email address and we'll send you a link to reset your password.</p>
-          <form (ngSubmit)="onForgotPassword()" #forgotForm="ngForm">
+          <form (ngSubmit)="onForgotPasswordSubmit(forgotForm)" #forgotForm="ngForm">
+            <!-- Email -->
             <div class="input-group">
               <label for="resetEmail">Email Address</label>
               <input
                 type="email"
                 id="resetEmail"
                 name="resetEmail"
-                [(ngModel)]="resetEmail"
+                [(ngModel)]="forgotPasswordData.email"
                 placeholder="you@company.com"
                 required
                 email
+                #resetEmail="ngModel"
               />
+              <div *ngIf="resetEmail.invalid && resetEmail.touched" class="error">Valid email required</div>
             </div>
-            <button type="submit" class="btn-primary">Send Reset Link</button>
+
+            <!-- New Password -->
+            <div class="input-group password-container">
+              <label for="newPassword">New Password</label>
+              <input
+                [type]="showNewPassword ? 'text' : 'password'"
+                id="newPassword"
+                name="newPassword"
+                [(ngModel)]="forgotPasswordData.newPassword"
+                placeholder="Enter new password"
+                required
+                minlength="6"
+                #newPassword="ngModel"
+              />
+              <i class="fas password-toggle-icon" [ngClass]="showNewPassword ? 'fa-eye-slash' : 'fa-eye'" (click)="toggleNewPassword()"></i>
+              <div *ngIf="newPassword.invalid && newPassword.touched" class="error">
+                <div *ngIf="newPassword.errors?.['required']">New password is required</div>
+                <div *ngIf="newPassword.errors?.['minlength']">Password must be at least 6 characters</div>
+              </div>
+            </div>
+
+            <!-- Confirm New Password -->
+            <div class="input-group password-container">
+              <label for="confirmNewPassword">Confirm New Password</label>
+              <input
+                [type]="showConfirmNewPassword ? 'text' : 'password'"
+                id="confirmNewPassword"
+                name="confirmNewPassword"
+                [(ngModel)]="forgotPasswordData.confirmNewPassword"
+                placeholder="Confirm new password"
+                required
+                (input)="checkNewPasswordMatch()"
+                #confirmNewPassword="ngModel"
+              />
+              <i class="fas password-toggle-icon" [ngClass]="showConfirmNewPassword ? 'fa-eye-slash' : 'fa-eye'" (click)="toggleConfirmNewPassword()"></i>
+              <div *ngIf="confirmNewPassword.invalid && confirmNewPassword.touched" class="error">
+                <div *ngIf="confirmNewPassword.errors?.['required']">Please confirm your new password</div>
+              </div>
+              <div *ngIf="newPasswordMismatch" class="error">Passwords do not match</div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn-secondary" (click)="closeForgotPassword()">Cancel</button>
+              <button type="submit" class="btn-primary" [disabled]="!isForgotPasswordFormValid() || isForgotPasswordLoading">
+                <i *ngIf="isForgotPasswordLoading" class="fas fa-spinner fa-spin"></i>
+                {{ isForgotPasswordLoading ? 'Resetting...' : 'Reset Password' }}
+              </button>
+            </div>
           </form>
         </div>
       </div>

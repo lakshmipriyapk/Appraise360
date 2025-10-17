@@ -5,9 +5,12 @@ import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.annotation.Validated;
+import jakarta.validation.Valid;
 
 import com.example.springapp.model.User;
 import com.example.springapp.model.LoginRequest;
+import com.example.springapp.model.PasswordResetRequest;
 import com.example.springapp.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -53,13 +56,15 @@ public class UserController {
         @ApiResponse(responseCode = "200", description = "User created successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid user data")
     })
-    public ResponseEntity<?> createUser(@RequestBody User user) {
+    public ResponseEntity<?> createUser(@Valid @RequestBody User user) {
         try {
             User createdUser = service.createUser(user);
             return ResponseEntity.ok(createdUser);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         } catch (Exception e) {
+            System.err.println("Error creating user: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(500).body("Internal server error: " + e.getMessage());
         }
     }
@@ -124,6 +129,31 @@ public class UserController {
         } catch (RuntimeException e) {
             System.out.println("Login failed: " + e.getMessage());
             throw new RuntimeException("Authentication failed: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/reset-password")
+    @Operation(summary = "Reset user password", description = "Reset password for a user by email")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Password reset successfully"),
+        @ApiResponse(responseCode = "404", description = "User not found"),
+        @ApiResponse(responseCode = "400", description = "Invalid data")
+    })
+    public ResponseEntity<?> resetPassword(@RequestBody PasswordResetRequest resetRequest) {
+        System.out.println("=== PASSWORD RESET REQUEST RECEIVED ===");
+        System.out.println("Email: " + resetRequest.getEmail());
+        System.out.println("New Password: " + resetRequest.getNewPassword());
+        
+        try {
+            User updatedUser = service.resetPassword(resetRequest.getEmail(), resetRequest.getNewPassword());
+            System.out.println("Password reset successful for user: " + updatedUser.getEmail());
+            return ResponseEntity.ok(updatedUser);
+        } catch (RuntimeException e) {
+            System.out.println("Password reset failed: " + e.getMessage());
+            return ResponseEntity.status(404).body("User not found with email: " + resetRequest.getEmail());
+        } catch (Exception e) {
+            System.out.println("Password reset error: " + e.getMessage());
+            return ResponseEntity.status(400).body("Error resetting password: " + e.getMessage());
         }
     }
 }

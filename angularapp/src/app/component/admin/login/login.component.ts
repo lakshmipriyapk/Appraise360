@@ -1,7 +1,8 @@
 import { Component, OnInit, HostListener } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../../service/auth.service';
 import { User } from '../../../model/user.model';
 
@@ -20,6 +21,17 @@ export class LoginComponent implements OnInit {
   isLoading = false;
   errorMessage = '';
 
+  // Forgot Password properties
+  showNewPassword = false;
+  showConfirmNewPassword = false;
+  newPasswordMismatch = false;
+  isForgotPasswordLoading = false;
+  forgotPasswordData = {
+    email: '',
+    newPassword: '',
+    confirmNewPassword: ''
+  };
+
   loginData = {
     email: '',
     phone: '',
@@ -28,7 +40,8 @@ export class LoginComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private http: HttpClient
   ) {}
 
   ngOnInit() {
@@ -175,16 +188,70 @@ export class LoginComponent implements OnInit {
   closeForgotPassword() {
     this.showForgotPassword = false;
     this.resetEmail = '';
+    this.forgotPasswordData = {
+      email: '',
+      newPassword: '',
+      confirmNewPassword: ''
+    };
+    this.newPasswordMismatch = false;
+    this.showNewPassword = false;
+    this.showConfirmNewPassword = false;
   }
 
-  onForgotPassword() {
-    if (this.resetEmail) {
-      console.log('Reset password for:', this.resetEmail);
-      alert('Password reset link sent to your email!');
-      this.closeForgotPassword();
-    } else {
-      alert('Please enter your email address.');
+  toggleNewPassword() {
+    this.showNewPassword = !this.showNewPassword;
+  }
+
+  toggleConfirmNewPassword() {
+    this.showConfirmNewPassword = !this.showConfirmNewPassword;
+  }
+
+  checkNewPasswordMatch() {
+    this.newPasswordMismatch = this.forgotPasswordData.newPassword !== this.forgotPasswordData.confirmNewPassword;
+  }
+
+  isForgotPasswordFormValid() {
+    return this.forgotPasswordData.email && 
+           this.forgotPasswordData.newPassword && 
+           this.forgotPasswordData.confirmNewPassword &&
+           !this.newPasswordMismatch &&
+           this.forgotPasswordData.newPassword.length >= 6;
+  }
+
+  onForgotPasswordSubmit(form: NgForm) {
+    if (form.invalid || this.newPasswordMismatch) {
+      return;
     }
+
+    this.isForgotPasswordLoading = true;
+
+    const resetData = {
+      email: this.forgotPasswordData.email,
+      newPassword: this.forgotPasswordData.newPassword
+    };
+
+    // Call backend API to reset password
+    this.http.put('http://localhost:8080/api/users/reset-password', resetData).subscribe({
+      next: (response) => {
+        this.isForgotPasswordLoading = false;
+        this.closeForgotPassword();
+        alert('Password reset successfully! You can now log in with your new password.');
+      },
+      error: (error) => {
+        this.isForgotPasswordLoading = false;
+        console.error('Password reset error:', error);
+        
+        if (error.status === 0) {
+          alert('Cannot connect to the server. Please make sure the backend is running.');
+        } else if (error.status === 404) {
+          alert('No account found with this email address. Please check your email and try again.');
+        } else if (error.status === 400) {
+          alert('Invalid data. Please check your information and try again.');
+        } else {
+          alert('Password reset failed. Please try again.');
+        }
+      }
+    });
   }
 
   private redirectBasedOnRole(role: string) {

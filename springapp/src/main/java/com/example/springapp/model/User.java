@@ -6,6 +6,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
@@ -18,21 +21,26 @@ public class User {
     @Schema(description = "Unique identifier for the user")
     private Long userId;
 
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email should be valid")
     @Schema(description = "User's email address")
     private String email;
     
     @Schema(description = "User's first name")
     private String firstName;
     
+    @NotBlank(message = "Full name is required")
     @Schema(description = "User's full name")
     private String fullName;
     
     @Schema(description = "User's last name")
     private String lastName;
     
+    @NotBlank(message = "Password is required")
     @Schema(description = "User's password", accessMode = Schema.AccessMode.WRITE_ONLY)
     private String password;
     
+    @NotBlank(message = "Phone number is required")
     @Schema(description = "User's phone number")
     private String phoneNumber;
     

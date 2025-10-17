@@ -30,6 +30,7 @@ export class SignupComponent implements OnInit {
   passwordMismatch = false;
   isLoading = false;
 
+
   constructor(private http: HttpClient, private router: Router) {}
 
   ngOnInit() {
@@ -135,10 +136,10 @@ export class SignupComponent implements OnInit {
           this.messageText = 'An account with this email already exists. Please use a different email or try logging in.';
         } else if (error.status === 400) {
           this.messageTitle = 'Invalid Data';
-          this.messageText = error.error || 'Please check your information and try again.';
+          this.messageText = this.getErrorMessage(error.error) || 'Please check your information and try again.';
         } else {
           this.messageTitle = 'Account Creation Failed';
-          this.messageText = error.error || error.message || 'Please try again with different information.';
+          this.messageText = this.getErrorMessage(error.error) || this.getErrorMessage(error.message) || 'Please try again with different information.';
         }
         this.showMessage = true;
       }
@@ -158,6 +159,39 @@ export class SignupComponent implements OnInit {
   closeMessage() {
     this.showMessage = false;
   }
+
+  private getErrorMessage(error: any): string {
+    if (!error) return '';
+    
+    if (typeof error === 'string') {
+      return error;
+    }
+    
+    if (typeof error === 'object') {
+      // Try to extract meaningful error message from object
+      if (error.message) {
+        return error.message;
+      }
+      if (error.error) {
+        return this.getErrorMessage(error.error);
+      }
+      if (error.details) {
+        return error.details;
+      }
+      if (error.statusText) {
+        return error.statusText;
+      }
+      // If it's an object with no clear message, stringify it safely
+      try {
+        return JSON.stringify(error);
+      } catch {
+        return 'An error occurred';
+      }
+    }
+    
+    return String(error);
+  }
+
 
   private storeUserData(userData: any) {
     try {

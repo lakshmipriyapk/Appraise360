@@ -26,16 +26,31 @@ public class UserService {
     }
 
     public User createUser(User user) {
+        System.out.println("=== CREATE USER DEBUG ===");
+        System.out.println("User data received: " + user);
+        System.out.println("Email: " + user.getEmail());
+        System.out.println("FullName: " + user.getFullName());
+        System.out.println("PhoneNumber: " + user.getPhoneNumber());
+        System.out.println("Role: " + user.getRole());
+        System.out.println("Username: " + user.getUsername());
+        
         // Set default values for new fields if not provided
         if (user.getRole() == null || user.getRole().isEmpty()) {
             user.setRole("Employee");
         }
 
-        // ensure bidirectional link
-        if (user.getEmployeeProfiles() != null) {
-            user.getEmployeeProfiles().forEach(profile -> profile.setUser(user));
+        // Clear employee profiles to avoid cascade issues during user creation
+        user.setEmployeeProfiles(null);
+        
+        try {
+            User savedUser = repo.save(user);
+            System.out.println("User saved successfully with ID: " + savedUser.getUserId());
+            return savedUser;
+        } catch (Exception e) {
+            System.err.println("Error saving user: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
-        return repo.save(user);
     }
 
     public User updateUser(User user) {
@@ -91,5 +106,29 @@ public class UserService {
         
         // If no user found or password doesn't match, throw exception
         throw new RuntimeException("Invalid credentials");
+    }
+
+    public User resetPassword(String email, String newPassword) {
+        System.out.println("=== PASSWORD RESET DEBUG ===");
+        System.out.println("Email: " + email);
+        System.out.println("New Password: " + newPassword);
+        
+        // Find user by email
+        Optional<User> userOpt = repo.findByEmail(email.trim());
+        
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            System.out.println("User found: " + user.getEmail());
+            
+            // Update password
+            user.setPassword(newPassword);
+            User updatedUser = repo.save(user);
+            
+            System.out.println("Password updated successfully for user: " + updatedUser.getEmail());
+            return updatedUser;
+        } else {
+            System.out.println("No user found with email: " + email);
+            throw new RuntimeException("User not found with email: " + email);
+        }
     }
 }
