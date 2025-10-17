@@ -24,7 +24,7 @@
             <i class="fas fa-user"></i>
           </div>
           <div class="employee-details">
-            <h3>{{ (currentEmployee.user?.fullName) || (currentEmployee.user?.username) || 'No Name Found' }}</h3>
+            <h3>{{ getDisplayName(currentEmployee.user) }}</h3>
             <p>{{ currentEmployee.designation || 'Not provided' }}</p>
           </div>
         </div>
@@ -60,8 +60,19 @@
 
       <!-- Dashboard Content -->
       <div class="content-area">
+        <!-- Messages -->
+        <div *ngIf="errorMessage" class="message message-error">
+          <i class="fas fa-exclamation-circle"></i>
+          {{ errorMessage }}
+        </div>
+        <div *ngIf="successMessage" class="message message-success">
+          <i class="fas fa-check-circle"></i>
+          {{ successMessage }}
+        </div>
+        
         <!-- Overview Section -->
         <div *ngIf="activeSection === 'overview'" class="overview-section">
+          
           <!-- Stats Cards -->
           <div class="stats-grid">
             <div class="stat-card">
@@ -85,12 +96,12 @@
                 <i class="fas fa-star"></i>
               </div>
               <div class="stat-content">
-                <h3>{{ currentSelfFeedback?.rating || 'N/A' }}</h3>
+                <h3>{{ getSelfRating() }}</h3>
                 <p>Self Rating</p>
                 <div class="rating-display">
                   <div class="stars">
                     <i *ngFor="let star of [1,2,3,4,5]" 
-                       [class]="'fas fa-star ' + (star <= (currentSelfFeedback?.rating || 0) ? 'filled' : '')"></i>
+                       [class]="'fas fa-star ' + (star <= getSelfRating() ? 'filled' : '')"></i>
                   </div>
                 </div>
               </div>
@@ -205,6 +216,19 @@
                   {{ goal.priority || 'Medium' }} Priority
                 </span>
               </div>
+              <div class="goal-details-grid">
+                <div><strong>Goal ID:</strong> {{ goal.goalId }}</div>
+                <div><strong>Employee ID:</strong> {{ goal.employee?.employeeProfileId }}</div>
+                <div><strong>Appraisal ID:</strong> {{ goal.appraisal?.appraisalId }}</div>
+                <div><strong>Start Date:</strong> {{ goal.startDate | date:'mediumDate' }}</div>
+                <div><strong>Target Date:</strong> {{ goal.targetDate | date:'mediumDate' }}</div>
+                <div><strong>Completion Date:</strong> {{ goal.completionDate | date:'mediumDate' }}</div>
+                <div><strong>Progress:</strong> {{ goal.progress || 0 }}%</div>
+                <div><strong>Status:</strong> {{ goal.status }}</div>
+                <div><strong>Created Date:</strong> {{ goal.createdDate | date:'medium' }}</div>
+                <div><strong>Created By:</strong> {{ goal.createdBy || '-' }}</div>
+                <div class="wide"><strong>Manager Comments:</strong> {{ goal.managerComments || '-' }}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -216,15 +240,10 @@
               <i class="fas fa-plus"></i>
               Add Self Feedback
             </button>
-            <button class="btn-secondary" (click)="openRequestFeedbackModal()">
-              <i class="fas fa-comment"></i>
-              Request Feedback
-            </button>
           </div>
 
-          <!-- Self Feedback Section -->
+          <!-- Self Feedback Section (heading removed as requested) -->
           <div class="self-feedback-section">
-            <h3>Self Feedback</h3>
             <div class="self-feedback-card" *ngIf="currentSelfFeedback">
               <div class="feedback-header">
                 <h4>My Self Assessment</h4>
@@ -253,13 +272,7 @@
                 </div>
               </div>
             </div>
-            <div class="no-feedback" *ngIf="!currentSelfFeedback">
-              <div class="no-feedback-content">
-                <i class="fas fa-comment-dots"></i>
-                <h4>No Self Feedback Yet</h4>
-                <p>Share your thoughts about your performance and achievements.</p>
-              </div>
-            </div>
+            <!-- Removed empty self-feedback placeholder per requirement -->
           </div>
 
           <div class="feedback-list">
@@ -278,6 +291,17 @@
                 </div>
               </div>
               <p class="feedback-comment">{{ feedback.comments }}</p>
+              <div class="feedback-details-grid">
+                <div><strong>Feedback ID:</strong> {{ feedback.feedbackId }}</div>
+                <div><strong>Employee ID:</strong> {{ feedback.employee?.employeeProfileId }}</div>
+                <div><strong>Reviewer ID:</strong> {{ feedback.reviewer?.userId }}</div>
+                <div><strong>Rating:</strong> {{ feedback.rating || 'N/A' }}</div>
+                <div><strong>Type:</strong> {{ feedback.feedbackType }}</div>
+                <div><strong>Achievements:</strong> {{ feedback.achievements || '-' }}</div>
+                <div><strong>Challenges:</strong> {{ feedback.challenges || '-' }}</div>
+                <div><strong>Improvements:</strong> {{ feedback.improvements || '-' }}</div>
+                <div><strong>Created:</strong> {{ feedback.createdDate | date:'medium' }}</div>
+              </div>
               <div class="feedback-footer">
                 <span class="reviewer" *ngIf="feedback.reviewer as r">{{ r.fullName }}</span>
                 <span class="reviewer" *ngIf="!feedback.reviewer">Self</span>
@@ -303,9 +327,9 @@
                   <div class="rating-display">
                     <div class="stars">
                       <i *ngFor="let star of [1,2,3,4,5]" 
-                         [class]="'fas fa-star ' + (star <= (currentSelfFeedback?.rating || 0) ? 'filled' : '')"></i>
+                         [class]="'fas fa-star ' + (star <= getSelfRating() ? 'filled' : '')"></i>
                     </div>
-                    <span class="rating-number">{{ currentSelfFeedback?.rating || 'N/A' }}</span>
+                    <span class="rating-number">{{ getSelfRating() }}</span>
                   </div>
                 </div>
                 <div class="rating-item">
@@ -318,6 +342,21 @@
                     <span class="rating-number">{{ appraisal.managerRating }}</span>
                   </div>
                 </div>
+              </div>
+              <div class="appraisal-details-grid">
+                <div><strong>Appraisal ID:</strong> {{ appraisal.appraisalId }}</div>
+                <div><strong>Employee ID:</strong> {{ appraisal.employee?.employeeProfileId }}</div>
+                <div><strong>Cycle ID:</strong> {{ appraisal.reviewCycle?.cycleId }}</div>
+                <div><strong>Cycle Name:</strong> {{ appraisal.cycleName || appraisal.reviewCycle?.cycleName }}</div>
+                <div><strong>Period Start:</strong> {{ appraisal.periodStart | date:'mediumDate' }}</div>
+                <div><strong>Period End:</strong> {{ appraisal.periodEnd | date:'mediumDate' }}</div>
+                <div><strong>Review Date:</strong> {{ (appraisal.reviewDate || appraisal.appraisalDate) | date:'mediumDate' }}</div>
+                <div><strong>Self Rating:</strong> {{ appraisal.selfRating }}</div>
+                <div><strong>Manager Rating:</strong> {{ appraisal.managerRating }}</div>
+                <div><strong>Status:</strong> {{ appraisal.status }}</div>
+                <div class="wide"><strong>Manager Comments:</strong> {{ appraisal.managerComments || '-' }}</div>
+                <div><strong>Manager Name:</strong> {{ appraisal.managerName || '-' }}</div>
+                <div><strong>Reviewer Role:</strong> {{ appraisal.reviewerRole || '-' }}</div>
               </div>
             </div>
           </div>
@@ -456,31 +495,46 @@
                   </div>
 
                   <div class="form-group">
-                    <label for="priority">Priority</label>
+                    <label for="category">Category *</label>
                     <select 
-                      id="priority"
-                      formControlName="priority"
+                      id="category"
+                      formControlName="category"
                       class="form-select">
-                      <option value="Low">Low</option>
-                      <option value="Medium">Medium</option>
-                      <option value="High">High</option>
+                      <option value="Professional Development">Professional Development</option>
+                      <option value="Project Goals">Project Goals</option>
+                      <option value="Skill Enhancement">Skill Enhancement</option>
+                      <option value="Performance Improvement">Performance Improvement</option>
+                      <option value="Career Growth">Career Growth</option>
+                      <option value="Other">Other</option>
                     </select>
                   </div>
                 </div>
 
-                <div class="form-group">
-                  <label for="category">Category</label>
-                  <select 
-                    id="category"
-                    formControlName="category"
-                    class="form-select">
-                    <option value="Professional Development">Professional Development</option>
-                    <option value="Project Goals">Project Goals</option>
-                    <option value="Skill Enhancement">Skill Enhancement</option>
-                    <option value="Performance Improvement">Performance Improvement</option>
-                    <option value="Career Growth">Career Growth</option>
-                    <option value="Other">Other</option>
-                  </select>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="progress">Progress *</label>
+                    <select 
+                      id="progress"
+                      formControlName="progress"
+                      class="form-select">
+                      <option [value]="0">0</option>
+                      <option [value]="25">25</option>
+                      <option [value]="50">50</option>
+                      <option [value]="75">75</option>
+                      <option [value]="100">100</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="status">Status *</label>
+                    <select 
+                      id="status"
+                      formControlName="status"
+                      class="form-select">
+                      <option value="Pending">Pending</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div class="form-actions">
@@ -497,98 +551,7 @@
           </div>
         </div>
 
-        <!-- Request Feedback Modal -->
-        <div class="modal-overlay" *ngIf="showRequestFeedbackModal" (click)="closeRequestFeedbackModal()">
-          <div class="modal-content" (click)="$event.stopPropagation()">
-            <div class="modal-header">
-              <h3>Request Feedback</h3>
-              <button class="close-btn" (click)="closeRequestFeedbackModal()">
-                <i class="fas fa-times"></i>
-              </button>
-            </div>
-            <div class="modal-body">
-              <form [formGroup]="requestFeedbackForm" (ngSubmit)="submitFeedbackRequest()">
-                <div class="form-group">
-                  <label for="requestee">Request Feedback From *</label>
-                  <select 
-                    id="requestee"
-                    formControlName="requestee"
-                    class="form-select">
-                    <option value="">Select a colleague...</option>
-                    <option value="manager">My Manager</option>
-                    <option value="peer1">John Smith (Senior Developer)</option>
-                    <option value="peer2">Sarah Johnson (Team Lead)</option>
-                    <option value="peer3">Mike Davis (Product Manager)</option>
-                    <option value="peer4">Lisa Wilson (UX Designer)</option>
-                  </select>
-                  <div class="error-message" *ngIf="requestFeedbackForm.get('requestee')?.invalid && requestFeedbackForm.get('requestee')?.touched">
-                    Please select someone to request feedback from
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="feedbackType">Feedback Type *</label>
-                  <select 
-                    id="feedbackType"
-                    formControlName="feedbackType"
-                    class="form-select">
-                    <option value="">Select feedback type...</option>
-                    <option value="Performance">Performance Review</option>
-                    <option value="Project">Project Feedback</option>
-                    <option value="Skills">Skills Development</option>
-                    <option value="Collaboration">Collaboration</option>
-                    <option value="Leadership">Leadership</option>
-                    <option value="General">General Feedback</option>
-                  </select>
-                  <div class="error-message" *ngIf="requestFeedbackForm.get('feedbackType')?.invalid && requestFeedbackForm.get('feedbackType')?.touched">
-                    Please select a feedback type
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="message">Message (Optional)</label>
-                  <textarea 
-                    id="message"
-                    formControlName="message"
-                    placeholder="Add a personal message to your feedback request..."
-                    rows="4"
-                    class="form-textarea">
-                  </textarea>
-                </div>
-
-                <div class="form-group">
-                  <label for="deadline">Request Deadline</label>
-                  <input 
-                    type="date" 
-                    id="deadline"
-                    formControlName="deadline"
-                    class="form-input">
-                </div>
-
-                <div class="form-group">
-                  <label class="checkbox-label">
-                    <input 
-                      type="checkbox" 
-                      formControlName="anonymous"
-                      class="form-checkbox">
-                    <span class="checkmark"></span>
-                    Request anonymous feedback
-                  </label>
-                </div>
-
-                <div class="form-actions">
-                  <button type="button" class="btn-secondary" (click)="closeRequestFeedbackModal()">
-                    Cancel
-                  </button>
-                  <button type="submit" class="btn-primary" [disabled]="requestFeedbackForm.invalid">
-                    <i class="fas fa-paper-plane"></i>
-                    Send Request
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
+        <!-- Request Feedback Modal removed per requirement -->
 
         <!-- Edit Profile Modal -->
         <div class="modal-overlay" *ngIf="showEditProfileModal" (click)="closeEditProfileModal()">
@@ -723,20 +686,7 @@
         <div *ngIf="activeSection === 'profile'" class="profile-section">
           <div class="section-header">
             <h2>Employee Profile</h2>
-            <div class="header-buttons">
-              <button class="btn-secondary" (click)="setTestData()">
-                <i class="fas fa-flask"></i>
-                Set Test Data
-              </button>
-              <button class="btn-secondary" (click)="debugProfileSection()">
-                <i class="fas fa-bug"></i>
-                Debug Profile
-              </button>
-              <button class="btn-secondary" (click)="openEditProfileModal()">
-                <i class="fas fa-edit"></i>
-                Edit Profile
-              </button>
-            </div>
+            <div class="header-buttons"></div>
           </div>
 
           <!-- Loading State -->
@@ -755,7 +705,7 @@
                   <i class="fas fa-user"></i>
                 </div>
                 <div class="profile-info">
-                  <h3>{{ (currentEmployee.user?.fullName) || (currentEmployee.user?.username) || 'No Name Found' }}</h3>
+                  <h3>{{ getDisplayName(currentEmployee.user) }}</h3>
                   <p>{{ currentEmployee.designation || 'Not provided' }}</p>
                   <span class="employee-id">Employee ID: {{ currentEmployee.employeeProfileId }}</span>
                   <span class="user-id">User ID: {{ currentEmployee.user?.userId }}</span>
@@ -841,24 +791,7 @@
                 </div>
               </div>
 
-              <!-- Current Goals Section -->
-              <div class="profile-section-title">
-                <h4><i class="fas fa-bullseye"></i> Current Goals</h4>
-              </div>
-              <div class="goals-section">
-                <div class="goals-list">
-                  <span class="goal-tag" *ngFor="let goal of getCurrentGoalsArray()">
-                    <i class="fas fa-target"></i>
-                    {{ goal }}
-                  </span>
-                  <p *ngIf="getCurrentGoalsArray().length === 0" class="no-data">
-                    <i class="fas fa-info-circle"></i>
-                    No goals set yet
-                    <br>
-                    <small>Raw current goals data: {{ currentEmployee.currentGoals || 'null' }}</small>
-                  </p>
-                </div>
-              </div>
+              <!-- Current Goals removed as requested -->
 
               <!-- Performance Summary -->
               <div class="profile-section-title">

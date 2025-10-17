@@ -130,14 +130,14 @@ public class FeedbackController {
             }
             
             if (employeeId == null) {
-                return ResponseEntity.badRequest().build();
-            }
-            
+            return ResponseEntity.badRequest().build();
+        }
+
             final Long finalEmployeeId = employeeId;
             EmployeeProfile employee = employeeService.getEmployeeProfileById(finalEmployeeId)
                     .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Employee not found with ID " + finalEmployeeId));
-            feedback.setEmployee(employee);
-            
+        feedback.setEmployee(employee);
+
             // Handle reviewer relationship
             Long reviewerId = null;
             if (feedbackData.containsKey("reviewer_id")) {
@@ -164,7 +164,7 @@ public class FeedbackController {
                 final Long finalReviewerId = reviewerId;
                 User reviewer = userService.getUserById(finalReviewerId)
                         .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Reviewer not found with ID " + finalReviewerId));
-                feedback.setReviewer(reviewer);
+            feedback.setReviewer(reviewer);
             } else {
                 // Default reviewer if not provided
                 User defaultReviewer = userService.getUserById(1L)

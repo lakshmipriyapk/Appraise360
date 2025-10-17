@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { NgFor, NgClass, NgIf } from '@angular/common';
+import{NgFor, NgClass, NgIf,} from '@angular/common';
 import { EmployeeProfileService } from '../../../service/employee-profile.service';
 import { GoalService } from '../../../service/goal.service';
 import { FeedbackService } from '../../../service/feedback.service';

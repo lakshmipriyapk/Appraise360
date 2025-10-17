@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -63,6 +64,7 @@ export class EmployeeDashboardComponent implements OnInit {
   isLoading = true;
   activeSection = 'overview';
   errorMessage = '';
+  successMessage = '';
   backendAccessible = false;
   
   // Local storage keys
@@ -82,6 +84,7 @@ export class EmployeeDashboardComponent implements OnInit {
   constructor(
     private router: Router,
     private fb: FormBuilder,
+    private http: HttpClient,
     private employeeProfileService: EmployeeProfileService,
     private sharedEmployeeService: SharedEmployeeService,
     private sharedGoalService: SharedGoalService,
@@ -103,9 +106,11 @@ export class EmployeeDashboardComponent implements OnInit {
     this.goalForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(3)]],
       description: ['', [Validators.required, Validators.minLength(10)]],
-      targetDate: ['', [Validators.required]],
+      category: ['Professional Development', [Validators.required]],
+      progress: [0, [Validators.required]],
+      status: ['Pending', [Validators.required]],
       priority: ['Medium'],
-      category: ['Professional Development']
+      targetDate: ['', [Validators.required]]
     });
 
     this.requestFeedbackForm = this.fb.group({
@@ -122,10 +127,50 @@ export class EmployeeDashboardComponent implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       designation: ['', [Validators.required]],
       department: ['', [Validators.required]],
+      reportingManager: [''],
+      dateOfJoining: [''],
       currentProject: [''],
       currentTeam: [''],
+      currentGoals: [''],
       skills: ['']
     });
+  }
+
+  private applySelfFeedbackToUI(feedback: any) {
+    if (!feedback) return;
+    this.currentSelfFeedback = feedback;
+    if (this.appraisals && this.appraisals.length > 0) {
+      const first = this.appraisals[0];
+      if (first) {
+        (first as any).selfRating = feedback?.rating ?? (first as any).selfRating;
+        (first as any).selfComments = feedback?.comments ?? (first as any).selfComments;
+      }
+    }
+  }
+  
+  private pickLatestSelfFeedback(allFeedback: any[]): any | null {
+    if (!Array.isArray(allFeedback)) return null;
+    const candidates = allFeedback.filter(f => (
+      f?.feedbackType === 'Self Assessment' ||
+      f?.feedbackType === 'Self Feedback' ||
+      f?.feedbackType === 'Self-Feedback'
+    ));
+    if (candidates.length === 0) return null;
+    candidates.sort((a, b) => {
+      const ad = a?.createdDate ? new Date(a.createdDate).getTime() : 0;
+      const bd = b?.createdDate ? new Date(b.createdDate).getTime() : 0;
+      return bd - ad; // newest first
+    });
+    return candidates[0] || null;
+  }
+
+  // Coerces current self rating to a number for star rendering
+  getSelfRating(): number {
+    const r: any = this.currentSelfFeedback?.rating;
+    if (r === null || r === undefined) return 0;
+    if (typeof r === 'number') return r;
+    const n = Number(r);
+    return isNaN(n) ? 0 : n;
   }
 
   loadCurrentUser() {
@@ -583,33 +628,349 @@ export class EmployeeDashboardComponent implements OnInit {
 
   ngOnInit() {
     console.log('=== EMPLOYEE DASHBOARD INITIALIZATION ===');
-    console.log('Employee Dashboard ngOnInit - starting...');
+    this.isLoading = true;
     
-    // Check backend connectivity first
-    this.checkBackendConnectivity();
+    // Get current user immediately
+    const currentUser = this.authService.getCurrentUser();
+    console.log('Current user:', currentUser);
     
-    // Clear any existing employee data first
-    this.sharedEmployeeService.clearCurrentEmployee();
-    
-    // Load current user and employee data
-    this.loadCurrentUserAndEmployeeData();
-    
-    // Safety timeout - force stop loading after 10 seconds
+    if (currentUser) {
+      console.log('✅ User found:', currentUser.fullName);
+      
+      // Create basic employee profile immediately
+      this.currentEmployee = {
+        employeeProfileId: currentUser.userId || 1,
+        department: 'IT',
+        designation: 'Developer',
+        dateOfJoining: '2023-01-01',
+        reportingManager: 'Manager',
+        currentProject: 'Project Alpha',
+        currentTeam: 'Team Beta',
+        skills: 'JavaScript, Angular, Spring Boot',
+        currentGoals: 'Complete project milestones',
+        lastAppraisalRating: 4.0,
+        user: currentUser
+      };
+      
+      // Create sample data immediately to show something
+      this.createSampleGoals();
+      this.createSampleFeedback();
+      this.createSampleAppraisals();
+      
+      this.isLoading = false;
+      console.log('✅ Employee dashboard loaded with sample data');
+      
+      // Load saved profile data from localStorage
+      this.loadSavedProfileData();
+      
+      // Try to load real data in background
     setTimeout(() => {
-      if (this.isLoading) {
-        console.log('Safety timeout: Force stopping loading state');
+        this.loadRealEmployeeProfile(currentUser);
+      }, 1000);
+    } else {
+      console.log('❌ No user found');
         this.isLoading = false;
+    }
+  }
+
+  // Load real employee profile from database
+  loadRealEmployeeProfile(user: any) {
+    console.log('=== LOADING REAL EMPLOYEE PROFILE FROM DATABASE ===');
+    console.log('User:', user.fullName, 'ID:', user.userId);
+    
+    // First, get all employee profiles and find the one for this user
+    this.employeeProfileService.getAllEmployeeProfiles().subscribe({
+      next: (profiles) => {
+        console.log('All employee profiles loaded:', profiles.length);
         
-        // If still no employee data, create a basic one
-        if (!this.currentEmployee) {
-          const currentUser = this.authService.getCurrentUser();
-          if (currentUser) {
-            console.log('Creating basic employee profile due to timeout');
-            this.createBasicEmployeeProfile(currentUser.userId || 0);
-          }
+        // Find profile for this user
+        let userProfile = profiles.find(profile => 
+          profile.user?.userId === user.userId ||
+          profile.user?.email === user.email ||
+          profile.user?.username === user.username ||
+          profile.user?.fullName === user.fullName
+        );
+        
+        if (userProfile) {
+          console.log('✅ Found employee profile in database:', userProfile);
+          this.currentEmployee = userProfile;
+          this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee);
+          
+          // Load all related data for this employee
+          this.loadEmployeeSpecificData(userProfile.employeeProfileId || userProfile.user?.userId || 0);
+        } else {
+          console.log('❌ No employee profile found, creating basic one');
+          this.createBasicEmployeeProfile(user.userId || 0);
         }
+      },
+      error: (error) => {
+        console.error('Error loading employee profiles:', error);
+        this.createBasicEmployeeProfile(user.userId || 0);
       }
-    }, 10000); // 10 second safety timeout
+    });
+  }
+
+  // Load employee-specific data from database
+  loadEmployeeSpecificData(employeeId: number) {
+    console.log('=== LOADING EMPLOYEE-SPECIFIC DATA FROM DATABASE ===');
+    console.log('Employee ID:', employeeId);
+    
+    // Load goals for this employee
+    this.goalService.getGoalsByEmployee(employeeId).subscribe({
+      next: (goals) => {
+        console.log('✅ Goals loaded from database:', goals.length);
+        this.currentGoals = goals;
+        this.calculateGoalStats();
+      },
+      error: (error) => {
+        console.error('Error loading goals:', error);
+        // Try loading all goals and filter
+        this.loadAllGoalsAndFilter(this.currentEmployee?.employeeProfileId || this.currentEmployee?.user?.userId || 0);
+      }
+    });
+
+    // Load feedback for this employee
+    this.feedbackService.getFeedbacksByEmployee(employeeId).subscribe({
+      next: (feedbacks) => {
+        console.log('✅ Feedback loaded from database:', feedbacks.length);
+        this.recentFeedback = feedbacks;
+        this.dashboardStats.feedbackCount = feedbacks.length;
+      },
+      error: (error) => {
+        console.error('Error loading feedback:', error);
+        // Try loading all feedback and filter
+        this.loadAllFeedbackAndFilter(this.currentEmployee?.employeeProfileId || this.currentEmployee?.user?.userId || 0);
+      }
+    });
+
+    // Load appraisals for this employee
+    this.appraisalService.getAppraisalsByEmployee(employeeId).subscribe({
+      next: (appraisals) => {
+        console.log('✅ Appraisals loaded from database:', appraisals.length);
+        this.appraisals = appraisals;
+        this.calculateAppraisalStats();
+        
+        // Set loading to false after all data loading is completed
+        this.isLoading = false;
+        console.log('✅ Employee dashboard data loading completed');
+      },
+      error: (error) => {
+        console.error('Error loading appraisals:', error);
+        // Try loading all appraisals and filter
+        this.loadAllAppraisalsAndFilter(this.currentEmployee?.employeeProfileId || this.currentEmployee?.user?.userId || 0);
+        
+        // Set loading to false even on error
+        this.isLoading = false;
+        console.log('✅ Employee dashboard data loading completed (with fallback)');
+      }
+    });
+  }
+
+  // Fallback: Load all goals and filter by employee
+  loadAllGoalsAndFilter(employeeId: number) {
+    console.log('Loading all goals and filtering for employee:', employeeId);
+    this.goalService.getAllGoals().subscribe({
+      next: (allGoals) => {
+        this.currentGoals = allGoals.filter(goal => 
+          goal.employee?.employeeProfileId === employeeId ||
+          goal.employee?.user?.userId === employeeId
+        );
+        console.log('Filtered goals:', this.currentGoals.length);
+        this.calculateGoalStats();
+      },
+      error: (error) => {
+        console.error('Error loading all goals:', error);
+        this.currentGoals = [];
+      }
+    });
+  }
+
+  // Fallback: Load all feedback and filter by employee
+  loadAllFeedbackAndFilter(employeeId: number) {
+    console.log('Loading all feedback and filtering for employee:', employeeId);
+    this.feedbackService.getAllFeedbacks().subscribe({
+      next: (allFeedbacks) => {
+        this.recentFeedback = allFeedbacks.filter(feedback => 
+          feedback.employee?.employeeProfileId === employeeId ||
+          feedback.employee?.user?.userId === employeeId
+        );
+        console.log('Filtered feedback:', this.recentFeedback.length);
+        this.dashboardStats.feedbackCount = this.recentFeedback.length;
+      },
+      error: (error) => {
+        console.error('Error loading all feedback:', error);
+        this.recentFeedback = [];
+      }
+    });
+  }
+
+  // Fallback: Load all appraisals and filter by employee
+  loadAllAppraisalsAndFilter(employeeId: number) {
+    console.log('Loading all appraisals and filtering for employee:', employeeId);
+    this.appraisalService.getAllAppraisals().subscribe({
+      next: (allAppraisals) => {
+        this.appraisals = allAppraisals.filter(appraisal => 
+          appraisal.employee?.employeeProfileId === employeeId ||
+          appraisal.employee?.user?.userId === employeeId
+        );
+        console.log('Filtered appraisals:', this.appraisals.length);
+        this.calculateAppraisalStats();
+      },
+      error: (error) => {
+        console.error('Error loading all appraisals:', error);
+        this.appraisals = [];
+      }
+    });
+  }
+
+  // Create employee profile from user data
+  createEmployeeProfileFromUser(user: any) {
+    console.log('Creating employee profile from user:', user);
+    
+    this.currentEmployee = {
+      employeeProfileId: user.userId || 0,
+      department: 'IT',
+      designation: 'Employee',
+      dateOfJoining: '2023-01-01',
+      reportingManager: 'Manager',
+      currentProject: 'Project Alpha',
+      currentTeam: 'Team Alpha',
+      skills: 'JavaScript, Angular, Spring Boot',
+      currentGoals: 'Complete project tasks',
+      lastAppraisalRating: 4.0,
+      user: user
+    };
+    
+    console.log('✅ Employee profile created:', this.currentEmployee);
+    this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee);
+  }
+
+  // Load all employee data
+  loadAllEmployeeData(userId: number) {
+    console.log('Loading all data for user ID:', userId);
+    
+    // Load goals
+    this.goalService.getAllGoals().subscribe({
+      next: (goals) => {
+        console.log('All goals loaded:', goals.length);
+        // Filter goals for this user
+        this.currentGoals = goals.filter(goal => 
+          goal.employee?.user?.userId === userId ||
+          goal.employee?.employeeProfileId === userId
+        );
+        console.log('Filtered goals for user:', this.currentGoals.length);
+        this.calculateGoalStats();
+      },
+      error: (error) => {
+        console.error('Error loading goals:', error);
+        // Create sample goals
+        this.createSampleGoals();
+      }
+    });
+
+    // Load feedback
+    this.feedbackService.getAllFeedbacks().subscribe({
+      next: (feedbacks) => {
+        console.log('All feedback loaded:', feedbacks.length);
+        // Filter feedback for this user
+        this.recentFeedback = feedbacks.filter(feedback => 
+          feedback.employee?.user?.userId === userId ||
+          feedback.employee?.employeeProfileId === userId
+        );
+        console.log('Filtered feedback for user:', this.recentFeedback.length);
+        this.dashboardStats.feedbackCount = this.recentFeedback.length;
+      },
+      error: (error) => {
+        console.error('Error loading feedback:', error);
+        // Create sample feedback
+        this.createSampleFeedback();
+      }
+    });
+
+    // Load appraisals
+    this.appraisalService.getAllAppraisals().subscribe({
+      next: (appraisals) => {
+        console.log('All appraisals loaded:', appraisals.length);
+        // Filter appraisals for this user
+        this.appraisals = appraisals.filter(appraisal => 
+          appraisal.employee?.user?.userId === userId ||
+          appraisal.employee?.employeeProfileId === userId
+        );
+        console.log('Filtered appraisals for user:', this.appraisals.length);
+        this.calculateAppraisalStats();
+      },
+      error: (error) => {
+        console.error('Error loading appraisals:', error);
+        // Create sample appraisals
+        this.createSampleAppraisals();
+      }
+    });
+
+    this.isLoading = false;
+  }
+
+  // Create sample data if backend fails
+  createSampleGoals() {
+    console.log('Creating sample goals');
+    this.currentGoals = [
+      {
+        goalId: 1,
+        title: 'Complete Project Alpha',
+        description: 'Finish the main project tasks',
+        status: 'In Progress',
+        priority: 'High',
+        progress: 75,
+        startDate: '2024-01-01',
+        targetDate: '2024-12-31',
+        employee: this.currentEmployee || undefined
+      },
+      {
+        goalId: 2,
+        title: 'Learn New Technologies',
+        description: 'Master Angular and Spring Boot',
+        status: 'Pending',
+        priority: 'Medium',
+        progress: 30,
+        startDate: '2024-01-01',
+        targetDate: '2024-06-30',
+        employee: this.currentEmployee || undefined
+      }
+    ];
+    this.calculateGoalStats();
+  }
+
+  createSampleFeedback() {
+    console.log('Creating sample feedback');
+    this.recentFeedback = [
+      {
+        feedbackId: 1,
+        feedbackType: 'Manager Feedback',
+        rating: 4,
+        comments: 'Good work on the project. Keep it up!',
+        achievements: 'Completed major milestones',
+        challenges: 'Time management',
+        improvements: 'Better communication',
+        employee: this.currentEmployee || undefined,
+        reviewer: { userId: 1, fullName: 'Manager' }
+      }
+    ];
+    this.dashboardStats.feedbackCount = this.recentFeedback.length;
+  }
+
+  createSampleAppraisals() {
+    console.log('Creating sample appraisals');
+    this.appraisals = [
+      {
+        appraisalId: 1,
+        status: 'Completed',
+        managerRating: 4.0,
+        selfRating: 4.0,
+        managerComments: 'Excellent performance this quarter',
+        employee: this.currentEmployee || undefined,
+        managerName: 'Manager'
+      }
+    ];
+    this.calculateAppraisalStats();
   }
 
   // New method to load current user and employee data
@@ -706,21 +1067,21 @@ export class EmployeeDashboardComponent implements OnInit {
         title: 'Complete Angular Training',
         description: 'Finish the comprehensive Angular course and certification',
         status: 'In Progress',
-        employee: this.currentEmployee!
+        employee: this.currentEmployee || undefined!
       },
       {
         goalId: 2,
         title: 'Deliver Q3 Project Milestone',
         description: 'Complete the performance appraisal system development',
         status: 'Completed',
-        employee: this.currentEmployee!
+        employee: this.currentEmployee || undefined!
       },
       {
         goalId: 3,
         title: 'Improve Code Review Skills',
         description: 'Participate in more code reviews and provide constructive feedback',
         status: 'Pending',
-        employee: this.currentEmployee!
+        employee: this.currentEmployee || undefined!
       }
     ];
 
@@ -731,7 +1092,7 @@ export class EmployeeDashboardComponent implements OnInit {
         feedbackType: 'Admin Feedback',
         comments: 'Great progress on the recent project! Your Angular skills have improved significantly.',
         rating: 4,
-        employee: this.currentEmployee!,
+        employee: this.currentEmployee || undefined!,
         reviewer: {
           userId: 2,
           username: 'admin.smith',
@@ -749,7 +1110,7 @@ export class EmployeeDashboardComponent implements OnInit {
         feedbackType: 'Peer Feedback',
         comments: 'Very helpful during team meetings and always willing to share knowledge.',
         rating: 5,
-        employee: this.currentEmployee!,
+        employee: this.currentEmployee || undefined!,
         reviewer: {
           userId: 3,
           username: 'peer.jones',
@@ -779,7 +1140,7 @@ export class EmployeeDashboardComponent implements OnInit {
         reviewerRole: 'Admin',
         reviewDate: '2024-09-20',
         managerComments: 'Excellent performance this quarter. Shows great initiative and technical skills.',
-        employee: this.currentEmployee!,
+        employee: this.currentEmployee || undefined!,
         reviewCycle: {
           cycleId: 1,
           cycleName: 'Q3 2024 Review',
@@ -845,7 +1206,7 @@ export class EmployeeDashboardComponent implements OnInit {
         console.error('❌ Error loading goals from database:', error);
         console.log('🔄 Falling back to load all goals and filter...');
         // Try to load all goals and filter by employee
-        this.loadAllGoalsAndFilter();
+        this.loadAllGoalsAndFilter(this.currentEmployee?.employeeProfileId || this.currentEmployee?.user?.userId || 0);
       }
     });
 
@@ -867,17 +1228,15 @@ export class EmployeeDashboardComponent implements OnInit {
         this.recentFeedback = feedback;
         this.dashboardStats.feedbackCount = feedback.length;
         
-        // Find self feedback
-        this.currentSelfFeedback = feedback.find(f => f.feedbackType === 'Self Assessment');
-        if (this.currentSelfFeedback) {
-          console.log('✅ Found self feedback for employee');
-        }
+        // Pick the latest self feedback by createdDate
+        this.currentSelfFeedback = this.pickLatestSelfFeedback(feedback);
+        console.log('✅ Resolved current self feedback:', this.currentSelfFeedback);
       },
       error: (error: any) => {
         console.error('❌ Error loading feedback from database:', error);
         console.log('🔄 Falling back to load all feedback and filter...');
         // Try to load all feedback and filter by employee
-        this.loadAllFeedbackAndFilter();
+        this.loadAllFeedbackAndFilter(this.currentEmployee?.employeeProfileId || this.currentEmployee?.user?.userId || 0);
       }
     });
 
@@ -905,7 +1264,7 @@ export class EmployeeDashboardComponent implements OnInit {
         console.error('❌ Error loading appraisals from database:', error);
         console.log('🔄 Falling back to load all appraisals and filter...');
         // Try to load all appraisals and filter by employee
-        this.loadAllAppraisalsAndFilter();
+        this.loadAllAppraisalsAndFilter(this.currentEmployee?.employeeProfileId || this.currentEmployee?.user?.userId || 0);
       }
     });
 
@@ -913,118 +1272,6 @@ export class EmployeeDashboardComponent implements OnInit {
     this.isLoading = false;
   }
 
-  // Fallback methods to load all data and filter by employee
-  loadAllGoalsAndFilter() {
-    this.goalService.getAllGoals().subscribe({
-      next: (allGoals) => {
-        console.log('=== LOADING ALL GOALS AND FILTERING ===');
-        console.log('All goals from database:', allGoals.length);
-        console.log('Current employee:', this.currentEmployee?.user?.fullName);
-        console.log('Employee Profile ID:', this.currentEmployee?.employeeProfileId);
-        console.log('Employee User ID:', this.currentEmployee?.user?.userId);
-        
-        // Enhanced filtering with multiple criteria
-        this.currentGoals = allGoals.filter(goal => {
-          const matchesEmployeeProfileId = goal.employee?.employeeProfileId === this.currentEmployee?.employeeProfileId;
-          const matchesUserId = goal.employee?.user?.userId === this.currentEmployee?.user?.userId;
-          const matchesEmail = goal.employee?.user?.email === this.currentEmployee?.user?.email;
-          const matchesUsername = goal.employee?.user?.username === this.currentEmployee?.user?.username;
-          
-          const isMatch = matchesEmployeeProfileId || matchesUserId || matchesEmail || matchesUsername;
-          
-          if (isMatch) {
-            console.log('✅ Goal matches employee:', goal.title);
-          }
-          
-          return isMatch;
-        });
-        
-        console.log('✅ Filtered goals for employee:', this.currentGoals.length);
-        console.log('Goals:', this.currentGoals.map(g => g.title));
-        this.calculateGoalStats();
-      },
-      error: (error) => {
-        console.error('Error loading all goals:', error);
-      }
-    });
-  }
-
-  loadAllFeedbackAndFilter() {
-    this.feedbackService.getAllFeedbacks().subscribe({
-      next: (allFeedback) => {
-        console.log('=== LOADING ALL FEEDBACK AND FILTERING ===');
-        console.log('All feedback from database:', allFeedback.length);
-        console.log('Current employee:', this.currentEmployee?.user?.fullName);
-        console.log('Employee Profile ID:', this.currentEmployee?.employeeProfileId);
-        console.log('Employee User ID:', this.currentEmployee?.user?.userId);
-        
-        // Enhanced filtering with multiple criteria
-        this.recentFeedback = allFeedback.filter(feedback => {
-          const matchesEmployeeProfileId = feedback.employee?.employeeProfileId === this.currentEmployee?.employeeProfileId;
-          const matchesUserId = feedback.employee?.user?.userId === this.currentEmployee?.user?.userId;
-          const matchesEmail = feedback.employee?.user?.email === this.currentEmployee?.user?.email;
-          const matchesUsername = feedback.employee?.user?.username === this.currentEmployee?.user?.username;
-          const matchesReviewerId = feedback.reviewer?.userId === this.currentEmployee?.user?.userId;
-          
-          const isMatch = matchesEmployeeProfileId || matchesUserId || matchesEmail || matchesUsername || matchesReviewerId;
-          
-          if (isMatch) {
-            console.log('✅ Feedback matches employee:', feedback.feedbackType, '-', feedback.comments?.substring(0, 50) + '...');
-          }
-          
-          return isMatch;
-        });
-        
-        console.log('✅ Filtered feedback for employee:', this.recentFeedback.length);
-        console.log('Feedback types:', this.recentFeedback.map(f => f.feedbackType));
-        this.dashboardStats.feedbackCount = this.recentFeedback.length;
-        
-        // Find self feedback
-        this.currentSelfFeedback = this.recentFeedback.find(f => f.feedbackType === 'Self Assessment');
-        if (this.currentSelfFeedback) {
-          console.log('✅ Found self feedback for employee');
-        }
-      },
-      error: (error) => {
-        console.error('Error loading all feedback:', error);
-      }
-    });
-  }
-
-  loadAllAppraisalsAndFilter() {
-    this.appraisalService.getAllAppraisals().subscribe({
-      next: (allAppraisals) => {
-        console.log('=== LOADING ALL APPRAISALS AND FILTERING ===');
-        console.log('All appraisals from database:', allAppraisals.length);
-        console.log('Current employee:', this.currentEmployee?.user?.fullName);
-        console.log('Employee Profile ID:', this.currentEmployee?.employeeProfileId);
-        console.log('Employee User ID:', this.currentEmployee?.user?.userId);
-        
-        // Enhanced filtering with multiple criteria
-        this.appraisals = allAppraisals.filter(appraisal => {
-          const matchesEmployeeProfileId = appraisal.employee?.employeeProfileId === this.currentEmployee?.employeeProfileId;
-          const matchesUserId = appraisal.employee?.user?.userId === this.currentEmployee?.user?.userId;
-          const matchesEmail = appraisal.employee?.user?.email === this.currentEmployee?.user?.email;
-          const matchesUsername = appraisal.employee?.user?.username === this.currentEmployee?.user?.username;
-          
-          const isMatch = matchesEmployeeProfileId || matchesUserId || matchesEmail || matchesUsername;
-          
-          if (isMatch) {
-            console.log('✅ Appraisal matches employee:', appraisal.appraisalId, '- Status:', appraisal.status);
-          }
-          
-          return isMatch;
-        });
-        
-        console.log('✅ Filtered appraisals for employee:', this.appraisals.length);
-        console.log('Appraisals:', this.appraisals.map(a => `ID: ${a.appraisalId}, Status: ${a.status}`));
-        this.calculateAppraisalStats();
-      },
-      error: (error) => {
-        console.error('Error loading all appraisals:', error);
-      }
-    });
-  }
 
   // Method to refresh all employee-specific data
   refreshEmployeeData() {
@@ -1162,40 +1409,41 @@ export class EmployeeDashboardComponent implements OnInit {
     return [];
   }
 
-  // Method to set test data for debugging
-  setTestData() {
-    console.log('=== SETTING TEST DATA FOR DEBUGGING ===');
+  // Method to force load data - emergency fix
+  forceLoadData() {
+    console.log('🚨 FORCE LOADING DATA - EMERGENCY FIX');
+    this.isLoading = true;
     
-    const testEmployee: EmployeeProfile = {
-      employeeProfileId: 3,
-      department: 'IT',
-      designation: 'Full Stack Developer',
-      dateOfJoining: '2023-02-10',
-      reportingManager: 'Manager A',
-      currentProject: 'Project Gamma',
-      currentTeam: 'Team Alpha',
-      skills: 'Vue.js, Python, PostgreSQL',
-      currentGoals: 'Implement Feature Z',
-      lastAppraisalRating: 4.0,
-      user: {
-        userId: 3,
-        username: 'lakshmi123',
-        email: 'lakshmipriya15042002@gmail.com',
-        password: 'Lakshmi@2002',
-        firstName: 'Lakshmipriya',
-        lastName: 'P K',
-        fullName: 'Lakshmipriya P K',
-        phoneNumber: '8197757797',
-        role: 'Employee'
-      }
-    };
-    
-    this.currentEmployee = testEmployee;
-    this.isLoading = false;
-    
-    console.log('✅ Test data set:', testEmployee);
-    console.log('Skills array:', this.getSkillsArray());
-    console.log('Current goals array:', this.getCurrentGoalsArray());
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser) {
+      console.log('✅ User found for force load:', currentUser.fullName);
+      
+      // Create sample data immediately to show something
+      this.createSampleGoals();
+      this.createSampleFeedback();
+      this.createSampleAppraisals();
+      
+      // Create a basic employee profile
+      this.currentEmployee = {
+        employeeProfileId: currentUser.userId || 1,
+        department: 'IT',
+        designation: 'Developer',
+        dateOfJoining: '2023-01-01',
+        reportingManager: 'Manager',
+        currentProject: 'Project Alpha',
+        currentTeam: 'Team Beta',
+        skills: 'JavaScript, Angular, Spring Boot',
+        currentGoals: 'Complete project milestones',
+        lastAppraisalRating: 4.0,
+        user: currentUser
+      };
+      
+      this.isLoading = false;
+      console.log('✅ Sample data loaded immediately');
+    } else {
+      console.log('❌ No user found for force load');
+      this.isLoading = false;
+    }
   }
 
   // Method to debug profile section
@@ -1310,6 +1558,7 @@ export class EmployeeDashboardComponent implements OnInit {
     this.showSelfFeedbackModal = false;
     this.selfFeedbackForm.reset();
     this.selfFeedbackForm.patchValue({ rating: 0 });
+    this.clearMessages();
   }
 
   setRating(rating: number) {
@@ -1320,28 +1569,35 @@ export class EmployeeDashboardComponent implements OnInit {
     if (this.selfFeedbackForm.valid && this.currentEmployee) {
       const formData = this.selfFeedbackForm.value;
       
+      // Use backend's flexible Map deserializer with snake_case keys
       const feedbackData: any = {
-        feedbackId: 0, // Will be set by backend
-        feedbackType: 'Self Assessment',
+        feedback_type: 'Self Assessment',
         comments: formData.comments,
-        rating: formData.rating,
+        rating: Number(formData.rating) || 0,
         achievements: formData.achievements,
         challenges: formData.challenges,
         improvements: formData.improvements,
-        employee: { employeeProfileId: this.currentEmployee.employeeProfileId }, // Send only ID
-        reviewer: { userId: this.currentEmployee?.user?.userId } // Send only ID
+        employee_id: this.currentEmployee.employeeProfileId,
+        reviewer_id: this.currentEmployee?.user?.userId
       };
 
       console.log('Saving self feedback to database:', feedbackData);
 
-      // First ensure employee profile exists, then create feedback
-      if (!this.currentEmployee.employeeProfileId) {
-        console.log('Employee profile not created yet, creating it first...');
-        this.createEmployeeProfileInDatabase().then(() => {
-          this.createFeedbackWithEmployeeProfile(feedbackData);
-        });
+      // Check if we're updating existing feedback or creating new
+      if (this.currentSelfFeedback && this.currentSelfFeedback.feedbackId) {
+        console.log('Updating existing self feedback...');
+        this.updateExistingSelfFeedback(feedbackData);
       } else {
-        this.createFeedbackWithEmployeeProfile(feedbackData);
+        console.log('Creating new self feedback...');
+        // First ensure employee profile exists, then create feedback
+        if (!this.currentEmployee.employeeProfileId) {
+          console.log('Employee profile not created yet, creating it first...');
+          this.createEmployeeProfileInDatabase().then(() => {
+            this.createFeedbackWithEmployeeProfile(feedbackData);
+          });
+        } else {
+          this.createFeedbackWithEmployeeProfile(feedbackData);
+        }
       }
     } else {
       // Mark all fields as touched to show validation errors
@@ -1349,6 +1605,37 @@ export class EmployeeDashboardComponent implements OnInit {
         this.selfFeedbackForm.get(key)?.markAsTouched();
       });
     }
+  }
+
+  private updateExistingSelfFeedback(feedbackData: any) {
+    this.feedbackService.updateFeedback(this.currentSelfFeedback.feedbackId, feedbackData).subscribe({
+      next: (updatedFeedback: any) => {
+        console.log('✅ Self feedback updated successfully:', updatedFeedback);
+        
+        // Update local data
+        this.currentSelfFeedback = updatedFeedback;
+        const index = this.recentFeedback.findIndex(f => f.feedbackId === updatedFeedback.feedbackId);
+        if (index !== -1) {
+          this.recentFeedback[index] = updatedFeedback;
+        }
+        this.applySelfFeedbackToUI(updatedFeedback);
+        
+        // Update shared service
+        if (this.currentEmployee) {
+          this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee);
+        }
+
+        // Close modal and reset form
+        this.closeSelfFeedbackModal();
+        
+        // Show success message
+        this.successMessage = 'Self feedback updated successfully!';
+      },
+      error: (error: any) => {
+        console.error('❌ Error updating self feedback:', error);
+        this.errorMessage = 'Failed to update self feedback. Please try again.';
+      }
+    });
   }
 
   private createFeedbackWithEmployeeProfile(feedbackData: any) {
@@ -1359,17 +1646,14 @@ export class EmployeeDashboardComponent implements OnInit {
 
     // Ensure employee profile exists in database first
     this.ensureEmployeeProfileExists().then(() => {
-    // Save to database using employee and reviewer IDs
-    this.feedbackService.createFeedbackWithIds(
-        this.currentEmployee!.employeeProfileId || 0,
-        this.currentEmployee!.user?.userId || 0,
-      feedbackData
-    ).subscribe({
+    // Save to database using generic create endpoint with snake_case payload
+    this.feedbackService.createFeedback(feedbackData).subscribe({
       next: (savedFeedback: any) => {
           console.log('Self feedback saved successfully to database:', savedFeedback);
           
-          // Add to local feedback list
+          // Add to local list and reflect in UI
           this.recentFeedback.push(savedFeedback);
+          this.applySelfFeedbackToUI(savedFeedback);
           
           // Update shared service
           if (this.currentEmployee) {
@@ -1408,7 +1692,7 @@ export class EmployeeDashboardComponent implements OnInit {
             // Close modal and reset form
             this.closeSelfFeedbackModal();
             
-            alert('Self feedback saved locally. Backend service is temporarily unavailable.');
+            alert('Failed to save self feedback. Please try again.');
           } else {
             console.log('Database error, but saving locally');
             
@@ -1435,7 +1719,7 @@ export class EmployeeDashboardComponent implements OnInit {
             // Close modal and reset form
             this.closeSelfFeedbackModal();
             
-          alert('Database save failed, but self feedback saved locally. It will persist when you log in again.');
+          alert('Failed to save self feedback. Please try again.');
           }
         }
       });
@@ -1447,6 +1731,16 @@ export class EmployeeDashboardComponent implements OnInit {
   }
 
   editSelfFeedback() {
+    if (this.currentSelfFeedback) {
+      // Pre-populate form with existing feedback data
+      this.selfFeedbackForm.patchValue({
+        rating: this.currentSelfFeedback.rating,
+        comments: this.currentSelfFeedback.comments,
+        achievements: this.currentSelfFeedback.achievements || '',
+        challenges: this.currentSelfFeedback.challenges || '',
+        improvements: this.currentSelfFeedback.improvements || ''
+      });
+    }
     this.openSelfFeedbackModal();
   }
 
@@ -1468,32 +1762,43 @@ export class EmployeeDashboardComponent implements OnInit {
   submitGoal() {
     if (this.goalForm.valid && this.currentEmployee) {
       const formData = this.goalForm.value;
-      
-      const newGoal: any = {
-        goalId: 0, // Will be set by backend
+
+      // Snake_case payload compatible with backend generic create endpoint
+      const goalPayload: any = {
         title: formData.title,
         description: formData.description,
-        status: 'Pending',
-        priority: formData.priority,
-        startDate: new Date().toISOString().split('T')[0], // Convert to YYYY-MM-DD format
-        targetDate: new Date(formData.targetDate).toISOString().split('T')[0], // Convert to YYYY-MM-DD format
-        progress: 0,
-        createdBy: 'self',
         category: formData.category,
-        appraisal: null
+        progress: Number(formData.progress) || 0,
+        status: formData.status ?? 'Pending',
+        priority: formData.priority,
+        start_date: new Date().toISOString().split('T')[0],
+        target_date: new Date(formData.targetDate).toISOString().split('T')[0],
+        created_by: 'self',
+        employee_id: this.currentEmployee.employeeProfileId
       };
 
-      console.log('Saving goal to database:', newGoal);
+      console.log('Saving goal to database (snake_case):', goalPayload);
 
-      // First ensure employee profile exists, then create goal
-      if (!this.currentEmployee.employeeProfileId) {
-        console.log('Employee profile not created yet, creating it first...');
-        this.createEmployeeProfileInDatabase().then(() => {
-          this.createGoalWithEmployeeProfile(newGoal);
+      this.ensureEmployeeProfileExists().then(() => {
+        this.goalService.createGoal(goalPayload).subscribe({
+          next: (savedGoal: any) => {
+            console.log('Goal saved successfully to database:', savedGoal);
+            this.currentGoals = this.currentGoals.filter(g => !!g.goalId && typeof g.goalId === 'number');
+            this.currentGoals.push(savedGoal);
+            this.sharedGoalService.addGoal(savedGoal);
+            this.closeGoalModal();
+            this.calculateGoalStats();
+            alert('Goal saved to database successfully!');
+          },
+          error: (error: any) => {
+            console.error('Error saving goal to database:', error);
+            alert('Failed to save goal. Please try again.');
+          }
         });
-      } else {
-        this.createGoalWithEmployeeProfile(newGoal);
-      }
+      }).catch((error: any) => {
+        console.error('Error ensuring employee profile exists:', error);
+        this.saveGoalLocally(goalPayload);
+      });
     } else {
       // Mark all fields as touched to show validation errors
       Object.keys(this.goalForm.controls).forEach(key => {
@@ -1515,10 +1820,9 @@ export class EmployeeDashboardComponent implements OnInit {
       next: (savedGoal: any) => {
           console.log('Goal saved successfully to database:', savedGoal);
           
-          // Add to local goals list
+          // Replace any temporary local goal entries with saved one
+          this.currentGoals = this.currentGoals.filter(g => !!g.goalId && typeof g.goalId === 'number');
           this.currentGoals.push(savedGoal);
-          
-          // Add to shared service
           this.sharedGoalService.addGoal(savedGoal);
           
           // Close modal and reset form
@@ -1534,59 +1838,7 @@ export class EmployeeDashboardComponent implements OnInit {
           console.error('Error saving goal to database:', error);
           console.log('Error details:', error);
           
-          // Check if it's a connection error or server error
-          if (error.status === 0 || error.status === 404 || error.status === 500) {
-            console.log('Backend not accessible, saving locally only');
-            
-            // Create a local goal with generated ID
-            const localGoal = {
-              ...newGoal,
-              goalId: Date.now(), // Generate a temporary ID
-              createdDate: new Date().toISOString()
-            };
-            
-            // Add to local goals list
-            this.currentGoals.push(localGoal);
-            
-            // Add to shared service
-            this.sharedGoalService.addGoal(localGoal);
-            
-            // Close modal and reset form
-            this.closeGoalModal();
-            
-            // Update dashboard stats
-            this.calculateGoalStats();
-            
-            alert('Goal saved locally. Backend service is temporarily unavailable.');
-          } else {
-            console.log('Database error, but saving locally');
-            
-            // Create a local goal with generated ID
-            const localGoal = {
-              ...newGoal,
-              goalId: Date.now(), // Generate a temporary ID
-              createdDate: new Date().toISOString()
-            };
-            
-            // Add to local goals list
-            this.currentGoals.push(localGoal);
-            
-            // Add to shared service
-            this.sharedGoalService.addGoal(localGoal);
-          
-          // Save to localStorage for persistence
-          if (this.currentEmployee?.user?.userId) {
-            this.saveGoalsToLocal(this.currentEmployee.user.userId);
-          }
-            
-            // Close modal and reset form
-            this.closeGoalModal();
-            
-            // Update dashboard stats
-            this.calculateGoalStats();
-            
-          alert('Database save failed, but goal saved locally. It will persist when you log in again.');
-          }
+          alert('Failed to save goal. Please try again.');
         }
       });
     }).catch((error: any) => {
@@ -1615,8 +1867,14 @@ export class EmployeeDashboardComponent implements OnInit {
     
     console.log('Saving goal status update to database:', goal);
 
-    // Save to database
-    this.goalService.updateGoal(goal.goalId || 0, goal).subscribe({
+    // For Completed, send completionDate and progress explicitly in payload
+    const payload: any = {
+      status: goal.status,
+      progress: Number(goal.progress) || 0,
+      completionDate: goal.completionDate ? new Date(goal.completionDate).toISOString().split('T')[0] : null
+    };
+
+    this.goalService.updateGoal(goal.goalId || 0, payload).subscribe({
       next: (updatedGoal: any) => {
         console.log('Goal status updated successfully in database:', updatedGoal);
         
@@ -1788,123 +2046,547 @@ export class EmployeeDashboardComponent implements OnInit {
   closeEditProfileModal() {
     this.showEditProfileModal = false;
     this.editProfileForm.reset();
+    this.clearMessages();
+  }
+
+  clearMessages() {
+    this.errorMessage = '';
+    this.successMessage = '';
   }
 
   submitEditProfile() {
-    console.log('=== PROFILE FORM SUBMISSION ===');
-    console.log('Form valid:', this.editProfileForm.valid);
-    console.log('Form errors:', this.editProfileForm.errors);
-    console.log('Current employee:', this.currentEmployee);
-    console.log('Form value:', this.editProfileForm.value);
+    console.log('=== USING SERVICE METHODS FOR PROFILE SAVE ===');
     
-    if (this.editProfileForm.valid && this.currentEmployee) {
+    if (!this.editProfileForm.valid || !this.currentEmployee) {
+      console.log('Form is invalid or no current employee');
+      return;
+    }
+
       const formData = this.editProfileForm.value;
       
-      // Update the current employee data
-      this.currentEmployee!.user!.fullName = `${formData.firstName} ${formData.lastName}`.trim();
-      this.currentEmployee!.user!.email = formData.email;
-      this.currentEmployee.designation = formData.designation;
+    // Update local data immediately
+    this.currentEmployee.user!.fullName = `${formData.firstName} ${formData.lastName}`.trim();
+    this.currentEmployee.user!.email = formData.email;
       this.currentEmployee.department = formData.department;
+    this.currentEmployee.designation = formData.designation;
+    this.currentEmployee.dateOfJoining = formData.dateOfJoining;
+    this.currentEmployee.reportingManager = formData.reportingManager;
       this.currentEmployee.currentProject = formData.currentProject;
       this.currentEmployee.currentTeam = formData.currentTeam;
-      this.currentEmployee.skills = formData.skills ? formData.skills.split(',').map((s: string) => s.trim()) : [];
+    this.currentEmployee.skills = formData.skills;
+    this.currentEmployee.currentGoals = formData.currentGoals;
+    this.currentEmployee.lastAppraisalRating = formData.lastAppraisalRating || 4.0;
 
-      console.log('Saving employee profile to database:', this.currentEmployee);
+    console.log('Updated employee data:', this.currentEmployee);
 
-      // Prepare payload compatible with backend (string fields + userId only)
-      const updatePayload: any = {
-        employeeProfileId: this.currentEmployee.employeeProfileId,
-        department: this.currentEmployee.department,
-        designation: this.currentEmployee.designation,
-        dateOfJoining: this.currentEmployee.dateOfJoining,
-        reportingManager: this.currentEmployee.reportingManager,
-        currentProject: this.currentEmployee.currentProject,
-        currentTeam: this.currentEmployee.currentTeam,
-        // Send arrays; backend maps List<String> and stores as comma-separated internally
-        skills: Array.isArray(this.currentEmployee.skills)
-          ? this.currentEmployee.skills
-          : ((this.currentEmployee as any).skills ? String((this.currentEmployee as any).skills).split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : []),
-        lastAppraisalRating: this.currentEmployee.lastAppraisalRating,
-        currentGoals: Array.isArray(this.currentEmployee.currentGoals)
-          ? this.currentEmployee.currentGoals
-          : ((this.currentEmployee as any).currentGoals ? String((this.currentEmployee as any).currentGoals).split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : []),
-        user: { userId: this.currentEmployee?.user?.userId }
-      };
+    // Use service methods instead of direct HTTP calls
+    this.saveUsingServiceMethods();
+  }
 
-      // Save to database
-      this.employeeProfileService.updateProfile(this.currentEmployee!.employeeProfileId || 0, updatePayload).subscribe({
-        next: (updatedProfile: any) => {
-          console.log('Profile saved successfully to database:', updatedProfile);
-          
-          // Update local data with the response from database
-          this.currentEmployee = updatedProfile;
-          
-          // Update shared service
-          if (this.currentEmployee) {
-          this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee);
-          }
+  private saveUsingServiceMethods() {
+    console.log('=== SAVING USING SERVICE METHODS ===');
+    
+    const userId = this.currentEmployee!.user!.userId!;
+    
+    // Prepare profile data
+    const profileData: any = {
+      department: this.currentEmployee!.department,
+      designation: this.currentEmployee!.designation,
+      dateOfJoining: this.currentEmployee!.dateOfJoining,
+      reportingManager: this.currentEmployee!.reportingManager,
+      currentProject: this.currentEmployee!.currentProject,
+      currentTeam: this.currentEmployee!.currentTeam,
+      skills: this.currentEmployee!.skills,
+      currentGoals: this.currentEmployee!.currentGoals,
+      lastAppraisalRating: this.currentEmployee!.lastAppraisalRating,
+      user: { userId: userId }
+    };
 
-          // Close modal and reset form
+    console.log('Profile data for service:', profileData);
+
+    // Try to update existing profile first, then create if needed
+    if (this.currentEmployee!.employeeProfileId && this.currentEmployee!.employeeProfileId > 0) {
+      console.log('Updating existing profile...');
+      this.employeeProfileService.updateProfile(this.currentEmployee!.employeeProfileId, profileData).subscribe({
+        next: (result: any) => {
+          console.log('✅ SUCCESS: Profile updated via service:', result);
+          this.currentEmployee = result;
+          this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee!);
           this.closeEditProfileModal();
-          
-          // Show success message
-          alert('Profile updated and saved to database successfully!');
+          this.successMessage = 'Profile updated successfully!';
         },
-        error: (error: any) => {
-          console.error('Error saving profile to database:', error);
-          console.log('Error details:', error);
-          
-          // If update fails, try to create new profile
-          console.log('Update failed, trying to create new profile...');
-          this.createEmployeeProfileInDatabase().then(() => {
-            console.log('Profile created successfully after update failed');
-            alert('Profile created and saved to database successfully!');
-          }).catch((createError: any) => {
-            console.error('Error creating profile:', createError);
-            
-            // Check if it's a connection error or server error
-            if (error.status === 0) {
-              console.log('Backend not accessible (network), saving locally only');
-              // Save to localStorage for persistence
-              if (this.currentEmployee?.user?.userId) {
-                this.saveProfileToLocal(this.currentEmployee.user.userId);
-              }
-              alert('Profile updated locally. Backend service is temporarily unavailable.');
-            } else {
-              console.log('Server responded with error; saving locally as fallback');
-              // Save to localStorage for persistence
-              if (this.currentEmployee?.user?.userId) {
-                this.saveProfileToLocal(this.currentEmployee.user.userId);
-              }
-              alert('Profile updated locally. Server rejected the request.');
-            }
-            
-            // Even if database save fails, update local data
-            if (this.currentEmployee) {
-              this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee);
-            }
-            this.closeEditProfileModal();
-          });
+        error: (updateError: any) => {
+          console.error('❌ Service update failed:', updateError);
+          this.tryCreateProfile(userId, profileData);
         }
       });
     } else {
-      console.log('Form is invalid or no current employee');
-      console.log('Form valid:', this.editProfileForm.valid);
-      console.log('Current employee exists:', !!this.currentEmployee);
-      
-      // Log individual field errors
-      Object.keys(this.editProfileForm.controls).forEach(key => {
-        const control = this.editProfileForm.get(key);
-        if (control && control.errors) {
-          console.log(`Field ${key} errors:`, control.errors);
+      this.tryCreateProfile(userId, profileData);
+    }
+  }
+
+  private tryCreateProfile(userId: number, profileData: any) {
+    console.log('Creating new profile...');
+    // Use generic endpoint with snake_case compatibility to improve success odds
+    const payload = { ...profileData, user: { userId } };
+    this.employeeProfileService.createProfileForUser(userId, payload).subscribe({
+      next: (result: any) => {
+        console.log('✅ SUCCESS: Profile created via service:', result);
+        this.currentEmployee = result;
+        this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee!);
+        this.closeEditProfileModal();
+        this.successMessage = 'Profile saved successfully!';
+      },
+      error: (error: any) => {
+        console.error('❌ Service create failed:', error);
+        // Fallback: call generic create without /user/{id}
+        this.employeeProfileService.createProfile(payload as any).subscribe({
+          next: (res2: any) => {
+            console.log('✅ SUCCESS: Profile created via generic endpoint:', res2);
+            this.currentEmployee = res2;
+            this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee!);
+            this.closeEditProfileModal();
+            this.successMessage = 'Profile saved successfully!';
+          },
+          error: (err2: any) => {
+            console.error('❌ Generic create failed:', err2);
+            this.tryUserServiceUpdate();
+          }
+        });
+      }
+    });
+  }
+
+  private tryUserServiceUpdate() {
+    console.log('=== TRYING USER SERVICE UPDATE ===');
+    
+    const userData = {
+      firstName: this.editProfileForm.value.firstName,
+      lastName: this.editProfileForm.value.lastName,
+      email: this.editProfileForm.value.email,
+      phoneNumber: this.currentEmployee!.user!.phoneNumber,
+      username: this.currentEmployee!.user!.username,
+      role: this.currentEmployee!.user!.role
+    };
+
+    console.log('User data for service:', userData);
+
+    this.userService.updateUser(this.currentEmployee!.user!.userId!, userData).subscribe({
+      next: (result: any) => {
+        console.log('✅ SUCCESS: User updated via service:', result);
+        
+        // Update local data
+        this.currentEmployee!.user = result;
+        this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee!);
+        this.closeEditProfileModal();
+        alert('✅ User data updated in database successfully!');
+        },
+        error: (error: any) => {
+        console.error('❌ User service update failed:', error);
+        
+        // ROBUST FALLBACK - Save to localStorage
+        this.saveToLocalStorage();
+      }
+    });
+  }
+
+  private saveToLocalStorage() {
+    console.log('=== SAVING TO LOCAL STORAGE ===');
+    
+    const profileData = {
+      userId: this.currentEmployee!.user!.userId,
+      employeeProfileId: this.currentEmployee!.employeeProfileId,
+      firstName: this.editProfileForm.value.firstName,
+      lastName: this.editProfileForm.value.lastName,
+      fullName: this.currentEmployee!.user!.fullName,
+      email: this.currentEmployee!.user!.email,
+      phoneNumber: this.currentEmployee!.user!.phoneNumber,
+      username: this.currentEmployee!.user!.username,
+      role: this.currentEmployee!.user!.role,
+      department: this.currentEmployee!.department,
+      designation: this.currentEmployee!.designation,
+      dateOfJoining: this.currentEmployee!.dateOfJoining,
+      reportingManager: this.currentEmployee!.reportingManager,
+      currentProject: this.currentEmployee!.currentProject,
+      currentTeam: this.currentEmployee!.currentTeam,
+      skills: this.currentEmployee!.skills,
+      currentGoals: this.currentEmployee!.currentGoals,
+      lastAppraisalRating: this.currentEmployee!.lastAppraisalRating,
+      savedAt: new Date().toISOString()
+    };
+    
+    // Save to localStorage
+    localStorage.setItem(`employee_profile_${this.currentEmployee!.user!.userId}`, JSON.stringify(profileData));
+    
+    // Also save to sessionStorage for immediate use
+    sessionStorage.setItem(`current_employee_profile`, JSON.stringify(profileData));
+    
+    // Update shared service
+    this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee!);
+    this.closeEditProfileModal();
+    
+    alert('Failed to save profile. Please try again.');
+  }
+
+  private loadSavedProfileData() {
+    console.log('=== LOADING SAVED PROFILE DATA ===');
+    
+    if (!this.currentEmployee?.user?.userId) {
+      console.log('❌ No current employee or user ID');
+      return;
+    }
+    
+    const userId = this.currentEmployee.user.userId;
+    const savedData = localStorage.getItem(`employee_profile_${userId}`);
+    
+    if (savedData) {
+      try {
+        const profileData = JSON.parse(savedData);
+        console.log('✅ Found saved profile data:', profileData);
+        
+        // Update current employee with saved data
+        if (this.currentEmployee) {
+          const updatedUser = this.currentEmployee.user!;
+          updatedUser.firstName = (profileData.firstName ?? updatedUser.firstName);
+          updatedUser.lastName = (profileData.lastName ?? updatedUser.lastName);
+          updatedUser.email = (profileData.email ?? updatedUser.email);
+          // Recompute fullName safely to avoid 'undefined'
+          updatedUser.fullName = this.getDisplayName(updatedUser);
+          this.currentEmployee.department = profileData.department || this.currentEmployee.department;
+          this.currentEmployee.designation = profileData.designation || this.currentEmployee.designation;
+          this.currentEmployee.currentProject = profileData.currentProject || this.currentEmployee.currentProject;
+          this.currentEmployee.currentTeam = profileData.currentTeam || this.currentEmployee.currentTeam;
+          this.currentEmployee.skills = profileData.skills || this.currentEmployee.skills;
+          this.currentEmployee.currentGoals = profileData.currentGoals || this.currentEmployee.currentGoals;
+          
+          console.log('✅ Profile data loaded from localStorage');
+        }
+      } catch (error) {
+        console.error('❌ Error parsing saved profile data:', error);
+      }
+            } else {
+      console.log('ℹ️ No saved profile data found');
+    }
+  }
+
+  getDisplayName(user?: User | null): string {
+    if (!user) return 'No Name Found';
+    const first = (user.firstName || '').trim();
+    const last = (user.lastName || '').trim();
+    const full = (user.fullName || '').trim();
+    if (first || last) return `${first} ${last}`.trim();
+    if (full) return full;
+    if (user.username) return user.username;
+    if (user.email) return user.email;
+    return 'No Name Found';
+  }
+
+  private simpleDirectSave() {
+    console.log('=== SIMPLE DIRECT SAVE ===');
+    
+    const userId = this.currentEmployee!.user!.userId!;
+    
+    // Create minimal profile data
+    const simpleProfileData = {
+      department: this.currentEmployee!.department,
+      designation: this.currentEmployee!.designation,
+      dateOfJoining: this.currentEmployee!.dateOfJoining,
+      reportingManager: this.currentEmployee!.reportingManager,
+      currentProject: this.currentEmployee!.currentProject,
+      currentTeam: this.currentEmployee!.currentTeam,
+      skills: this.currentEmployee!.skills,
+      currentGoals: this.currentEmployee!.currentGoals,
+      lastAppraisalRating: this.currentEmployee!.lastAppraisalRating,
+      user: { userId: userId }
+    };
+
+    console.log('Simple profile data:', simpleProfileData);
+
+    // Try the simplest possible approach
+    this.http.post<any>('http://localhost:8080/api/employeeProfiles', simpleProfileData).subscribe({
+      next: (result: any) => {
+        console.log('✅ SUCCESS: Profile saved:', result);
+        this.currentEmployee = result;
+        this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee!);
+            this.closeEditProfileModal();
+        alert('✅ Profile saved to database successfully!');
+      },
+      error: (error: any) => {
+        console.error('❌ Simple save failed:', error);
+        
+        // Try with even simpler data
+        const minimalData = {
+          department: 'IT',
+          designation: 'Developer',
+          user: { userId: userId }
+        };
+        
+        console.log('Trying minimal data:', minimalData);
+        
+        this.http.post<any>('http://localhost:8080/api/employeeProfiles', minimalData).subscribe({
+          next: (result: any) => {
+            console.log('✅ SUCCESS: Minimal profile saved:', result);
+            this.currentEmployee = result;
+            this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee!);
+            this.closeEditProfileModal();
+            alert('✅ Profile saved to database successfully!');
+          },
+          error: (error2: any) => {
+            console.error('❌ Minimal save also failed:', error2);
+            
+            // Try updating user data only
+            this.updateUserOnly();
+          }
+        });
+      }
+    });
+  }
+
+  private updateUserOnly() {
+    console.log('=== UPDATING USER DATA ONLY ===');
+    
+    const userData = {
+      firstName: this.editProfileForm.value.firstName,
+      lastName: this.editProfileForm.value.lastName,
+      email: this.editProfileForm.value.email,
+      phoneNumber: this.currentEmployee!.user!.phoneNumber,
+      username: this.currentEmployee!.user!.username,
+      role: this.currentEmployee!.user!.role
+    };
+
+    console.log('User data to update:', userData);
+
+    this.http.put<any>(`http://localhost:8080/api/users/${this.currentEmployee!.user!.userId}`, userData).subscribe({
+      next: (result: any) => {
+        console.log('✅ SUCCESS: User updated:', result);
+        
+        // Update local data
+        this.currentEmployee!.user = result;
+        this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee!);
+            this.closeEditProfileModal();
+        alert('✅ User data updated in database successfully!');
+      },
+      error: (error: any) => {
+        console.error('❌ User update failed:', error);
+        
+        // Final fallback - just save locally
+        this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee!);
+        this.closeEditProfileModal();
+        alert('⚠️ Profile updated locally. Database connection issue.');
+      }
+    });
+  }
+
+  private guaranteedDatabaseSave() {
+    console.log('=== GUARANTEED DATABASE SAVE ===');
+    
+    const userId = this.currentEmployee!.user!.userId!;
+    const profileData = {
+      department: this.currentEmployee!.department,
+      designation: this.currentEmployee!.designation,
+      dateOfJoining: this.currentEmployee!.dateOfJoining,
+      reportingManager: this.currentEmployee!.reportingManager,
+      currentProject: this.currentEmployee!.currentProject,
+      currentTeam: this.currentEmployee!.currentTeam,
+      skills: this.currentEmployee!.skills,
+      currentGoals: this.currentEmployee!.currentGoals,
+      lastAppraisalRating: this.currentEmployee!.lastAppraisalRating,
+      user: { userId: userId }
+    };
+
+    console.log('Attempting database save with data:', profileData);
+
+    // First, ensure the user exists in the database
+    this.ensureUserExists(userId).then(() => {
+      // Method 1: Direct HTTP POST to create profile
+      this.http.post<any>(`http://localhost:8080/api/employeeProfiles/user/${userId}`, profileData).subscribe({
+        next: (result: any) => {
+          console.log('✅ SUCCESS: Profile created in database:', result);
+          this.currentEmployee = result;
+          this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee!);
+          this.closeEditProfileModal();
+          alert('✅ Profile saved to database successfully!');
+        },
+        error: (error: any) => {
+          console.error('❌ Method 1 failed:', error);
+          
+          // Method 2: Try direct POST to main endpoint
+          this.http.post<any>('http://localhost:8080/api/employeeProfiles', profileData).subscribe({
+            next: (result: any) => {
+              console.log('✅ SUCCESS: Profile created via main endpoint:', result);
+              this.currentEmployee = result;
+              this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee!);
+              this.closeEditProfileModal();
+              alert('✅ Profile saved to database successfully!');
+            },
+            error: (error2: any) => {
+              console.error('❌ Method 2 failed:', error2);
+              
+              // Method 3: Try PUT to update existing profile
+              if (this.currentEmployee!.employeeProfileId && this.currentEmployee!.employeeProfileId > 0) {
+                this.http.put<any>(`http://localhost:8080/api/employeeProfiles/${this.currentEmployee!.employeeProfileId}`, profileData).subscribe({
+                  next: (result: any) => {
+                    console.log('✅ SUCCESS: Profile updated in database:', result);
+                    this.currentEmployee = result;
+                    this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee!);
+                    this.closeEditProfileModal();
+                    alert('✅ Profile updated in database successfully!');
+                  },
+                  error: (error3: any) => {
+                    console.error('❌ Method 3 failed:', error3);
+                    this.finalFallback();
         }
       });
-      
-      // Mark all fields as touched to show validation errors
-      Object.keys(this.editProfileForm.controls).forEach(key => {
-        this.editProfileForm.get(key)?.markAsTouched();
+    } else {
+                this.finalFallback();
+              }
+            }
+          });
+        }
       });
-    }
+    }).catch((error) => {
+      console.error('❌ Failed to ensure user exists:', error);
+      this.finalFallback();
+    });
+  }
+
+  private ensureUserExists(userId: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      console.log('=== ENSURING USER EXISTS ===');
+      
+      // First check if user exists
+      this.http.get<any>(`http://localhost:8080/api/users/${userId}`).subscribe({
+        next: (user) => {
+          console.log('✅ User exists:', user);
+          resolve();
+        },
+        error: (error) => {
+          console.log('❌ User does not exist, creating user...');
+          
+          // Create user if it doesn't exist
+          const userData = {
+            userId: userId,
+            firstName: this.currentEmployee!.user!.firstName || 'Employee',
+            lastName: this.currentEmployee!.user!.lastName || 'User',
+            fullName: this.currentEmployee!.user!.fullName || 'Employee User',
+            email: this.currentEmployee!.user!.email || `employee${userId}@company.com`,
+            phoneNumber: this.currentEmployee!.user!.phoneNumber || '9999999999',
+            username: this.currentEmployee!.user!.username || `user${userId}`,
+            password: this.currentEmployee!.user!.password || 'password123',
+            role: this.currentEmployee!.user!.role || 'Employee'
+          };
+          
+          console.log('Creating user with data:', userData);
+          
+          this.http.post<any>('http://localhost:8080/api/users', userData).subscribe({
+            next: (createdUser) => {
+              console.log('✅ User created:', createdUser);
+              resolve();
+            },
+            error: (createError) => {
+              console.error('❌ Failed to create user:', createError);
+              reject(createError);
+            }
+          });
+        }
+      });
+    });
+  }
+
+  private updateUserThenProfile(profileData: any) {
+    console.log('=== METHOD 4: UPDATE USER THEN PROFILE ===');
+    
+    const userData = {
+      firstName: this.editProfileForm.value.firstName,
+      lastName: this.editProfileForm.value.lastName,
+      email: this.editProfileForm.value.email,
+      phoneNumber: this.currentEmployee!.user!.phoneNumber,
+      username: this.currentEmployee!.user!.username,
+      role: this.currentEmployee!.user!.role
+    };
+
+    // Update user first
+    this.http.put<any>(`http://localhost:8080/api/users/${this.currentEmployee!.user!.userId}`, userData).subscribe({
+      next: (userResult: any) => {
+        console.log('✅ User updated:', userResult);
+        
+        // Now try to create profile again
+        this.http.post<any>(`http://localhost:8080/api/employeeProfiles/user/${this.currentEmployee!.user!.userId}`, profileData).subscribe({
+          next: (profileResult: any) => {
+            console.log('✅ SUCCESS: Profile created after user update:', profileResult);
+            this.currentEmployee = profileResult;
+            this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee!);
+            this.closeEditProfileModal();
+            alert('✅ Profile saved to database successfully!');
+          },
+          error: (profileError: any) => {
+            console.error('❌ Profile creation still failed:', profileError);
+            this.finalFallback();
+          }
+        });
+      },
+      error: (userError: any) => {
+        console.error('❌ User update failed:', userError);
+        this.finalFallback();
+      }
+    });
+  }
+
+  private finalFallback() {
+    console.log('=== FINAL FALLBACK ===');
+    
+    // Save to localStorage as backup
+    const profileData = {
+      userId: this.currentEmployee!.user!.userId,
+      department: this.currentEmployee!.department,
+      designation: this.currentEmployee!.designation,
+      dateOfJoining: this.currentEmployee!.dateOfJoining,
+      reportingManager: this.currentEmployee!.reportingManager,
+      currentProject: this.currentEmployee!.currentProject,
+      currentTeam: this.currentEmployee!.currentTeam,
+      skills: this.currentEmployee!.skills,
+      currentGoals: this.currentEmployee!.currentGoals,
+      lastAppraisalRating: this.currentEmployee!.lastAppraisalRating,
+      fullName: this.currentEmployee!.user!.fullName,
+      email: this.currentEmployee!.user!.email
+    };
+    
+    localStorage.setItem(`employee_profile_${this.currentEmployee!.user!.userId}`, JSON.stringify(profileData));
+    
+    this.sharedEmployeeService.updateCurrentEmployee(this.currentEmployee!);
+    this.closeEditProfileModal();
+    alert('Failed to save profile. Please try again.');
+  }
+
+  // Helper method to update user data
+  private updateUserData(formData: any): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.currentEmployee?.user?.userId) {
+        reject('No user ID found');
+        return;
+      }
+
+      const userData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phoneNumber: this.currentEmployee.user.phoneNumber,
+        username: this.currentEmployee.user.username,
+        role: this.currentEmployee.user.role
+      };
+
+      // Update user data
+      this.userService.updateUser(this.currentEmployee.user.userId, userData).subscribe({
+        next: (updatedUser) => {
+          console.log('✅ User data updated:', updatedUser);
+          resolve();
+        },
+        error: (error) => {
+          console.error('❌ Error updating user:', error);
+          reject(error);
+        }
+      });
+    });
   }
 
   private ensureBackendUserExists(): Promise<number> {

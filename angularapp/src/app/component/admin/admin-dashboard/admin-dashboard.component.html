@@ -51,34 +51,12 @@
 
         <div class="card" (click)="navigateTo('/employee-profile')">
           <div class="card-header">
-            <i class="fas fa-user-plus icon" style="color: #10b981;"></i>
-            <span class="trend positive">New Hires</span>
-          </div>
-          <div class="card-body">
-            <div class="value">{{ employeeStats.newlyJoined }}</div>
-            <div class="title">Newly Joined</div>
-          </div>
-        </div>
-
-        <div class="card" (click)="navigateTo('/employee-profile')">
-          <div class="card-header">
             <i class="fas fa-user-check icon" style="color: #059669;"></i>
             <span class="trend positive">Active</span>
           </div>
           <div class="card-body">
             <div class="value">{{ employeeStats.activeEmployees }}</div>
             <div class="title">Active Employees</div>
-          </div>
-        </div>
-
-        <div class="card" (click)="navigateTo('/employee-profile')">
-          <div class="card-header">
-            <i class="fas fa-user-clock icon" style="color: #f59e0b;"></i>
-            <span class="trend negative">On Leave</span>
-          </div>
-          <div class="card-body">
-            <div class="value">{{ employeeStats.employeesOnLeave }}</div>
-            <div class="title">On Leave</div>
           </div>
         </div>
 
@@ -92,13 +70,12 @@
             <div class="title">Total Departments</div>
           </div>
         </div>
-
       </div>
 
       <!-- Performance Metrics Section -->
       <div class="analytics-section">
         <div class="section-header">
-          <h2>Performance Analytics</h2>
+          <!-- Removed <h2>Performance Analytics</h2> -->
         </div>
         <div class="analytics-grid">
           <div class="metric-card" *ngFor="let metric of performanceMetrics">

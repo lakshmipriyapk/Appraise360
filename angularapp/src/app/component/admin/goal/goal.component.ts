@@ -69,6 +69,7 @@ export class GoalComponent implements OnInit {
       title: ['', Validators.required],
       description: ['', Validators.required],
       category: ['', Validators.required],
+      priority: ['Medium', Validators.required],
       startDate: ['', Validators.required],
       endDate: ['', Validators.required],
       managerComments: [''],
@@ -208,13 +209,50 @@ export class GoalComponent implements OnInit {
   closeModals() { this.showCreateModal = this.showEditModal = this.showDeleteModal = false; this.selectedGoal = null; this.goalForm.reset(); }
 
   createGoal() {
-    if (!this.goalForm.valid) return;
+    if (!this.goalForm.valid) {
+      this.errorMessage = 'Please fill in all required fields';
+      return;
+    }
+    
     const formData = this.goalForm.value;
+    console.log('Creating goal with form data:', formData);
+    
+    // Find the selected employee
     const employee = this.employeeProfiles.find(emp => emp.employeeProfileId === formData.employeeId);
-    const goal: Goal = { goalId: 0, ...formData, targetDate: formData.endDate, employee: employee || null, createdBy: 'manager' };
-    this.goalService.createGoal(goal).subscribe({
-      next: (res: Goal) => { this.goals.unshift(res); this.applyFilters(); this.successMessage = 'Goal created'; this.closeModals(); },
-      error: () => { this.errorMessage = 'Failed to create goal'; }
+    if (!employee) {
+      this.errorMessage = 'Please select an employee';
+      return;
+    }
+    
+    // Create goal data with proper field mapping for backend
+    const goalData = {
+      title: formData.title,
+      description: formData.description,
+      category: formData.category,
+      status: formData.status || 'Pending',
+      priority: formData.priority || 'Medium',
+      start_date: formData.startDate,
+      target_date: formData.endDate,
+      manager_comments: formData.managerComments || '',
+      employee_id: employee.employeeProfileId,
+      created_by: 'manager',
+      progress: 0
+    };
+    
+    console.log('Sending goal data to backend:', goalData);
+    
+    this.goalService.createGoal(goalData as any).subscribe({
+      next: (res: Goal) => { 
+        console.log('Goal created successfully:', res);
+        this.goals.unshift(res); 
+        this.applyFilters(); 
+        this.successMessage = 'Goal created successfully'; 
+        this.closeModals(); 
+      },
+      error: (error) => { 
+        console.error('Error creating goal:', error);
+        this.errorMessage = 'Failed to create goal. Please try again.';
+      }
     });
   }
 
