@@ -151,7 +151,13 @@ export class GoalComponent implements OnInit {
 
   loadEmployeeProfiles() {
     this.employeeProfileService.getAllEmployeeProfiles().subscribe({
-      next: (data: EmployeeProfile[]) => { this.employeeProfiles = data; this.cdr.markForCheck(); }
+      next: (data: EmployeeProfile[]) => { 
+        // Filter only employees (exclude admins)
+        this.employeeProfiles = data.filter(profile => 
+          profile.user?.role === 'Employee' || profile.user?.role === 'employee'
+        );
+        this.cdr.markForCheck(); 
+      }
     });
   }
 

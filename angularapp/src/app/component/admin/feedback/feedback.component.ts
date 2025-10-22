@@ -125,7 +125,10 @@ export class FeedbackComponent implements OnInit {
     this.employeeProfileService.getAllEmployeeProfiles().subscribe({
       next: (data: EmployeeProfile[]) => { 
         console.log('Employee profiles loaded from database:', data);
-        this.employeeProfiles = data; 
+        // Filter only employees (exclude admins)
+        this.employeeProfiles = data.filter(profile => 
+          profile.user?.role === 'Employee' || profile.user?.role === 'employee'
+        );
       },
       error: (error) => { 
         console.error('Error loading employee profiles:', error);

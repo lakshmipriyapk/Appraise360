@@ -96,10 +96,17 @@ export class EmployeeProfileComponent implements OnInit {
       next: (data: EmployeeProfile[]) => {
         console.log('Employee profiles loaded from database:', data);
         console.log('First profile user data:', data[0]?.user);
-        this.employeeProfiles = data.map(profile => {
+        
+        // Filter only employees (exclude admins)
+        const employeeProfiles = data.filter(profile => 
+          profile.user?.role === 'Employee' || profile.user?.role === 'employee'
+        );
+        
+        this.employeeProfiles = employeeProfiles.map(profile => {
           console.log('Processing profile:', profile.employeeProfileId, 'User:', profile.user);
           return {
             employeeId: profile.employeeProfileId ?? 0,
+            userId: profile.user?.userId,
             fullName: profile.user?.fullName ?? 'Unknown',
             email: profile.user?.email ?? 'Not provided',
             phoneNumber: profile.user?.phoneNumber ?? 'Not provided',
@@ -112,7 +119,8 @@ export class EmployeeProfileComponent implements OnInit {
             reportingManager: profile.reportingManager ?? 'Not provided',
             lastAppraisalRating: profile.lastAppraisalRating != null 
               ? profile.lastAppraisalRating.toString() 
-              : 'N/A'
+              : 'N/A',
+            currentGoals: profile.currentGoals ?? ''
           };
         });
 
