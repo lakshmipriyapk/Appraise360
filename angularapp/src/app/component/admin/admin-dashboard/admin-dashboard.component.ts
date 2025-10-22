@@ -96,11 +96,15 @@ export class AdminDashboardComponent implements OnInit {
     this.currentManager = this.authService.getCurrentUser();
     console.log('Current manager:', this.currentManager);
     
-    // Load all employees
+    // Load all employees (filter only employees, exclude admins)
     this.employeeProfileService.getAllEmployeeProfiles().subscribe({
       next: (employees) => {
         console.log('All employees loaded:', employees);
-        this.allEmployees = employees;
+        // Filter only employees (exclude admins)
+        this.allEmployees = employees.filter(emp => 
+          emp.user?.role === 'Employee' || emp.user?.role === 'employee'
+        );
+        console.log('Filtered employees (excluding admins):', this.allEmployees.length);
         this.calculateEmployeeStats();
         this.loadAllEmployeeData();
       },

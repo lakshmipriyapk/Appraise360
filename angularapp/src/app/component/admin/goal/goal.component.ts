@@ -152,11 +152,17 @@ export class GoalComponent implements OnInit {
   loadEmployeeProfiles() {
     this.employeeProfileService.getAllEmployeeProfiles().subscribe({
       next: (data: EmployeeProfile[]) => { 
+        console.log('All employee profiles loaded:', data);
         // Filter only employees (exclude admins)
         this.employeeProfiles = data.filter(profile => 
           profile.user?.role === 'Employee' || profile.user?.role === 'employee'
         );
+        console.log('Filtered employee profiles for goal form:', this.employeeProfiles);
         this.cdr.markForCheck(); 
+      },
+      error: (error) => {
+        console.error('Error loading employee profiles for goal form:', error);
+        this.errorMessage = 'Failed to load employees. Please try again.';
       }
     });
   }

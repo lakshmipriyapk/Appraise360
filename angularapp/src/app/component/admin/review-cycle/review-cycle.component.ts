@@ -220,43 +220,34 @@ export class ReviewCycleComponent implements OnInit {
       const formData = this.reviewCycleForm.value;
       
       const newReviewCycle: ReviewCycle = {
-        cycleId: Date.now(), // Generate temporary ID
+        cycleId: 0, // Let backend generate ID
         cycleName: formData.cycleName,
         description: formData.description || '',
         startDate: formData.startDate,
         endDate: formData.endDate,
-        deadline: formData.deadline || '',
         status: formData.status
       };
 
-      // Add to local list immediately
-      this.reviewCycles.unshift(newReviewCycle);
-      this.applyFilters();
-      this.cdr.markForCheck();
+      console.log('Creating review cycle:', newReviewCycle);
 
       this.reviewCycleService.createReviewCycle(newReviewCycle).subscribe({
-        next: (response: any) => {
+        next: (response: ReviewCycle) => {
+          console.log('Review cycle created successfully:', response);
           this.successMessage = 'Review cycle created successfully!';
-          // Update with real ID from backend
-          if (response && response.cycleId) {
-            const index = this.reviewCycles.findIndex(rc => rc.cycleId === newReviewCycle.cycleId);
-            if (index !== -1) {
-              this.reviewCycles[index] = { ...newReviewCycle, cycleId: response.cycleId };
-              this.applyFilters();
-              this.cdr.markForCheck();
-            }
-          }
+          // Reload the list to get the updated data from database
+          this.loadReviewCycles();
           this.closeModals();
         },
         error: (error: any) => {
-          console.error('Error creating review cycle, using mock response:', error);
-          // Mock successful creation for development
-          this.successMessage = 'Review cycle created successfully! (Mock)';
-          this.closeModals();
+          console.error('Error creating review cycle:', error);
+          this.errorMessage = 'Failed to create review cycle. Please try again.';
+          // Remove from local list if it was added
+          this.loadReviewCycles();
         }
       });
     } else {
       this.errorMessage = 'Please fill in all required fields correctly.';
+      this.reviewCycleForm.markAllAsTouched();
     }
   }
 
