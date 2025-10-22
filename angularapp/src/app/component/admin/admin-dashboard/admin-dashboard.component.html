@@ -127,7 +127,7 @@
           <span class="employee-count">{{ allEmployees.length }} employees</span>
         </div>
         <div class="employees-grid">
-          <div class="employee-card" *ngFor="let employee of allEmployees" (click)="viewEmployeeDashboard(employee.employeeProfileId || 0)">
+          <div class="employee-card" *ngFor="let employee of allEmployees" (click)="viewEmployeeProfile(employee.employeeProfileId || 0)">
             <div class="employee-header">
               <div class="employee-avatar">
                 <i class="fas fa-user"></i>

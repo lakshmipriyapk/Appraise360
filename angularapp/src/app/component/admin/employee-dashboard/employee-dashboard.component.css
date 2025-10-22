@@ -715,7 +715,9 @@
 .goal-status-controls {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.5rem;
+  flex: 1;
 }
 
 .status-buttons {
@@ -725,6 +727,10 @@
   border-radius: 8px;
   padding: 0.25rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 300px;
 }
 
 .status-btn {
@@ -740,6 +746,13 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   min-width: 80px;
+  text-align: center;
+  white-space: nowrap;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
 }
 
 .status-btn:hover {

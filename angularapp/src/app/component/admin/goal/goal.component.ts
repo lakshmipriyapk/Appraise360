@@ -209,18 +209,36 @@ export class GoalComponent implements OnInit {
   closeModals() { this.showCreateModal = this.showEditModal = this.showDeleteModal = false; this.selectedGoal = null; this.goalForm.reset(); }
 
   createGoal() {
+    console.log('Form validity:', this.goalForm.valid);
+    console.log('Form errors:', this.goalForm.errors);
+    console.log('Form value:', this.goalForm.value);
+    console.log('Available employees:', this.employeeProfiles);
+    
     if (!this.goalForm.valid) {
       this.errorMessage = 'Please fill in all required fields';
+      this.goalForm.markAllAsTouched();
+      
+      // Log specific field errors
+      Object.keys(this.goalForm.controls).forEach(key => {
+        const control = this.goalForm.get(key);
+        if (control && control.invalid) {
+          console.log(`Field ${key} is invalid:`, control.errors);
+        }
+      });
       return;
     }
     
     const formData = this.goalForm.value;
     console.log('Creating goal with form data:', formData);
+    console.log('Selected employee ID:', formData.employeeId);
     
     // Find the selected employee
     const employee = this.employeeProfiles.find(emp => emp.employeeProfileId === formData.employeeId);
+    console.log('Found employee:', employee);
+    
     if (!employee) {
       this.errorMessage = 'Please select an employee';
+      this.goalForm.get('employeeId')?.markAsTouched();
       return;
     }
     

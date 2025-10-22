@@ -44,6 +44,11 @@ export class EmployeeProfileService {
     return this.http.put<EmployeeProfile>(`${this.apiUrl}/${id}`, profile);
   }
 
+  /** Update employee profile with partial data */
+  updateEmployeeProfilePartial(id: number, profileData: any): Observable<EmployeeProfile> {
+    return this.http.put<EmployeeProfile>(`${this.apiUrl}/${id}`, profileData);
+  }
+
   /** Delete a profile */
   deleteProfile(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);

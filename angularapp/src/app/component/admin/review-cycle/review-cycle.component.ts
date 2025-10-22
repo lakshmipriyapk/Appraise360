@@ -5,6 +5,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { ReviewCycleService } from '../../../service/review-cycle.service';
 import { EmployeeProfileService } from '../../../service/employee-profile.service';
 import { AppraisalService } from '../../../service/appraisal.service';
+import { AuthService } from '../../../service/auth.service';
 import { ReviewCycle } from '../../../model/review-cycle.model';
 import { EmployeeProfile } from '../../../model/employee-profile.model';
 import { Appraisal } from '../../../model/appraisal.model';
@@ -54,6 +55,7 @@ export class ReviewCycleComponent implements OnInit {
     private reviewCycleService: ReviewCycleService,
     private employeeProfileService: EmployeeProfileService,
     private appraisalService: AppraisalService,
+    private authService: AuthService,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef
   ) {
@@ -456,7 +458,7 @@ export class ReviewCycleComponent implements OnInit {
   }
 
   logout() {
-    // Add logout logic here
-    console.log('Logout clicked');
+    this.authService.logout();
+    this.router.navigate(['/website/landing']);
   }
 }

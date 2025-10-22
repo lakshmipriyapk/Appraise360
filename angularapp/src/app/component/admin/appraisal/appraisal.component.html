@@ -201,6 +201,10 @@
                 </div>
               </div>
 
+              <div class="comments-section" *ngIf="appraisal.selfComments">
+                <span class="comments-label">Employee Comments:</span>
+                <p class="comments-text">{{ appraisal.selfComments }}</p>
+              </div>
               <div class="comments-section" *ngIf="appraisal.managerComments">
                 <span class="comments-label">Manager Comments:</span>
                 <p class="comments-text">{{ appraisal.managerComments }}</p>
@@ -310,7 +314,7 @@
         </div>
         <div class="form-group">
           <label>Employee Comments:</label>
-          <div class="readonly-comments">{{ appraisalForm.get('selfComments')?.value }}</div>
+          <div class="readonly-comments">{{ appraisalForm.get('selfComments')?.value || 'No comments provided by employee' }}</div>
         </div>
       </div>
     </div>

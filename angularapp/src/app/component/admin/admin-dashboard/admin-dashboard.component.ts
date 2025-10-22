@@ -324,9 +324,9 @@ export class AdminDashboardComponent implements OnInit {
     return this.getEmployeeGoals(employeeId).filter(g => g.status === 'Completed').length;
   }
 
-  // Navigate to employee dashboard
-  viewEmployeeDashboard(employeeId: number) {
-    this.router.navigate(['/employee-dashboard'], { 
+  // Navigate to employee profile instead of dashboard
+  viewEmployeeProfile(employeeId: number) {
+    this.router.navigate(['/employee-profile'], { 
       queryParams: { employeeId: employeeId } 
     });
   }

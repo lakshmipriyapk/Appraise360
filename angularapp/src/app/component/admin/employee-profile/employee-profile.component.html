@@ -68,6 +68,12 @@
       {{ errorMessage }}
   </div>
 
+        <!-- Success Message -->
+        <div class="success-message" *ngIf="successMessage">
+      <i class="fas fa-check-circle"></i>
+      {{ successMessage }}
+  </div>
+
   <!-- Loading State -->
   <div class="loading-state" *ngIf="isLoading">
     <div class="spinner"></div>
@@ -109,6 +115,9 @@
                       <button class="btn btn-sm btn-primary" (click)="viewEmployeeDetails(profile)" title="View Details">
                         <i class="fas fa-eye"></i>
                       </button>
+                      <button class="btn btn-sm btn-warning" (click)="editEmployeeDetails(profile)" title="Edit Details">
+                        <i class="fas fa-edit"></i>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -118,12 +127,15 @@
         </div>
 
         <!-- Employee Detail View -->
-        <div class="employee-detail-view" *ngIf="showDetailView && selectedEmployeeProfile">
+        <div class="employee-detail-view" *ngIf="showDetailView && selectedEmployeeProfile && !showEditForm">
           <div class="detail-header">
             <button class="btn btn-secondary" (click)="closeDetailView()">
               <i class="fas fa-arrow-left"></i> Back to List
             </button>
             <h3>Employee Profile Details</h3>
+            <button class="btn btn-primary" (click)="editEmployeeDetails(selectedEmployeeProfile)">
+              <i class="fas fa-edit"></i> Edit Profile
+            </button>
           </div>
 
           <div class="profile-detail-card">
@@ -207,6 +219,108 @@
               </div>
       </div>
     </div>
+  </div>
+
+  <!-- Employee Edit Form -->
+  <div class="employee-edit-form" *ngIf="showEditForm && selectedEmployeeProfile">
+    <div class="edit-header">
+      <button class="btn btn-secondary" (click)="cancelEdit()">
+        <i class="fas fa-arrow-left"></i> Back to Details
+      </button>
+      <h3>Edit Employee Profile</h3>
+    </div>
+
+    <form [formGroup]="editForm" (ngSubmit)="saveEmployeeProfile()" class="edit-form">
+      <!-- Basic Information -->
+      <div class="form-section">
+        <h4>Basic Information</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fullName">Full Name *</label>
+            <input type="text" id="fullName" formControlName="fullName" class="form-control">
+            <div class="error-message" *ngIf="editForm.get('fullName')?.invalid && editForm.get('fullName')?.touched">
+              Full name is required
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="email">Email *</label>
+            <input type="email" id="email" formControlName="email" class="form-control">
+            <div class="error-message" *ngIf="editForm.get('email')?.invalid && editForm.get('email')?.touched">
+              Valid email is required
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="phoneNumber">Phone Number</label>
+            <input type="tel" id="phoneNumber" formControlName="phoneNumber" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="dateOfJoining">Date of Joining</label>
+            <input type="date" id="dateOfJoining" formControlName="dateOfJoining" class="form-control">
+          </div>
+        </div>
+      </div>
+
+      <!-- Work Information -->
+      <div class="form-section">
+        <h4>Work Information</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="department">Department *</label>
+            <select id="department" formControlName="department" class="form-control">
+              <option value="">Select Department</option>
+              <option value="IT">IT</option>
+              <option value="HR">HR</option>
+              <option value="Finance">Finance</option>
+              <option value="Marketing">Marketing</option>
+              <option value="Operations">Operations</option>
+              <option value="Sales">Sales</option>
+            </select>
+            <div class="error-message" *ngIf="editForm.get('department')?.invalid && editForm.get('department')?.touched">
+              Department is required
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="designation">Designation *</label>
+            <input type="text" id="designation" formControlName="designation" class="form-control">
+            <div class="error-message" *ngIf="editForm.get('designation')?.invalid && editForm.get('designation')?.touched">
+              Designation is required
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="currentProject">Current Project</label>
+            <input type="text" id="currentProject" formControlName="currentProject" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="currentTeam">Current Team</label>
+            <input type="text" id="currentTeam" formControlName="currentTeam" class="form-control">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="reportingManager">Reporting Manager</label>
+            <input type="text" id="reportingManager" formControlName="reportingManager" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="skills">Skills</label>
+            <input type="text" id="skills" formControlName="skills" class="form-control" placeholder="Comma-separated skills">
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="cancelEdit()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="editForm.invalid || isSaving">
+          <i class="fas fa-save"></i> {{ isSaving ? 'Saving...' : 'Save Changes' }}
+        </button>
+      </div>
+    </form>
   </div>
 
   <!-- Empty State -->

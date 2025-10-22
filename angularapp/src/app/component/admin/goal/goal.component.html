@@ -187,7 +187,7 @@
             [class.error]="goalForm.get('employeeId')?.invalid && goalForm.get('employeeId')?.touched">
             <option value="">Select an employee</option>
             <option *ngFor="let emp of employeeProfiles" [value]="emp.employeeProfileId">
-              {{ emp.user?.firstName }} {{ emp.user?.lastName }} ({{ emp.user?.email }})
+              {{ emp.user?.fullName || (emp.user?.firstName + ' ' + emp.user?.lastName) }} ({{ emp.user?.email }})
             </option>
           </select>
           <div class="error-message" *ngIf="goalForm.get('employeeId')?.invalid && goalForm.get('employeeId')?.touched">

@@ -2,7 +2,7 @@ import { Component, OnInit, HostListener } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-signup',
@@ -30,23 +30,16 @@ export class SignupComponent implements OnInit {
   passwordMismatch = false;
   isLoading = false;
 
-
   constructor(private http: HttpClient, private router: Router) {}
 
   ngOnInit() {
-    // Initialize any component logic here
+    // Removed health check to improve performance
+    // Health check will be done only when signup is attempted
   }
 
   @HostListener('window:scroll', [])
   onWindowScroll() {
     this.isScrolled = window.scrollY > 50;
-  }
-
-  scrollToSection(sectionId: string) {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
   }
 
   togglePassword() {
@@ -58,20 +51,22 @@ export class SignupComponent implements OnInit {
   }
 
   checkPasswordMatch() {
-    this.passwordMismatch = this.signupData.password !== this.signupData.confirmPassword && 
-                           this.signupData.confirmPassword.length > 0;
+    this.passwordMismatch =
+      this.signupData.password !== this.signupData.confirmPassword &&
+      this.signupData.confirmPassword.length > 0;
   }
 
-
   isFormValid(): boolean {
-    const phoneDigits = this.signupData.phone.replace(/\D/g, ''); // Remove non-digits
-    return this.signupData.fullName.trim().length > 0 &&
-           this.signupData.email.trim().length > 0 &&
-           phoneDigits.length === 10 &&
-           this.signupData.role.trim().length > 0 &&
-           this.signupData.password.length >= 6 &&
-           this.signupData.confirmPassword.length > 0 &&
-           !this.passwordMismatch;
+    const phoneDigits = this.signupData.phone.replace(/\D/g, '');
+    return (
+      this.signupData.fullName.trim().length > 0 &&
+      this.signupData.email.trim().length > 0 &&
+      phoneDigits.length === 10 &&
+      this.signupData.role.trim().length > 0 &&
+      this.signupData.password.length >= 6 &&
+      this.signupData.confirmPassword.length > 0 &&
+      !this.passwordMismatch
+    );
   }
 
   onSubmit(form: NgForm) {
@@ -80,7 +75,6 @@ export class SignupComponent implements OnInit {
       return;
     }
 
-    // Check if passwords match
     if (this.signupData.password !== this.signupData.confirmPassword) {
       this.passwordMismatch = true;
       return;
@@ -88,12 +82,11 @@ export class SignupComponent implements OnInit {
 
     this.isLoading = true;
 
-    // Prepare user data for backend
     const nameParts = this.signupData.fullName.trim().split(' ');
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
     const username = this.signupData.email.split('@')[0];
-    
+
     const userData = {
       fullName: this.signupData.fullName.trim(),
       email: this.signupData.email.trim(),
@@ -105,132 +98,102 @@ export class SignupComponent implements OnInit {
       lastName: lastName
     };
 
-    // Call backend API with timeout
-    this.http.post('http://localhost:8080/api/users', userData).subscribe({
-      next: (response) => {
+    // ✅ Send signup data to backend
+    this.http.post('http://localhost:8080/api/users', userData, { responseType: 'text' }).subscribe({
+      next: (responseText) => {
         this.isLoading = false;
+
+        // Some backends send plain text — try parsing if it's JSON
+        let response: any;
+        try {
+          response = JSON.parse(responseText);
+        } catch {
+          response = { message: responseText };
+        }
+
         this.messageTitle = 'Account Created Successfully!';
-        this.messageText = `Welcome ${this.signupData.fullName}! Your account has been created and saved to the database. You can now log in with your credentials.`;
+        this.messageText = response.message
+          ? response.message
+          : `Welcome ${this.signupData.fullName}! Your account has been created successfully.`;
         this.showMessage = true;
-        
-        // Store user data in localStorage for login fallback
+
+        // Store locally for fallback login
         this.storeUserData(userData);
-        
         form.resetForm();
         this.passwordMismatch = false;
-        
-        // Redirect to login after 2 seconds
-        setTimeout(() => {
-          this.router.navigate(['/login']);
-        }, 2000);
+
+        setTimeout(() => this.router.navigate(['/login']), 2000);
       },
-      error: (error) => {
+      error: (error: HttpErrorResponse) => {
         this.isLoading = false;
         console.error('Signup error:', error);
-        
+        console.error('Error details:', JSON.stringify(error, null, 2));
+
         if (error.status === 0) {
           this.messageTitle = 'Connection Error';
-          this.messageText = 'Cannot connect to the server. Please make sure the backend is running.';
+          this.messageText = 'Cannot connect to the server. Please make sure the backend is running on port 8080.';
         } else if (error.status === 409) {
           this.messageTitle = 'Account Already Exists';
-          this.messageText = 'An account with this email already exists. Please use a different email or try logging in.';
+          this.messageText = 'An account with this email already exists. Please try logging in.';
         } else if (error.status === 400) {
           this.messageTitle = 'Invalid Data';
-          this.messageText = this.getErrorMessage(error.error) || 'Please check your information and try again.';
+          this.messageText = this.extractErrorMessage(error) || 'Please check your inputs and try again.';
+        } else if (error.status === 500) {
+          this.messageTitle = 'Server Error';
+          this.messageText = 'There was a server error. This might be due to database connection issues. Please try again or contact support.';
         } else {
           this.messageTitle = 'Account Creation Failed';
-          this.messageText = this.getErrorMessage(error.error) || this.getErrorMessage(error.message) || 'Please try again with different information.';
+          this.messageText =
+            this.extractErrorMessage(error) ||
+            `Unexpected error occurred (Status: ${error.status}). Please try again later.`;
         }
+
         this.showMessage = true;
       }
     });
 
-    // Add timeout fallback
+    // Timeout fallback - reduced from 10s to 5s for better UX
     setTimeout(() => {
       if (this.isLoading) {
         this.isLoading = false;
         this.messageTitle = 'Request Timeout';
-        this.messageText = 'The request is taking too long. Please check your internet connection and try again.';
+        this.messageText = 'The request is taking too long. Please try again.';
         this.showMessage = true;
       }
-    }, 10000); // 10 second timeout
+    }, 5000);
   }
 
   closeMessage() {
     this.showMessage = false;
   }
 
-  private getErrorMessage(error: any): string {
+  private extractErrorMessage(error: any): string {
     if (!error) return '';
-    
-    if (typeof error === 'string') {
-      return error;
-    }
-    
-    if (typeof error === 'object') {
-      // Try to extract meaningful error message from object
-      if (error.message) {
-        return error.message;
-      }
-      if (error.error) {
-        return this.getErrorMessage(error.error);
-      }
-      if (error.details) {
-        return error.details;
-      }
-      if (error.statusText) {
-        return error.statusText;
-      }
-      // If it's an object with no clear message, stringify it safely
-      try {
-        return JSON.stringify(error);
-      } catch {
-        return 'An error occurred';
-      }
-    }
-    
-    return String(error);
-  }
 
+    if (error.error) {
+      if (typeof error.error === 'string') return error.error;
+      if (typeof error.error === 'object') {
+        return error.error.message || JSON.stringify(error.error);
+      }
+    }
+
+    if (error.message) return error.message;
+    return 'Unexpected error';
+  }
 
   private storeUserData(userData: any) {
     try {
-      // Get existing stored users
       const existingUsers = this.getStoredUsers();
-      
-      // Check if user already exists (by email or phone)
-      const existingUserIndex = existingUsers.findIndex(user => 
-        user.email === userData.email || user.phoneNumber === userData.phoneNumber
+      const exists = existingUsers.some(
+        (u) => u.email === userData.email || u.phoneNumber === userData.phoneNumber
       );
-      
-      // Add new user to the list
-      const newUser = {
-        userId: Math.floor(Math.random() * 1000) + 1, // Generate ID
-        username: userData.username,
-        email: userData.email,
-        fullName: userData.fullName,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        phoneNumber: userData.phoneNumber,
-        password: userData.password,
-        role: userData.role
-      };
-      
-      if (existingUserIndex >= 0) {
-        // Update existing user
-        existingUsers[existingUserIndex] = newUser;
-        console.log('Updated existing user data:', newUser);
-      } else {
-        // Add new user
-        existingUsers.push(newUser);
-        console.log('Added new user data:', newUser);
+      if (!exists) {
+        userData.userId = Math.floor(Math.random() * 1000) + 1;
+        existingUsers.push(userData);
+        localStorage.setItem('signedUpUsers', JSON.stringify(existingUsers));
       }
-      
-      // Store updated list
-      localStorage.setItem('signedUpUsers', JSON.stringify(existingUsers));
-      console.log('Total stored users:', existingUsers.length);
-    } catch (error) {
-      console.error('Error storing user data:', error);
+    } catch (err) {
+      console.error('Error storing user data:', err);
     }
   }
 

@@ -1,13 +1,15 @@
 import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { EmployeeProfileService } from '../../../service/employee-profile.service';
 import { EmployeeProfile } from '../../../model/employee-profile.model';
 import { AuthService } from '../../../service/auth.service';
+import { UserService } from '../../../service/user.service';
 
 interface EmployeeProfileDisplay {
   employeeId: number;
+  userId?: number; // Add userId to link to User entity
   fullName: string;
   email: string;
   phoneNumber: string;
@@ -19,12 +21,13 @@ interface EmployeeProfileDisplay {
   skills: string;
   reportingManager: string;
   lastAppraisalRating: string; // keep as string for UI
+  currentGoals?: string; // Add currentGoals field
 }
 
 @Component({
   selector: 'app-employee-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './employee-profile.component.html',
   styleUrls: ['./employee-profile.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -44,7 +47,11 @@ export class EmployeeProfileComponent implements OnInit {
   selectedEmployeeProfile: EmployeeProfileDisplay | null = null;
   isLoading = false;
   errorMessage = '';
+  successMessage = '';
   showDetailView = false;
+  showEditForm = false;
+  isSaving = false;
+  editForm!: FormGroup;
 
   // Filters
   searchTerm = '';
@@ -54,11 +61,30 @@ export class EmployeeProfileComponent implements OnInit {
     private router: Router,
     private employeeProfileService: EmployeeProfileService,
     private cdr: ChangeDetectorRef,
-    private authService: AuthService
-  ) {}
+    private authService: AuthService,
+    private fb: FormBuilder,
+    private userService: UserService
+  ) {
+    this.initializeEditForm();
+  }
 
   ngOnInit() {
     this.loadEmployeeProfiles();
+  }
+
+  private initializeEditForm(): void {
+    this.editForm = this.fb.group({
+      fullName: ['', [Validators.required]],
+      email: ['', [Validators.required, Validators.email]],
+      phoneNumber: [''],
+      department: ['', [Validators.required]],
+      designation: ['', [Validators.required]],
+      dateOfJoining: [''],
+      currentProject: [''],
+      currentTeam: [''],
+      reportingManager: [''],
+      skills: ['']
+    });
   }
 
   loadEmployeeProfiles() {
@@ -132,10 +158,12 @@ export class EmployeeProfileComponent implements OnInit {
   viewEmployeeDetails(employeeProfile: EmployeeProfileDisplay) {
     this.selectedEmployeeProfile = employeeProfile;
     this.showDetailView = true;
+    this.showEditForm = false; // Ensure edit form is not shown
   }
 
   closeDetailView() {
     this.showDetailView = false;
+    this.showEditForm = false;
     this.selectedEmployeeProfile = null;
   }
 
@@ -166,5 +194,110 @@ export class EmployeeProfileComponent implements OnInit {
     if (numRating >= 3) return 'rating-good';
     if (numRating >= 2) return 'rating-average';
     return 'rating-poor';
+  }
+
+  // Edit functionality
+  editEmployeeDetails(profile: EmployeeProfileDisplay): void {
+    this.selectedEmployeeProfile = profile;
+    this.showEditForm = true;
+    this.showDetailView = false;
+    
+    // Populate form with current values
+    this.editForm.patchValue({
+      fullName: profile.fullName,
+      email: profile.email,
+      phoneNumber: profile.phoneNumber,
+      department: profile.department,
+      designation: profile.designation,
+      dateOfJoining: profile.dateOfJoining,
+      currentProject: profile.currentProject,
+      currentTeam: profile.currentTeam,
+      reportingManager: profile.reportingManager,
+      skills: profile.skills
+    });
+  }
+
+  cancelEdit(): void {
+    this.showEditForm = false;
+    this.showDetailView = true;
+    this.editForm.reset();
+  }
+
+  saveEmployeeProfile(): void {
+    if (this.editForm.valid && this.selectedEmployeeProfile) {
+      this.isSaving = true;
+      const formData = this.editForm.value;
+      
+      // Find the original employee profile to update
+      const originalProfile = this.employeeProfiles.find(p => p.employeeId === this.selectedEmployeeProfile!.employeeId);
+      if (!originalProfile) {
+        this.errorMessage = 'Employee profile not found';
+        this.isSaving = false;
+        return;
+      }
+
+      // Create the updated profile data for backend
+      const updatedProfileData = {
+        department: formData.department,
+        designation: formData.designation,
+        dateOfJoining: formData.dateOfJoining,
+        currentProject: formData.currentProject,
+        currentTeam: formData.currentTeam,
+        reportingManager: formData.reportingManager,
+        skills: formData.skills,
+        currentGoals: originalProfile.currentGoals || '', // Include required field
+        lastAppraisalRating: originalProfile.lastAppraisalRating || 0 // Include optional field
+      };
+
+      console.log('Updating employee profile:', updatedProfileData);
+
+      // Update employee profile
+      this.employeeProfileService.updateEmployeeProfilePartial(this.selectedEmployeeProfile.employeeId, updatedProfileData).subscribe({
+        next: (response: any) => {
+          console.log('Employee profile updated successfully:', response);
+          
+          // Update local data
+          const updatedProfile: EmployeeProfileDisplay = {
+            ...originalProfile,
+            department: formData.department,
+            designation: formData.designation,
+            dateOfJoining: formData.dateOfJoining,
+            currentProject: formData.currentProject,
+            currentTeam: formData.currentTeam,
+            reportingManager: formData.reportingManager,
+            skills: formData.skills,
+            fullName: formData.fullName,
+            email: formData.email,
+            phoneNumber: formData.phoneNumber
+          };
+
+          const index = this.employeeProfiles.findIndex(p => p.employeeId === updatedProfile.employeeId);
+          if (index !== -1) {
+            this.employeeProfiles[index] = updatedProfile;
+            this.filteredEmployeeProfiles = [...this.employeeProfiles];
+            this.selectedEmployeeProfile = updatedProfile;
+          }
+
+          this.errorMessage = '';
+          this.successMessage = 'Employee profile updated successfully!';
+          this.showEditForm = false;
+          this.showDetailView = true;
+          this.isSaving = false;
+          
+          // Clear success message after 3 seconds
+          setTimeout(() => {
+            this.successMessage = '';
+          }, 3000);
+        },
+        error: (error: any) => {
+          console.error('Error updating employee profile:', error);
+          this.errorMessage = 'Failed to update employee profile. Please try again.';
+          this.isSaving = false;
+        }
+      });
+    } else {
+      this.errorMessage = 'Please fill in all required fields correctly.';
+      this.editForm.markAllAsTouched();
+    }
   }
 }
